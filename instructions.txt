@@ -1,0 +1,32 @@
+; Mnemonic Type Opcode B/W Description
+ADD		2	0x5000	2	ADD Add source to destination
+ADDC	2	0x6000	2	ADDC Add source and carry to destination
+AND		2	0xf000	2	AND Logical AND source with destination (dest &= src)
+BIC		2	0xc000	2	BIC Bit clear (dest &= ~src)
+BIS		2	0xd000	2	BIS Bit set (logical OR)
+BIT		2	0xb000	2	BIT Test bits of source AND destination
+CALL	1	0x1280	0	CALL Subroutine call; push PC and move operand to PC
+CMP		2	0x9000	2	CMP Compare source with destination
+DADD	2	0xa000	2	DADD Decimal add source to destination (with carry)
+JC		3	0x2c00		JC/JHS Jump if carry/higher or same
+JEQ		3	0x2400		JEQ/JZ Jump if equal/zero
+JGE		3	0x3400		JGE Jump if greater or equal
+JHS		3	0x2c00		JC/JHS Jump if carry/higher or same
+JL		3	0x3800		JL Jump if less
+JLO		3	0x2800		JNC/JLO Jump if no carry/lower
+JMP		3	0x3c00		JMP Jump (unconditionally)
+JN		3	0x3000		JN Jump if negative
+JNC		3	0x2800		JNC/JLO Jump if no carry/lower
+JNE		3	0x2000		JNE/JNZ Jump if not equal/zero
+JNZ		3	0x2000		JNE/JNZ Jump if not equal/zero
+JZ		3	0x2400		JEQ/JZ Jump if equal/zero
+MOV		2	0x4000	2	MOV Move source to destination
+PUSH	1	0x1200	2	PUSH 16-bit push value onto stack (byte extended)
+RETI	0	0x1300		RETI Return from interrupt; pop SR then pop PC
+RRA		1	0x1100	2	RRA Rotate right (1 bit) arithmetic
+RRC		1	0x1000	2	RRC Rotate right (1 bit) through carry
+SUB		2	0x8000	2	SUB Subtract source from destination
+SUBC	2	0x7000	2	SUBC Subtract source from destination (with carry)
+SWPB	1	0x1080	0	SWPB Swap bytes
+SXT		1	0x1180	0	SXT Sign extend byte to word
+XOR		2	0xe000	2	XOR Exclusive or source with destination
