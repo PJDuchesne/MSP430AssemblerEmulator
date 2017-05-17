@@ -1,86 +1,93 @@
+/*
+__/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____        
+ _\/\\\/////////\\\__\/////\\\///__\/\\\////////\\\__       
+  _\/\\\_______\/\\\______\/\\\_____\/\\\______\//\\\_      
+   _\/\\\\\\\\\\\\\/_______\/\\\_____\/\\\_______\/\\\_     
+    _\/\\\/////////_________\/\\\_____\/\\\_______\/\\\_    
+     _\/\\\__________________\/\\\_____\/\\\_______\/\\\_   
+      _\/\\\___________/\\\___\/\\\_____\/\\\_______/\\\__  
+       _\/\\\__________\//\\\\\\\\\______\/\\\\\\\\\\\\/___
+        _\///____________\/////////_______\////////////_____
+
+-> Name:  main.cpp
+-> Brief: Implementation for the main.cpp the code that runs executive commands
+-> Date: May 15, 2017	(Created)
+-> Date: May 17, 2017	(Last Modified)
+-> Author: Paul Duchesne (B00332119)
+-> Contact: pl332718@dal.ca
+*/
+
 #include <iostream>
 #include <stdio.h>
 #include <string>
+#include <fstream>
+#include <cstdlib>
 
-struct INST {
-	std::string mnemonic;
-	int type;
-	int opcode;
-	int b_w;
-};
+#include "main.h"
+#include "symtbl.h"
+#include "inst_dir.h"
+#include "library.h"
 
-struct DIR {
-	std::string mnemonic;
-	int dir_number; // This will trigger a separate DIR switch statement?
-};
+// TO ADD
+	// Input argument options (Drag and drop, input text, etc.)
+	// Operand Parser
+	// First pass function
+	// Transition logic
+	// Second pass function
+	// Closing
 
-class symtbl_entry {
-	private:
+// GLOBAL VARIABLES
 
-	public:
-		symtbl_entry(std::string lbl, int val, int ty, symtbl_entry* prev_p);
-		void output(symtbl_entry* top); // Outputs the contents of the symbtol table
+symtbl_entry* symtbl_ptr = NULL;  		// symtbl_ptr
 
-		// Why fuck with getters?
-		std::string label;
-		int value;
-		int type;	// -1 = Unknown, 0 = Register, 1 = Known
-		symtbl_entry* prev_ptr;
-};
+int LC = 0;  					// Define Location Counter
 
-void add_symbol(std::string lbl, int val, int ty, symtbl_entry* prev_p);
+state next_state = START;  			// Define state variable
 
-int main(void)
+int line_num = 0;  				// Current Line Number
+
+std::string current_record; 			// Current record string
+
+int main(int argc, char *argv[])
 {
-	// Define Symbol Table Pointer (To start)
-	symtbl_entry* symtbl_top = NULL;
 
-	// Add registers to symbol table
-		// Also add any aliases you'd like (upper/lower case, PC/LC/Etc.)
-
-	// Add instructions to instructions table
-		// STDIO input "instructions.txt"
-		// Read line by line and:
-			// Use "find next token" function to parse, store individual pieces
-		// Add to symbol table
-
-	// Add directives to directive table
-		// Create directives.txt
-		// Input same way as INSTs
-
-
-	/*
-	* Define parser functions
-		-> "Find next token"
-		-> "Skip to next record/line"
-	*/
-
-	// 
-
-}
-
-symtbl_entry::symtbl_entry(std::string lbl, int val, int ty, symtbl_entry* prev_p)
-{
-	label = lbl;
-	value = val;
-	type = ty;
-	prev_ptr = prev_p;
-}
-
-void symtbl_entry::output(symtbl_entry* top)
-{
-	// Iterate through points by using the "next" pointer on each value
-	symtbl_entry* temp = top;
-	int temp_cnt = 0;
-	while(temp->prev_ptr != NULL)
+/*	
+	// Example input argument for eventual adding of input/output parameters. Hardcoded for now
+	if(argc < 2)
 	{
-		temp_cnt++;
-		std::cout << "Entry #" << temp_cnt << " | Label: " << temp->label << " | Value: " << temp->value << " | type: " << temp->type << std::endl;
-		temp = temp->prev_ptr;
+		std::cout << "ERROR" << std::endl;
+		getchar();
+		exit(0);
 	}
+	else
+	{
+		std::cout << "NO ERROR" << std::endl;
+	}
+*/
+	// Initialize a few things (LC = 0, init_symtbl, open file
+	LC = 0;
+
+ 	init_symtbl();
+
+	std::ifstream fin("dev_input.txt");
+
+	// Run first pass
+
+
+	// Run second pass (If no errors or unknowns from first pass)
+
+
+	// Tidy up to finish (Close file, etc.)
+
+
+	fin.close();
+
+	return 0;
 }
 
-void add_symbol(std::string lbl, int val, int ty, symtbl_entry* prev_p)
+// Find next token
+std::string fnt(std::string, int record_pos)
 {
-	// Call constructor from symtbl_entry class and add new entry
+	// Returns NULL of there is no next token (hits EOL)
+	std::string token = NULL;
 }
