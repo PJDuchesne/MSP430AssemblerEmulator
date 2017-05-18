@@ -20,6 +20,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <iostream>
 #include <stdio.h>
 #include <string>
+#include <cstring>
 #include <fstream>
 #include <cstdlib>
 
@@ -48,6 +49,10 @@ int line_num = 0;  				// Current Line Number
 
 std::string current_record; 			// Current record string
 
+std::string current_token;	// Current token string
+
+inst_dir* id_ptr = NULL;			// id_ptr thingy
+
 int main(int argc, char *argv[])
 {
 
@@ -71,8 +76,29 @@ int main(int argc, char *argv[])
 
 	std::ifstream fin("dev_input.txt");
 
-	// Run first pass
+/*
+	// Testing INST_DIR Table search (Binary Search)
+	id_ptr = get_inst("moVeeee", I);
 
+	if(id_ptr != NULL) std::cout << "LOOKED FOR MOVIE: " << id_ptr->mnemonic << std::endl;
+	else std::cout << "NOT FOUND" << std::endl;
+*/
+
+	while(!fin.eof())
+	{	
+		line_num++;
+		std::getline(fin, current_record);
+		std::cout << "LINE " << line_num << " >>" << current_record << "<<" << std::endl;
+		current_token = fft();
+		while (current_token != "")
+		{
+			current_token = fnt();
+		}
+		current_token = "";
+		std::cout << std::endl;
+	}
+
+	// Run first pass
 
 	// Run second pass (If no errors or unknowns from first pass)
 
@@ -86,8 +112,43 @@ int main(int argc, char *argv[])
 }
 
 // Find next token
-std::string fnt(std::string, int record_pos)
+// Deletes comments in line and anything after it
+
+std::string fft()
 {
-	// Returns NULL of there is no next token (hits EOL)
-	std::string token = NULL;
+	std::string token;
+
+	int temp = current_record.find_first_of(";") - 1;
+
+	if (temp != -2) current_record.resize(int(current_record.find_first_of(";"))-1);
+
+        char* temp_crecord = new char[current_record.length()];     
+
+        std::strcpy(temp_crecord, current_record.c_str());
+
+        char* temp_ctoken = std::strtok(temp_crecord, " \t\n");
+	
+	if (temp_ctoken == NULL) return "";
+
+	token.assign(temp_ctoken, strlen(temp_ctoken));
+
+//  	delete[] temp_crecord;  // Do this wayyyy later?
+
+	std::cout << "Token f: >>" << token << "<<" << std::endl;
+
+	return token;
+}
+
+std::string fnt()
+{
+	std::string token;
+
+	char* temp_ctoken = strtok(NULL, " \t\n");
+
+	if (temp_ctoken != NULL) token.assign(temp_ctoken, strlen(temp_ctoken));
+	else return "";
+
+	std::cout << "Token x: >>" << token << "<<" << std::endl;
+
+	return token;
 }

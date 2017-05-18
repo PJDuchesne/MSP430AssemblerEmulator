@@ -20,6 +20,11 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #ifndef LIBRARY_H
 #define LIBRARY_H
 
+enum searchtype {
+	I,  // INSTRUCTION
+	D   //  DIRECTIVE
+};
+
 enum symtbltype {
         REG,
         KNOWN,
@@ -44,7 +49,7 @@ enum state {
         CHK_FIRST_TOKEN,
         CHK_NEXT_TOKEN,
         INST,
-        DIRECTIVE,
+        DIRECT,
         CHK_SRC,
         CHK_DST
 };

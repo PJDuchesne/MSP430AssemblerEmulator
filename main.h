@@ -20,6 +20,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #ifndef MAIN_H
 #define MAIN_H
 
-std::string fnt(std::string, int record_pos);   // "Find next token" function
+std::string fft();   // "Find next token" function
+std::string fnt();   // "Find next token" function
 
 #endif

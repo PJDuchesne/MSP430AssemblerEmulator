@@ -32,8 +32,6 @@ symtbl_entry* symtbl_master = NULL;
 
 void init_symtbl()
 {
-	std::cout << "Test 2" << std::endl;
-
 	// Add r0-r15, R0-R15, plus aliases
 	add_symbol("R0",  0,  REG);
 	add_symbol("R1",  1,  REG);
