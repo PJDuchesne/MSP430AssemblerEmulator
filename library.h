@@ -55,13 +55,14 @@ enum state {
 };
 
 enum addr_mode {
-        REG_DIR,
+        REG_DIRECT,
         INDEXED,
         RELATIVE,
         ABSOLUTE,
         INDIRECT,
         INDIRECT_AI,
-        IMMEDIATE
+        IMMEDIATE,
+	WRONG
 };
 
 #endif

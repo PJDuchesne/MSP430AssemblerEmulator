@@ -28,6 +28,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "symtbl.h"
 #include "inst_dir.h"
 #include "library.h"
+#include "parser.h"
 
 // TO ADD
 	// Input argument options (Drag and drop, input text, etc.)
@@ -88,7 +89,7 @@ int main(int argc, char *argv[])
 	{	
 		line_num++;
 		std::getline(fin, current_record);
-		std::cout << "LINE " << line_num << " >>" << current_record << "<<" << std::endl;
+	//	std::cout << "LINE " << line_num << " >>" << current_record << "<<" << std::endl;
 		current_token = fft();
 		while (current_token != "")
 		{
@@ -105,15 +106,22 @@ int main(int argc, char *argv[])
 
 	// Tidy up to finish (Close file, etc.)
 
+	int temp10;
+	int temp11;
+
+	std::string temp12;
+
+	addr_mode temp13;
+
+	temp13 = parse(temp12, temp10, temp11);
 
 	fin.close();
 
 	return 0;
 }
 
-// Find next token
-// Deletes comments in line and anything after it
 
+// Find first token Implementation
 std::string fft()
 {
 	std::string token;
@@ -123,7 +131,6 @@ std::string fft()
 	if (temp != -2) current_record.resize(int(current_record.find_first_of(";"))-1);
 
         char* temp_crecord = new char[current_record.length()];     
-
         std::strcpy(temp_crecord, current_record.c_str());
 
         char* temp_ctoken = std::strtok(temp_crecord, " \t\n");
@@ -134,7 +141,7 @@ std::string fft()
 
 //  	delete[] temp_crecord;  // Do this wayyyy later?
 
-	std::cout << "Token f: >>" << token << "<<" << std::endl;
+//	std::cout << "Token f: >>" << token << "<<" << std::endl;
 
 	return token;
 }
@@ -148,7 +155,7 @@ std::string fnt()
 	if (temp_ctoken != NULL) token.assign(temp_ctoken, strlen(temp_ctoken));
 	else return "";
 
-	std::cout << "Token x: >>" << token << "<<" << std::endl;
+//	std::cout << "Token x: >>" << token << "<<" << std::endl;
 
 	return token;
 }

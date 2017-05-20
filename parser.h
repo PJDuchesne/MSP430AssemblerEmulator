@@ -9,34 +9,19 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
        _\/\\\__________\//\\\\\\\\\______\/\\\\\\\\\\\\/___
         _\///____________\/////////_______\////////////_____
 
--> Name:  symtbl.h
--> Brief: Header file for the symtbl table
--> Date: May 15, 2017   (Created)
--> Date: May 17, 2017   (Last Modified)
+-> Name:  parser.h
+-> Brief: Header file for parser.h.cpp
+-> Date: May 18, 2017
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
 
-#ifndef SYMTBL_H
-#define SYMTBL_H
-
 #include "library.h"
 
-struct symtbl_entry {
-        std::string label;
-        int value;
-        symtbltype type;
-        symtbl_entry *next;
-};
+#ifndef PARSER_H
+#define PARSER_H
 
-void init_symtbl();
-
-void add_symbol(std::string label, int value, symtbltype type);
-
-symtbl_entry* get_symbol(std::string lbl);
-
-void output_symtbl();
-
-bool valid_symbol(std::string token);
+addr_mode parse(std::string op, int& value0, int& value1);
 
 #endif
+

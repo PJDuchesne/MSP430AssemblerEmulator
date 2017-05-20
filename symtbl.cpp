@@ -115,5 +115,57 @@ void output_symtbl()
 
 symtbl_entry* get_symbol(std::string label)
 {	
+	symtbl_entry* temp = symtbl_master;
+	
+	while(temp->next != NULL)
+	{
+		if(temp->label == label) return temp;
+		temp=temp->next;
+	}
 	return NULL;
+}
+
+bool valid_symbol(std::string token)
+{
+	// If token is A-Z or a-z or _ (Alphabetic)
+	if(token.length() > 32) return false; // TOKEN IS TOO LONG
+	else if(((token[0] >= 65) && (token[0] <= 90))||((token[0] >= 97) && (token[0] <= 122))||(token[0] == 95))
+	{
+		int temp_cnt = 1;
+		while(temp_cnt < token.length())
+		{
+			// If token is A-Z or a-z or _ (Alphabetic)
+			if(!((token[temp_cnt] >= 65 && token[temp_cnt] <= 90)||(token[temp_cnt] >= 97 && token[temp_cnt] <= 122)||(token[temp_cnt] == 95))) break;
+			temp_cnt++;
+		}
+		while(1)
+		{
+			// Can only have 2 more charaters, MAX
+			if(token.length() - temp_cnt > 2) return false; // too many characters after alphabetic section
+			else if(token.length() - temp_cnt == 1) // If this is the only character left
+			{
+				// Number can be 0-9
+				if(!((token[temp_cnt] >= 48)&&(token[temp_cnt] <= 57))) return false; // NUMBER TOO HIGH OR NOT NUMBER
+			}
+			else if(token.length() - temp_cnt == 2) // If this is the second last token
+			{
+				// Number can be 0-3 (SHOULD THIS 0 BE ALLOWED?)
+				if(!((token[temp_cnt] >= 48)&&(token[temp_cnt] <= 51))) return false; // NUMBER TOO HIGH OR NOT NUMBER
+			 	if(token[temp_cnt] == 51)  // If second last digit is 3, next one MUST be 0
+				{
+					temp_cnt++;
+					return (token[temp_cnt] == 48) ? true : false; 
+				}
+				else
+				{
+					temp_cnt++;
+					return ((token[temp_cnt] >= 48)&&(token[temp_cnt] <= 57)) ? true : false; // Return true if the character is from 0-9, false otherwise
+				}
+			}
+			return true;
+		}
+	}
+	else return false;
+
+	std::cout << "THIS SHOULD NEVER HAPPEN IN VALID_SYMBOL CHECKER" << std::endl;
 }
