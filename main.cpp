@@ -106,14 +106,19 @@ int main(int argc, char *argv[])
 
 	// Tidy up to finish (Close file, etc.)
 
-	int temp10;
-	int temp11;
+	std::string addr_mode_string[] = {"REG_DIRECT", "INDEXED", "RELATIVE", "ABSOLUTE", "INDIRECT", "INDIRECT_AUTO_INC", "IMMEDIATE", "WRONG"};
 
-	std::string temp12;
+	// Parser Testing
+	addr_mode am_temp;
+	std::string operand;
+	int value0;
+	int value1;
 
-	addr_mode temp13;
+	add_symbol("Test12", 14, KNOWN);
 
-	temp13 = parse(temp12, temp10, temp11);
+	operand = "x(R7)";
+	am_temp = parse(operand, value0, value1);
+	std::cout << "Checked Operand: >>" << operand << "<< and found ADDR MODE of: >>" << addr_mode_string[am_temp] << "<< with value0 of " << value0 << " and value1 of " << value1 << std::endl;
 
 	fin.close();
 

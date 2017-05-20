@@ -38,8 +38,6 @@ addr_mode parse(std::string op, int& value0, int& value1)
 
 	value0 = -1;  // The general return value
 	value1 = -1;  // The return value of the REGISTER in INDEXED mode
-	operand = "@R10+";
-
 	symtbl_entry* se_ptr = NULL;
 
 	bool auto_flag = false;
@@ -52,9 +50,14 @@ addr_mode parse(std::string op, int& value0, int& value1)
 			se_ptr = get_symbol(operand);
 
 		 	// If symbol not in table, and the operand is a valid label, add to symbol table
-			if(se_ptr==NULL && valid_symbol(operand)) add_symbol(operand, -1, UNKNOWN);
+			if(se_ptr==NULL && valid_symbol(operand))
+			{ // Valid symbol that isnt already on symbol table, FORWARD REFERNCE
+				add_symbol(operand, -1, UNKNOWN);
+				value0 = -1;
+				return ABSOLUTE; 
+			}
 			else 
-			{
+			{ // Valid symbol from symbol table, need to check that it isn't a REG
 				if(se_ptr->type != REG)
 				{
 					value0 = se_ptr->value;
@@ -80,8 +83,12 @@ addr_mode parse(std::string op, int& value0, int& value1)
 			{
  				value0 = se_ptr->value;
 			}
-			se_ptr->value += (auto_flag) ? 1 : 0;
-			return INDIRECT;
+			if(auto_flag)
+			{
+				// Increment value in register? "se_ptr->value += 1;"??
+				return INDIRECT_AI;
+			}
+			else return INDIRECT;
 			break;
 
 		case '#':	// (35) Immediate (OR BUST)
@@ -89,6 +96,12 @@ addr_mode parse(std::string op, int& value0, int& value1)
 			
 			se_ptr = get_symbol(operand);
 
+			if(se_ptr == NULL && valid_symbol(operand))
+			{ // Forward reference of label within immediate
+				add_symbol(operand, -1, UNKNOWN);
+				value0 = -1;
+				return IMMEDIATE;
+			}
 			if(se_ptr != NULL && se_ptr->type != REG)
 			{ // Constant is the value from the label
 				value0 = se_ptr->value;
@@ -96,7 +109,11 @@ addr_mode parse(std::string op, int& value0, int& value1)
 			}
 			else
 			{ // Value is a HEX number or DECIMAL number (Or bust!)
-	 			if(operand[0] == '$') operand.erase(0, 1); 
+	 			if(operand[0] == '$')
+				{
+					operand.erase(0, 1); 
+					hex_flag = true;
+				}
 				while(operand[0] == '0') operand.erase(0, 1); // Delete preceding 0s
 				if(operand.length() > 8 && hex_flag) return WRONG; // TOO LONG FOR STOL (Hex)
 				if(operand.length() > 10 && !hex_flag) return WRONG; // TOO LONG FOR STOL (Decimal)
@@ -131,16 +148,19 @@ addr_mode parse(std::string op, int& value0, int& value1)
 				// operand is the Rn in x(Rn)
 				// Now check validity of both
 
-
 				// Check validity of X in X(Rn)
 				se_ptr = get_symbol(temp_indexed);
-				if(se_ptr->type == REG) return WRONG; // X in x(Rn) cannot be a register
-				else if(se_ptr == NULL)
+				if(get_symbol(temp_indexed) == NULL && valid_symbol(temp_indexed))
 				{
-					if(valid_symbol(temp_indexed)) add_symbol(temp_indexed, -1, UNKNOWN);
+					add_symbol(temp_indexed, -1, UNKNOWN);
+					value0 = -1;
+				}
+				else if(se_ptr->type == REG) return WRONG; // X in x(Rn) cannot be a register
+				else // X is KNOWN or UNKNOWN
+				{
+					value0 = se_ptr->value;
 				}
 				// Else KNOWN or UNKNOWN, therefore set value0 to se_ptr->value
-				value0 = se_ptr->value;
 
 				// Check validity of Rn in x(Rn)
 				se_ptr = get_symbol(operand);
@@ -149,17 +169,18 @@ addr_mode parse(std::string op, int& value0, int& value1)
 
 				return INDEXED;		
 			}
+			else if(get_symbol(operand) == NULL && valid_symbol(operand))
+			{
+				add_symbol(operand, -1, UNKNOWN);
+				value0 = -1;
+				return RELATIVE;
+			}
 			else if(get_symbol(operand) != NULL)
 			{ // Reg or relative	
 				se_ptr = get_symbol(operand);
 				value0 = se_ptr->value;
 				if(se_ptr->type == REG) return REG_DIRECT;
 				else return RELATIVE;
-			}
-			else
-			{	// The label is not in the symbol table, check if it is a valid label and add to symtbl if so
-				if(valid_symbol(operand)) add_symbol(operand, -1, UNKNOWN);
-				else return WRONG; // INVALID OPERAND
 			}
 			break;
 	}		
