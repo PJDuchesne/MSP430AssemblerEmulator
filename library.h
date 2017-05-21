@@ -20,6 +20,11 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #ifndef LIBRARY_H
 #define LIBRARY_H
 
+// Variables used by fft and fnt
+extern std::string current_record;
+extern std::string current_token;
+extern int err_cnt;
+
 enum searchtype {
 	I,  // INSTRUCTION
 	D   //  DIRECTIVE
@@ -45,13 +50,12 @@ enum byte_word {
 };
 
 enum state {
-        START,
         CHK_FIRST_TOKEN,
         CHK_NEXT_TOKEN,
         INST,
         DIRECT,
-        CHK_SRC,
-        CHK_DST
+        CHK_SRC_OP,
+        CHK_DST_OP
 };
 
 enum addr_mode {
@@ -64,6 +68,9 @@ enum addr_mode {
         IMMEDIATE,
 	WRONG
 };
+
+std::string fft(std::istream& fin);
+std::string fnt(std::istream& fin);
 
 #endif
 

@@ -27,6 +27,8 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "symtbl.h"
 #include "library.h"
 
+// NOTE: Double check that I check the max number of characters of an operand
+
 addr_mode parse(std::string op, int& value0, int& value1)
 {
 	std::string operand = op;
@@ -184,8 +186,6 @@ addr_mode parse(std::string op, int& value0, int& value1)
 			}
 			break;
 	}		
-
-
 	return WRONG;
 }
 

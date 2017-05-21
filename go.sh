@@ -9,6 +9,6 @@ if [ -a main ]
 		rm main
 fi
 
-g++ -std=c++11 -o main main.cpp symtbl.cpp inst_dir.cpp parser.cpp
+g++ -std=c++11 -o main main.cpp library.cpp symtbl.cpp inst_dir.cpp parser.cpp first_pass.cpp
 
 ./main

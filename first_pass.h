@@ -9,18 +9,16 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
        _\/\\\__________\//\\\\\\\\\______\/\\\\\\\\\\\\/___
         _\///____________\/////////_______\////////////_____
 
--> Name:  main.h
--> Brief: Header file for main.cpp
--> Date: May 15, 2017   (Created)
--> Date: May 17, 2017   (Last Modified)
+-> Name:  first_pass.h
+-> Brief: Header file for first_pass.h
+-> Date: May 21, 2017   (Created)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
 
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef FIRST_PASS_H
+#define FIRST_PASS_H
 
-std::string fft();
-std::string fnt();
+void first_pass(std::istream& fin);  // Everything else is global?
 
 #endif

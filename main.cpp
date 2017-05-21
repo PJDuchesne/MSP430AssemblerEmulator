@@ -29,10 +29,10 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "inst_dir.h"
 #include "library.h"
 #include "parser.h"
+#include "first_pass.h"
 
 // TO ADD
 	// Input argument options (Drag and drop, input text, etc.)
-	// Operand Parser
 	// First pass function
 	// Transition logic
 	// Second pass function
@@ -40,19 +40,9 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 // GLOBAL VARIABLES
 
-symtbl_entry* symtbl_ptr = NULL;  		// symtbl_ptr
-
-int LC = 0;  					// Define Location Counter
-
-state next_state = START;  			// Define state variable
-
-int line_num = 0;  				// Current Line Number
-
-std::string current_record; 			// Current record string
-
-std::string current_token;	// Current token string
-
-inst_dir* id_ptr = NULL;			// id_ptr thingy
+std::string current_record = "";
+std::string current_token  = "";
+int err_cnt = 0;
 
 int main(int argc, char *argv[])
 {
@@ -70,49 +60,47 @@ int main(int argc, char *argv[])
 		std::cout << "NO ERROR" << std::endl;
 	}
 */
-	// Initialize a few things (LC = 0, init_symtbl, open file
-	LC = 0;
+	// Initialize a few things (Open file for one)
 
  	init_symtbl();
 
 	std::ifstream fin("dev_input.txt");
-
 /*
-	// Testing INST_DIR Table search (Binary Search)
-	id_ptr = get_inst("moVeeee", I);
-
-	if(id_ptr != NULL) std::cout << "LOOKED FOR MOVIE: " << id_ptr->mnemonic << std::endl;
-	else std::cout << "NOT FOUND" << std::endl;
-*/
-
 	while(!fin.eof())
 	{	
-		line_num++;
-		std::getline(fin, current_record);
-	//	std::cout << "LINE " << line_num << " >>" << current_record << "<<" << std::endl;
-		current_token = fft();
+// 		std::getline(fin, current_record); // Depreciated since fft was moved to library.cpp
+		// current_token = fft();
 		while (current_token != "")
 		{
-			current_token = fnt();
+			// current_token = fnt(); // Depreciated since fnt was moved to library.cpp
 		}
 		current_token = "";
 		std::cout << std::endl;
 	}
+*/
 
 	// Run first pass
 
-	// Run second pass (If no errors or unknowns from first pass)
+ 	first_pass(fin);
 
+	std::cout << std::endl << std::endl << "First pass completed with >>" << err_cnt << "<< Errors" << std::endl << std::endl;
+
+ 	output_symtbl();
+
+	// Check first pass validity
+
+	// Run second pass (if first pass was valid)
 
 	// Tidy up to finish (Close file, etc.)
+
+
+/* TESTING FOR PARSER.CPP
 
 	std::string addr_mode_string[] = {"REG_DIRECT", "INDEXED", "RELATIVE", "ABSOLUTE", "INDIRECT", "INDIRECT_AUTO_INC", "IMMEDIATE", "WRONG"};
 
 	// Parser Testing
 	addr_mode am_temp;
 	std::string operand;
-	int value0;
-	int value1;
 
 	add_symbol("Test12", 14, KNOWN);
 
@@ -120,47 +108,9 @@ int main(int argc, char *argv[])
 	am_temp = parse(operand, value0, value1);
 	std::cout << "Checked Operand: >>" << operand << "<< and found ADDR MODE of: >>" << addr_mode_string[am_temp] << "<< with value0 of " << value0 << " and value1 of " << value1 << std::endl;
 
+*/
+
 	fin.close();
 
 	return 0;
-}
-
-
-// Find first token Implementation
-std::string fft()
-{
-	std::string token;
-
-	int temp = current_record.find_first_of(";") - 1;
-
-	if (temp != -2) current_record.resize(int(current_record.find_first_of(";"))-1);
-
-        char* temp_crecord = new char[current_record.length()];     
-        std::strcpy(temp_crecord, current_record.c_str());
-
-        char* temp_ctoken = std::strtok(temp_crecord, " \t\n");
-	
-	if (temp_ctoken == NULL) return "";
-
-	token.assign(temp_ctoken, strlen(temp_ctoken));
-
-//  	delete[] temp_crecord;  // Do this wayyyy later?
-
-//	std::cout << "Token f: >>" << token << "<<" << std::endl;
-
-	return token;
-}
-
-std::string fnt()
-{
-	std::string token;
-
-	char* temp_ctoken = strtok(NULL, " \t\n");
-
-	if (temp_ctoken != NULL) token.assign(temp_ctoken, strlen(temp_ctoken));
-	else return "";
-
-//	std::cout << "Token x: >>" << token << "<<" << std::endl;
-
-	return token;
 }

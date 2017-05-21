@@ -24,7 +24,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <string>
 #include <fstream>
 #include <cstdlib>
-
 #include <algorithm>
 
 #include "inst_dir.h"
@@ -41,7 +40,7 @@ inst_dir inst_dir_array[] = {
                 {"AND.B",  DOUBLE, 0xf000, BYTE},
                 {"AND.W",  DOUBLE, 0xf000, WORD},
         {"BIC",  DOUBLE, 0xc000, WORD},
-                {"BIC.B",  DOUBLE, 0xc000, BYTE},
+                {"BIC.B",  DOUBLE, 0xc000, BYTE},	// 10
                 {"BIC.W",  DOUBLE, 0xc000, WORD},
         {"BIS",  DOUBLE, 0xd000, WORD},
                 {"BIS.B",  DOUBLE, 0xd000, BYTE},
@@ -51,7 +50,7 @@ inst_dir inst_dir_array[] = {
                 {"BIT.W", DOUBLE, 0xb000, WORD},
         {"CALL", SINGLE, 0x1280, WORD},
         {"CMP",  DOUBLE, 0x9000, WORD},
-                {"CMP.B", DOUBLE, 0x9000, BYTE},
+                {"CMP.B", DOUBLE, 0x9000, BYTE},	// 20
                 {"CMP.W", DOUBLE, 0x9000, WORD},
         {"DADD", DOUBLE, 0xa000, WORD},
                 {"DADD.B", DOUBLE, 0xa000, BYTE},
@@ -61,7 +60,7 @@ inst_dir inst_dir_array[] = {
         {"JGE",  JUMP, 0x3400, OFFSET},
         {"JHS",  JUMP, 0x2c00, OFFSET},
         {"JL",   JUMP, 0x3800, OFFSET},
-        {"JLO",  JUMP, 0x2800, OFFSET},
+        {"JLO",  JUMP, 0x2800, OFFSET},			// 30
         {"JMP",  JUMP, 0x3c00, OFFSET},
         {"JN",   JUMP, 0x3000, OFFSET},
         {"JNC",  JUMP, 0x2800, OFFSET},
@@ -71,7 +70,7 @@ inst_dir inst_dir_array[] = {
         {"MOV",  DOUBLE, 0x4000, WORD},
                 {"MOV.B",  DOUBLE, 0x4000, BYTE},
                 {"MOV.W",  DOUBLE, 0x4000, WORD},
-	{"PUSH", SINGLE, 0x1200, WORD},
+	{"PUSH", SINGLE, 0x1200, WORD},			// 40
                 {"PUSH.B", SINGLE, 0x1200, BYTE},
                 {"PUSH.W", SINGLE, 0x1200, WORD},
         {"RETI", NONE, 0x1300, WORD},
@@ -81,7 +80,7 @@ inst_dir inst_dir_array[] = {
         {"RRC",  SINGLE, 0x1000, WORD},
                 {"RRC.B", SINGLE, 0x1000, BYTE},
                 {"RRC.W", SINGLE, 0x1000, WORD},
-        {"SUB",  DOUBLE, 0x8000, WORD},
+        {"SUB",  DOUBLE, 0x8000, WORD},			// 50
                 {"SUB.B",  DOUBLE, 0x8000, BYTE},
                 {"SUB.W",  DOUBLE, 0x8000, WORD},
         {"SUBC", DOUBLE, 0x7000, WORD},
@@ -100,44 +99,62 @@ inst_dir inst_dir_array[] = {
         {"END",    NONE, 0xffff, WORD},  // DIR
         {"EQU",    NONE, 0xffff, WORD},  // DIR
         {"ORG",    NONE, 0xffff, WORD},  // DIR
-        {"STRING", NONE, 0xffff, WORD}   // DIR         // 67
+        {"STRING", NONE, 0xffff, WORD},  // DIR 
+        {"WORD"  , NONE, 0xffff, WORD}   // DIR 	// 68
 };
 
 inst_dir* get_inst(std::string input, searchtype stype)
 {
-	// Transform input string to uppercase
+	// Transform input string to uppercase (Instructions and Directives are case insensitive)
 	std::transform(input.begin(), input.end(), input.begin(), ::toupper);
 
-	int bottom;
-	int top;
+	int bottom = (stype == I) ? 0  : 61;
+	int top    = (stype == I) ? 60 : 68;
 
-	if (stype = I)
-	{
-		bottom = 0;
-		top    = 60;
-	}
-	else if (stype = D)
-	{
-		bottom = 61;
-		top    = 68;
-	}
-	else std::cout << "ERROR: INVALID SEARCH TYPE" << std::endl;
+	int char_cnt = 0;
+	int cnt = 0;
 
-	while(top-bottom != 1)
+	if(stype != I && stype != D)
 	{
-		std::cout << "Bottom: " << bottom << " | Top: " << top << std::endl;
-		int cnt = (top+bottom)/2;						// Update count to middle of new top and bottom
-		if (inst_dir_array[cnt].mnemonic == input) return &inst_dir_array[cnt];	// Check array and return if it is the right one
-		if(inst_dir_array[cnt].mnemonic[0] > input[0]) top = cnt;		// Check if desired value is higher or lower
-		else bottom = cnt;
+		std::cout << "ERROR: INVALID SEARCH TYPE" << std::endl;
+		return NULL;
 	}
+
+	// while(top-bottom != 1)
+	while(top - bottom != 1)
+	{
+		// std::cout << "\t\t Bottom: " << bottom << " | Top: " << top << " Cnt: " << cnt << std::endl;
+		cnt = (top+bottom)/2;						// Update count to middle of new top and bottom
+		if (inst_dir_array[cnt].mnemonic == input)
+		{
+			std::string temp123 = (cnt <= 60) ? "[INST]" : "[DIR]";	
+	
+			std::cout << "\t\t\t" << temp123 << ": Found >>" << input << "<< at cnt of " << cnt << std::endl;			
+			return &inst_dir_array[cnt];	// Check array and return if it is the right one
+		}
+		char_cnt = 0;
+		while(char_cnt < inst_dir_array[cnt].mnemonic.length())
+		{
+			if(char_cnt == input.length())
+			{
+				top = cnt;
+				break;
+			}
+			if(inst_dir_array[cnt].mnemonic[char_cnt] > input[char_cnt])
+			{
+				top = cnt;
+				break;
+			}
+			else if(inst_dir_array[cnt].mnemonic[char_cnt] < input[char_cnt])
+			{
+				bottom = cnt;
+				break;
+			}	
+			else char_cnt++; // Characters must equal eachother
+		}
+	}
+	std::string temp123 = (cnt <= 60) ? "[INST]" : "[DIR] ";	
+	std::cout << "\t\t\t " << temp123 << " " << input << ": Looked for and NOT found" << std::endl;
 	return NULL;
 }
 
-/*
-inst_dir* get_dir(std::string dir);
-{
-	int cnt = 64	// 
-
-}
-*/
