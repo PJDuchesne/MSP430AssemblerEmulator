@@ -2,8 +2,6 @@
 
 # Add new .cpp files here
 
-cd ~/Desktop/school_repositories/Eolian
-
 if [ -a main ]
 	then
 		rm main

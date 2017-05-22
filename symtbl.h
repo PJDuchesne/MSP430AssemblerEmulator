@@ -22,21 +22,25 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 #include "library.h"
 
+extern int err_cnt;
+
 struct symtbl_entry {
         std::string label;
         int value;
-        symtbltype type;
+        SYMTBLTYPE type;
         symtbl_entry *next;
 };
 
 void init_symtbl();
 
-void add_symbol(std::string label, int value, symtbltype type);
+void add_symbol(std::string label, int value, SYMTBLTYPE type);
 
 symtbl_entry* get_symbol(std::string lbl);
 
 void output_symtbl();
 
 bool valid_symbol(std::string token);
+
+void symtbl_unknown_check();
 
 #endif

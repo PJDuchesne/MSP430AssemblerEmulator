@@ -33,36 +33,36 @@ std::string fft(std::istream& fin)
 
 	std::cout << std::endl << "Record : >>" << current_record << "<<" << std::endl;
 
-        std::string token;
+  std::string token;
 
 	// Remove comment from line
 	current_record = current_record.substr(0, current_record.find_first_of(";"));
 
-        char* temp_crecord = new char[current_record.length()];
+  char* temp_crecord = new char[current_record.length()];
 
-        std::strcpy(temp_crecord, current_record.c_str());
+  std::strcpy(temp_crecord, current_record.c_str());
 
-        char* temp_ctoken = std::strtok(temp_crecord, " \t\n");
+  char* temp_ctoken = std::strtok(temp_crecord, " \t\n");
 
-        if (temp_ctoken == NULL) return "";
+  if (temp_ctoken == NULL) return "";
 
-        token.assign(temp_ctoken, strlen(temp_ctoken));
+  token.assign(temp_ctoken, strlen(temp_ctoken));
 
-        return token;
+  return token;
 }
 
 // Find next token implementation
-std::string fnt(std::istream& fin)
+std::string fnt()
 {
-        std::string token;
+  std::string token;
 
-        char* temp_ctoken = strtok(NULL, " \t\n");
+  char* temp_ctoken = strtok(NULL, " \t\n");
 
-        if (temp_ctoken != NULL) token.assign(temp_ctoken, strlen(temp_ctoken));
-        else return "";
+  if (temp_ctoken != NULL) token.assign(temp_ctoken, strlen(temp_ctoken));
+  else return "";
 
 //      std::cout << "Token x: >>" << token << "<<" << std::endl;
 
-        return token;
+  return token;
 }
 

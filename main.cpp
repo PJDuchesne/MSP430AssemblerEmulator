@@ -33,7 +33,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 // TO ADD
 	// Input argument options (Drag and drop, input text, etc.)
-	// First pass function
 	// Transition logic
 	// Second pass function
 	// Closing
@@ -43,6 +42,8 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 std::string current_record = "";
 std::string current_token  = "";
 int err_cnt = 0;
+
+symtbl_entry* se_ptr = NULL;
 
 int main(int argc, char *argv[])
 {
@@ -64,26 +65,16 @@ int main(int argc, char *argv[])
 
  	init_symtbl();
 
-	std::ifstream fin("dev_input.txt");
-/*
-	while(!fin.eof())
-	{	
-// 		std::getline(fin, current_record); // Depreciated since fft was moved to library.cpp
-		// current_token = fft();
-		while (current_token != "")
-		{
-			// current_token = fnt(); // Depreciated since fnt was moved to library.cpp
-		}
-		current_token = "";
-		std::cout << std::endl;
-	}
-*/
-
-	// Run first pass
+	std::ifstream fin("Example_Code/two.txt");
 
  	first_pass(fin);
 
 	std::cout << std::endl << std::endl << "First pass completed with >>" << err_cnt << "<< Errors" << std::endl << std::endl;
+
+	symtbl_unknown_check();
+
+	std::cout << std::endl << std::endl << "First pass completed with >>" << err_cnt << "<< Errors (Including Unknowns)" << std::endl << std::endl;
+
 
  	output_symtbl();
 
@@ -92,23 +83,6 @@ int main(int argc, char *argv[])
 	// Run second pass (if first pass was valid)
 
 	// Tidy up to finish (Close file, etc.)
-
-
-/* TESTING FOR PARSER.CPP
-
-	std::string addr_mode_string[] = {"REG_DIRECT", "INDEXED", "RELATIVE", "ABSOLUTE", "INDIRECT", "INDIRECT_AUTO_INC", "IMMEDIATE", "WRONG"};
-
-	// Parser Testing
-	addr_mode am_temp;
-	std::string operand;
-
-	add_symbol("Test12", 14, KNOWN);
-
-	operand = "x(R7)";
-	am_temp = parse(operand, value0, value1);
-	std::cout << "Checked Operand: >>" << operand << "<< and found ADDR MODE of: >>" << addr_mode_string[am_temp] << "<< with value0 of " << value0 << " and value1 of " << value1 << std::endl;
-
-*/
 
 	fin.close();
 

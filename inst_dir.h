@@ -24,11 +24,11 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 struct inst_dir {
 	std::string mnemonic;
-	type_thingy type;
+	INST_TYPE type;
 	int opcode;
-	byte_word b_w;
+	BYTE_WORD b_w;
 };
 
-inst_dir* get_inst(std::string input, searchtype stype);
+inst_dir* get_inst(std::string input, SEARCHTYPE stype);
 
 #endif

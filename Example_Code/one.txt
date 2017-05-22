@@ -1,0 +1,60 @@
+;
+; One-operand arithmetic
+; Note: Not all addressing modes might work
+; 5 May 17
+; Caveat emptor
+;
+; RRC - Rotate right (1 bit) through carry
+	RRC	R7	
+	RRC	Data(R7)	
+	RRC	Data	
+	RRC	&Data	
+	RRC	 @R7	
+	RRC	R7	
+	RRC	#1	
+; SWPB - Swap bytes			
+	swpb	R7	
+	swpb	Data(R7)	
+	swpb	Data	
+	swpb	&Data	
+	swpb	 @R7	
+	swpb	R7	
+	swpb	#1	
+; RRA - Shift right (1 bit) arithmetic			
+	Rra	R7	
+	Rra	Data(R7)	
+	Rra	Data	
+	Rra	&Data	
+	Rra	 @R7	
+	Rra	R7	
+	Rra	#1	
+; SXT - Sign extend byte to word			
+	Rra	R7	
+	Rra	Data(R7)	
+	Rra	Data	
+	Rra	&Data	
+	Rra	 @R7	
+	Rra	R7	
+	Rra	#1	
+; PUSH - 16-bit push value onto stack (byte extended)			
+	PUSH	R7	
+	push	Data(R7)	
+	PUSH	Data	
+	push	&Data	
+	PUSH	 @R7	
+	push	R7	
+	PUSH	#1	
+; CALL - Subroutine call; push PC and move source to PC			
+	PUSH	R7	
+	push	Data(R7)	
+	PUSH	Data	
+	push	&Data	
+	PUSH	 @R7	
+	push	R7	
+	PUSH	#1	
+; RETI - Return from interrupt; pop SR then pop PC			
+	RETI		
+; Data			
+Data	BSS	$10	
+;			
+	END		

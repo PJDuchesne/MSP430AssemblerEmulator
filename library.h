@@ -25,40 +25,40 @@ extern std::string current_record;
 extern std::string current_token;
 extern int err_cnt;
 
-enum searchtype {
+enum SEARCHTYPE {
 	I,  // INSTRUCTION
 	D   //  DIRECTIVE
 };
 
-enum symtbltype {
+enum SYMTBLTYPE {
         REG,
         KNOWN,
         UNKNOWN
 };
 
-enum type_thingy {
+enum INST_TYPE {
         NONE,
         SINGLE,
         DOUBLE,
         JUMP
 };
 
-enum byte_word {
+enum BYTE_WORD {
         BYTE,
         WORD,
         OFFSET
 };
 
-enum state {
+enum STATE {
         CHK_FIRST_TOKEN,
         CHK_NEXT_TOKEN,
         INST,
         DIRECT,
-        CHK_SRC_OP,
-        CHK_DST_OP
+        CHK_DST_OP,
+        CHK_SRC_OP
 };
 
-enum addr_mode {
+enum ADDR_MODE {
         REG_DIRECT,
         INDEXED,
         RELATIVE,
@@ -66,11 +66,11 @@ enum addr_mode {
         INDIRECT,
         INDIRECT_AI,
         IMMEDIATE,
-	WRONG
+	    WRONG
 };
 
 std::string fft(std::istream& fin);
-std::string fnt(std::istream& fin);
+std::string fnt();
 
 #endif
 

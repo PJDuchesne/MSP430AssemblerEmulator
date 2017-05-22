@@ -29,7 +29,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 // NOTE: Double check that I check the max number of characters of an operand
 
-addr_mode parse(std::string op, int& value0, int& value1)
+ADDR_MODE parse(std::string op, int& value0, int& value1)
 {
 	std::string operand = op;
 	std::string temp_indexed;

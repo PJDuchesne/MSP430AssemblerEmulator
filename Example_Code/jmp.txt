@@ -43,13 +43,13 @@ Loop6	jge	Target1
 	JGE	Target2
 	jge	Loop6
 Self6	JGE	Self6
-	jg	Self6
+	jg	Self6 ; this function doesn't exist
 ; JL - Jump if less
 Loop7	JL	Target1
 	JL	Target2
 	JL	Loop7
 Self7	JL	Self7
-	jl	self7
+	jl	self7 ; This is the wrong case
 ; JMP - Jump (unconditionally)		
 Loop8	jmp	Target1
 	jmp	Target2
@@ -59,4 +59,5 @@ Self8	jmp	Self8
 ; Forward reference		
 	ORG	$0
 Target1		; Reserve a location
+MOV Cake,Cake0
 	END

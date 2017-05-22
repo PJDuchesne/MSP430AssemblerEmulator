@@ -30,7 +30,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 inst_dir inst_dir_array[] = {
         // INSTRUCTIONS
-        {"ADD",  DOUBLE, 0x5000, WORD},                 // 0
+        {"ADD",  DOUBLE, 0x5000, WORD},                     // 0
                 {"ADD.B",  DOUBLE, 0x5000, BYTE},
                 {"ADD.W",  DOUBLE, 0x5000, WORD},
         {"ADDC", DOUBLE, 0x6000, WORD},
@@ -40,7 +40,7 @@ inst_dir inst_dir_array[] = {
                 {"AND.B",  DOUBLE, 0xf000, BYTE},
                 {"AND.W",  DOUBLE, 0xf000, WORD},
         {"BIC",  DOUBLE, 0xc000, WORD},
-                {"BIC.B",  DOUBLE, 0xc000, BYTE},	// 10
+                {"BIC.B",  DOUBLE, 0xc000, BYTE},	      // 10
                 {"BIC.W",  DOUBLE, 0xc000, WORD},
         {"BIS",  DOUBLE, 0xd000, WORD},
                 {"BIS.B",  DOUBLE, 0xd000, BYTE},
@@ -103,7 +103,7 @@ inst_dir inst_dir_array[] = {
         {"WORD"  , NONE, 0xffff, WORD}   // DIR 	// 68
 };
 
-inst_dir* get_inst(std::string input, searchtype stype)
+inst_dir* get_inst(std::string input, SEARCHTYPE stype)
 {
 	// Transform input string to uppercase (Instructions and Directives are case insensitive)
 	std::transform(input.begin(), input.end(), input.begin(), ::toupper);

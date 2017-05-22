@@ -21,7 +21,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #ifndef PARSER_H
 #define PARSER_H
 
-addr_mode parse(std::string op, int& value0, int& value1);
+ADDR_MODE parse(std::string op, int& value0, int& value1);
 
 #endif
 

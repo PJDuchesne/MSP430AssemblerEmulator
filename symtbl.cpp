@@ -87,7 +87,7 @@ void init_symtbl()
 	add_symbol("cg2", 3,  REG);
 }
 
-void add_symbol(std::string label, int value, symtbltype type)
+void add_symbol(std::string label, int value, SYMTBLTYPE type)
 {
 	symtbl_entry* new_entry = new symtbl_entry();
 	new_entry->label = label;
@@ -95,6 +95,8 @@ void add_symbol(std::string label, int value, symtbltype type)
 	new_entry->type = type;
 	new_entry->next = symtbl_master;	// Link new entry to next entry
 	symtbl_master = new_entry;	// Set ptr to the new entry
+
+	std::cout << "\t\t\t\tAdded >>" << label << "<< to the symbol table with type: >>" << type << "<<" << std::endl;
 }
 
 void output_symtbl()
@@ -168,4 +170,14 @@ bool valid_symbol(std::string token)
 	else return false;
 
 	std::cout << "THIS SHOULD NEVER HAPPEN IN VALID_SYMBOL CHECKER" << std::endl;
+}
+
+void symtbl_unknown_check()
+{
+	symtbl_entry* se_ptr = symtbl_master;
+	while(se_ptr->next != NULL)
+	{
+		if(se_ptr->type == 2) err_cnt++;
+		se_ptr = se_ptr->next;
+	}
 }
