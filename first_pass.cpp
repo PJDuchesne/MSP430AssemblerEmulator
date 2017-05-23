@@ -64,7 +64,7 @@ void first_pass(std::istream& fin)
 	char temp_dev;
 
 	next_state = CHK_FIRST_TOKEN;
-	while(!fin.eof())
+	while(!fin.eof() && !end_flag)
 	{
 		switch (next_state)
 		{
@@ -134,6 +134,8 @@ void first_pass(std::istream& fin)
 
 				// This is either an empty token, and INST, or DIR (OR ERROR)
 				current_token = fnt();
+
+				se
 
 				if(current_token == "") 	      // Line only had a label (and maybe a comment)
 				{
@@ -246,25 +248,156 @@ void first_pass(std::istream& fin)
 			case DIRECT: // id_ptr should already point to the correct INST
 				std::cout << "\t\t\t DIRECT" << std::endl;
 				
+				// The second letter of all directives are unique with this directive set
+				// This avoids having to do another enumeration set (Note: Discussed this with Tom Smith)
 
+				// ALIGN, BSS, BYTE, END, EQU, ORG, STRING, WORD
+				//  L      S    Y     N    Q    R    T       O
 
+				// Directives take either a LABEL or an IMMEDIATE (In which case the # will have to be added for the parser.cpp function call)
 
+				current_token = fnt();						// Find next token
 
+				symtbl_ptr = get_symbol(current_token);		// Check symtbl for that token
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+				// Whether or not there's an error, this is always the next state
 				next_state = CHK_FIRST_TOKEN;
+
+				switch (id_ptr->mnemonic[1])  // The second letter of all directives are unique with this directive set
+				{
+					case 'L':  // Align
+						if(LC%2) LC++;
+
+						current_token = fnt();
+						if(current_token != "")
+						{
+							error_line_array[err_cnt] = line_num;
+							err_cnt++; // ERROR: TOKEN FOUND AFTER ALIGN
+							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found token after ALIGN directive" << std::endl;
+						}
+
+						break;
+
+					case 'S':  // BSS
+						if(se_ptr == NULL && valid_symbol(operand))
+						{
+							// This is an issue: NO FORWARD REFERENCING
+							error_line_array[err_cnt] = line_num;
+							err_cnt++; // ERROR: TOKEN FOUND UNKNOWN LABEL AFTER BSS
+							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after BSS" << std::endl;
+						}
+						else
+						{
+							current_token = "#" + current_token;  // make it an indexed value for the parser
+
+							addr_mode = parse(current_token);
+
+							if(addr_mode == INDEXED)
+							{
+								LC += value0;
+								current_token = fnt();
+								if(current_token != "")
+								{
+									error_line_array[err_cnt] = line_num;
+									err_cnt++; // ERROR: TOKEN FOUND AFTER BSS
+									std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found token after BSS directive" << std::endl;
+									break;
+								}
+							}
+							else // Must be wrong (unless something is wrong with the parser)
+							{
+								error_line_array[err_cnt] = line_num;
+								err_cnt++; // ERROR: Invalid Imediate number
+								std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after BSS" << std::endl;
+								break;
+							}
+						}
+
+						break;
+
+					case 'Y':  // BYTE
+						
+						if(se_ptr == NULL && valid_symbol(operand))
+						{
+							// This is an issue: NO FORWARD REFERENCING
+							error_line_array[err_cnt] = line_num;
+							err_cnt++; // ERROR: TOKEN FOUND UNKNOWN LABEL AFTER BYTE
+							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after BSS" << std::endl;
+						}
+						else
+						{
+							current_token = "#" + current_token;  // make it an indexed value for the parser
+
+							addr_mode = parse(current_token);
+
+							if(addr_mode == INDEXED)
+							{
+								if(value0 > 255)
+								{
+									error_line_array[err_cnt] = line_num;
+									err_cnt++; // ERROR: Value too large for BYTE
+									std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Value too large for BYTE directive" << std::endl;
+									break;
+								}
+
+								LC += value0;
+								current_token = fnt();
+								if(current_token != "")
+								{
+									error_line_array[err_cnt] = line_num;
+									err_cnt++; // ERROR: TOKEN FOUND AFTER BSS
+									std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found token after BSS directive" << std::endl;
+									break;
+								}
+							}
+							else // Must be wrong (unless something is wrong with the parser)
+							{
+								error_line_array[err_cnt] = line_num;
+								err_cnt++; // ERROR: Invalid Imediate number
+								std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after BSS" << std::endl;
+							}
+						}
+
+						LC++;
+						break;
+
+					case 'N':  // END
+						std::cout << "THE END IS COMING" << std::endl;
+						end_flag = true;
+						break;
+
+					case 'Q':  // EQU
+
+
+
+						break;
+
+					case 'R':  // ORG
+
+
+
+						break;
+
+					case 'T':  // STRING
+
+
+
+						break;
+
+					case 'O':  // WORD
+
+
+
+						break;
+
+					default:
+						// This should never happen
+
+						std::cout << "\t\t\t\t[Directive] DEFAULT ERROR" << std::endl; // This should literally never happen
+						std::cin >> dst_operand[0]; // To stop building and point out the error
+						break;
+				}
+
 				break;
 
 			// =================== DIRECTIVES HERE (END) =====================================
@@ -358,3 +491,4 @@ void first_pass(std::istream& fin)
 */
 	std::cout << "First pass ending" << std::endl;
 }
+

@@ -99,7 +99,7 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 			se_ptr = get_symbol(operand);
 
 			if(se_ptr == NULL && valid_symbol(operand))
-			{ // Forward reference of label within immediate
+			{ // Forward reference of label within immediate // This is intentionally never done if this is called for directives
 				add_symbol(operand, -1, UNKNOWN);
 				value0 = -1;
 				return IMMEDIATE;
