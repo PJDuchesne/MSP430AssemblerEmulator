@@ -59,5 +59,4 @@ Self8	jmp	Self8
 ; Forward reference		
 	ORG	$0
 Target1		; Reserve a location
-MOV Cake,Cake0
 	END

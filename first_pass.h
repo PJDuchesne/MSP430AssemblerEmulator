@@ -19,6 +19,8 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #ifndef FIRST_PASS_H
 #define FIRST_PASS_H
 
-void first_pass(std::istream& fin);  // Everything else is global?
+void first_pass(std::istream& fin);
+
+bool is_last_token(); // True if the token previously parsed was the last token, false if there is another token after
 
 #endif

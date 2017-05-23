@@ -29,8 +29,13 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 std::string types[] = {"REGISTER", "KNOWN", "UNKNOWN"};
 
+// extern symtbl_entry* symtbl_master;
+
 // Actual pointer to the symbol table
 symtbl_entry* symtbl_master = NULL;
+
+// Used in EQU directive (Unfortunately)
+std::string last_addition = "";
 
 void init_symtbl()
 {
@@ -91,6 +96,8 @@ void init_symtbl()
 
 void add_symbol(std::string label, int value, SYMTBLTYPE type)
 {
+	last_addition = label; // Save last label put into symtbl
+
 	symtbl_entry* new_entry = new symtbl_entry();
 	new_entry->label = label;
 	new_entry->value = value;

@@ -36,11 +36,17 @@ std::string fft(std::istream& fin)
   std::string token;
 
 	// Remove comment from line
-	current_record = current_record.substr(0, current_record.find_first_of(";"));
+  current_record = current_record.substr(0, current_record.find_first_of(";"));
 
-  char* temp_crecord = new char[current_record.length()];
+  current_record = " " + current_record; // Testing
 
-  std::strcpy(temp_crecord, current_record.c_str());
+  char* temp_crecord = new char[current_record.length()+1];
+
+  std::cout << "Test123" << std::endl;
+
+  std::strcpy(temp_crecord, current_record.c_str()+1);
+
+  std::cout << "Test123" << std::endl;
 
   char* temp_ctoken = std::strtok(temp_crecord, " \t\n");
 

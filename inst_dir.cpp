@@ -105,6 +105,7 @@ inst_dir inst_dir_array[] = {
 inst_dir* get_inst(std::string input, SEARCHTYPE stype)
 {
 	// Transform input string to uppercase (Instructions and Directives are case insensitive)
+    std::cout << "\t\t\t\t[get_inst] LOOKING FOR >>" << input << "<<" << std::endl;
 	std::transform(input.begin(), input.end(), input.begin(), ::toupper);
 
     std::cout << "\t\t\t\t[get_inst] LOOKING FOR >>" << input << "<<" << std::endl;
@@ -114,6 +115,8 @@ inst_dir* get_inst(std::string input, SEARCHTYPE stype)
 
 	int char_cnt = 0;
 	int cnt = 0;
+
+
 
 	if(stype != I && stype != D)
 	{

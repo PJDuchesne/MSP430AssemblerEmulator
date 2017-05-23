@@ -54,8 +54,9 @@ enum STATE {
         CHK_NEXT_TOKEN,
         INST,
         DIRECT,
+        CHK_SRC_OP,
         CHK_DST_OP,
-        CHK_SRC_OP
+	CHK_JMP_OP
 };
 
 enum ADDR_MODE {
@@ -66,7 +67,7 @@ enum ADDR_MODE {
         INDIRECT,
         INDIRECT_AI,
         IMMEDIATE,
-	    WRONG
+        WRONG
 };
 
 std::string fft(std::istream& fin);

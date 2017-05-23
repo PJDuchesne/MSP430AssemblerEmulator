@@ -23,6 +23,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "library.h"
 
 extern int err_cnt;
+extern std::string last_addition;
 
 struct symtbl_entry {
         std::string label;
