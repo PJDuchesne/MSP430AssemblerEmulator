@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
 
 	std::cout << std::endl << std::endl << "First pass completed with >>" << err_cnt << "<< Errors (Including Unknowns)" << std::endl << std::endl;
 
-
  	output_symtbl();
+
 
 	// Check first pass validity
 

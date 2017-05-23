@@ -136,6 +136,7 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 		default:	// Reg, Indexed, Relative	
 			if(operand.find_first_of("(") != -1 && operand.find_first_of(")") != -1) // If either is not found, 'find_first_of' returns n_pos, which is equal to -1
 			{	// If true, this is Indexed (OR BUST)
+				if(operand.find_first_of("(") + 1 == operand.find_first_of(")")) return WRONG; // Invalid INDEXED OPERAND (Closing bracket appears before opening bracket?)
 				if(operand.find_first_of("(") > operand.find_first_of(")")) return WRONG; // Invalid INDEXED OPERAND (Closing bracket appears before opening bracket?)
 				while(operand[0] != '(')
 				{

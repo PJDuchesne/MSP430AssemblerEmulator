@@ -91,7 +91,6 @@ inst_dir inst_dir_array[] = {
         {"XOR",  DOUBLE, 0xe000, WORD},
                 {"XOR.B",  DOUBLE, 0xe000, BYTE},
                 {"XOR.W",  DOUBLE, 0xe000, WORD},       // 60
-
         // DIRECTIVES (To finish)
         {"ALIGN",  NONE, 0xffff, WORD},  // DIR         // 61
         {"BSS",    NONE, 0xffff, WORD},  // DIR
@@ -100,13 +99,15 @@ inst_dir inst_dir_array[] = {
         {"EQU",    NONE, 0xffff, WORD},  // DIR
         {"ORG",    NONE, 0xffff, WORD},  // DIR
         {"STRING", NONE, 0xffff, WORD},  // DIR 
-        {"WORD"  , NONE, 0xffff, WORD}   // DIR 	// 68
+        {"WORD"  , NONE, 0xffff, WORD},   // DIR 	// 68
 };
 
 inst_dir* get_inst(std::string input, SEARCHTYPE stype)
 {
 	// Transform input string to uppercase (Instructions and Directives are case insensitive)
 	std::transform(input.begin(), input.end(), input.begin(), ::toupper);
+
+    std::cout << "\t\t\t\t[get_inst] LOOKING FOR >>" << input << "<<" << std::endl;
 
 	int bottom = (stype == I) ? 0  : 61;
 	int top    = (stype == I) ? 60 : 68;
@@ -120,41 +121,37 @@ inst_dir* get_inst(std::string input, SEARCHTYPE stype)
 		return NULL;
 	}
 
-	// while(top-bottom != 1)
-	while(top - bottom != 1)
-	{
-		// std::cout << "\t\t Bottom: " << bottom << " | Top: " << top << " Cnt: " << cnt << std::endl;
-		cnt = (top+bottom)/2;						// Update count to middle of new top and bottom
-		if (inst_dir_array[cnt].mnemonic == input)
-		{
-			std::string temp123 = (cnt <= 60) ? "[INST]" : "[DIR]";	
-	
-			std::cout << "\t\t\t" << temp123 << ": Found >>" << input << "<< at cnt of " << cnt << std::endl;			
-			return &inst_dir_array[cnt];	// Check array and return if it is the right one
-		}
-		char_cnt = 0;
-		while(char_cnt < inst_dir_array[cnt].mnemonic.length())
-		{
-			if(char_cnt == input.length())
-			{
-				top = cnt;
-				break;
-			}
-			if(inst_dir_array[cnt].mnemonic[char_cnt] > input[char_cnt])
-			{
-				top = cnt;
-				break;
-			}
-			else if(inst_dir_array[cnt].mnemonic[char_cnt] < input[char_cnt])
-			{
-				bottom = cnt;
-				break;
-			}	
-			else char_cnt++; // Characters must equal eachother
-		}
-	}
+    // Check starting top/bottom values
+    if(inst_dir_array[top].mnemonic == input)
+    {
+        std::cout << "\t\t\t" << ": Found >>" << input << "<< at cnt of " << top << std::endl;           
+        return &inst_dir_array[top];
+    }
+    if(inst_dir_array[bottom].mnemonic == input)
+    {
+        std::cout << "\t\t\t" << ": Found >>" << input << "<< at cnt of " << bottom << std::endl;           
+        return &inst_dir_array[bottom];
+    }
+
+    while(top-bottom != 1)
+    {
+        cnt = (top+bottom)/2;
+        // std::cout << "\t\t Bottom: " << bottom << " | Top: " << top << " Cnt: " << cnt << std::endl;                       // Update count to middle of new top and bottom
+        if (inst_dir_array[cnt].mnemonic == input)
+        {
+            std::string temp123 = (cnt <= 60) ? "[INST]" : "[DIR]"; 
+        
+            std::cout << "\t\t\t" << temp123 << ": Found >>" << input << "<< at cnt of " << cnt << std::endl;           
+            return &inst_dir_array[cnt];    // Check array and return if it is the right one
+        }
+
+        if(inst_dir_array[cnt].mnemonic > input) top = cnt;
+        else bottom = cnt;
+    }
+
 	std::string temp123 = (cnt <= 60) ? "[INST]" : "[DIR] ";	
 	std::cout << "\t\t\t " << temp123 << " " << input << ": Looked for and NOT found" << std::endl;
+
 	return NULL;
 }
 

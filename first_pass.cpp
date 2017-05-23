@@ -31,6 +31,8 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 int addr_mode_LC_array[] = {0, 2, 2, 2, 0, 0, 2};
 
+int error_line_array[1000] = { };
+
 /* Extern Globals Used
 	std::string current_record
 	std::string current_token
@@ -57,10 +59,9 @@ void first_pass(std::istream& fin)
 	int value1 = -1;
 
 	std::string src_operand = "";
+	std::string dst_operand = "";
 
 	char temp_dev;
-
-	// Do "Start" things here	
 
 	next_state = CHK_FIRST_TOKEN;
 	while(!fin.eof())
@@ -100,19 +101,32 @@ void first_pass(std::istream& fin)
 					next_state = CHK_NEXT_TOKEN;
 					break;
 				}
-				else if(symtbl_ptr->type == 2) // Fills in forward references
+				else if(symtbl_ptr != NULL)
 				{
-					symtbl_ptr->value = LC;
-					next_state = CHK_NEXT_TOKEN;
-					break;
+					if(symtbl_ptr->type == 2) // Fills in forward references
+					{
+						symtbl_ptr->value = LC;
+						symtbl_ptr->type = KNOWN;
+						next_state = CHK_NEXT_TOKEN;
+						break;
+					}
+					else
+					{
+						next_state = CHK_FIRST_TOKEN;
+						std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Chk_First_Token: Duplicate token" << std::endl;
+		   				error_line_array[err_cnt] = line_num;
+						err_cnt++;
+						break;
+					}
 				}
 				else
 				{ // Either token is already in symtbl, or it is not a valid token
 					next_state = CHK_FIRST_TOKEN;
-					std::cout << "\t\t\t\tERROR FOUND (Check first token)" << std::endl;
+					std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Chk_First_Token: Invalid token" << std::endl;
+	   				error_line_array[err_cnt] = line_num;
 					err_cnt++;
 					break;
-				}
+				} 
 
 				break;
 			case CHK_NEXT_TOKEN: // This happens after a valid label is found
@@ -146,8 +160,9 @@ void first_pass(std::istream& fin)
                 
 				// If it is not an instruction or directive, this is an error	
                 next_state = CHK_FIRST_TOKEN;
-                std::cout << "\t\t\t\tERROR FOUND (Check next token)" << std::endl;
+   				error_line_array[err_cnt] = line_num;
                 err_cnt++;
+				std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Chk_Next_Token: Token is not INST or DIR" << std::endl;
                 
                 break;
 			case INST:  // id_ptr should already point to the correct INST
@@ -157,23 +172,66 @@ void first_pass(std::istream& fin)
 				// Next token should contain either 0, 1, or 2 operands
 				current_token = fnt();
 
+
+
 				switch(id_ptr->type)
 				{
 					case NONE:
 						next_state = CHK_FIRST_TOKEN;
-						if(current_token != "") err_cnt++; // ERROR: Found operand where there should not be one
+						if(current_token != "")
+						{
+							error_line_array[err_cnt] = line_num;
+							err_cnt++; // ERROR: Found operand where there should not be one
+							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] INST: Found Operand on NONE INST" << std::endl;
+						}
 						break;
 					case SINGLE: // Only DST addr_modes are allowed
+						if(current_token == "")
+						{
+							error_line_array[err_cnt] = line_num;
+							err_cnt++;
+							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] INST: Found No Operand on SINGLE INST" << std::endl;
+							next_state = CHK_FIRST_TOKEN;
+						}
+						else
+						{
+							src_operand = current_token;
+							next_state = CHK_SRC_OP;
+						}
+						break;
 					case JUMP:
-						next_state = CHK_DST_OP;
+						if(current_token == "")
+						{
+							error_line_array[err_cnt] = line_num;
+							err_cnt++;
+							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] INST: Found No Operand on JMP INST" << std::endl;
+							next_state = CHK_FIRST_TOKEN;
+						}
+						else
+						{
+							src_operand = current_token;
+							next_state = CHK_SRC_OP;
+						}
 						break;
 					case DOUBLE:
 						two_op_flag = true;
 
 						// Need to turn "current_token" into DST_OPERAND and fill in "src_operand"
-						src_operand = current_token.substr(current_token.find_first_of(","), current_token.size());
-						current_token = current_token.substr(0, current_token.find_first_of(","));
-						next_state = CHK_SRC_OP;
+
+						if(current_token.find_first_of(",") != std::string::npos && current_token.find_first_of(",") != current_token.length()-1)
+						{
+							src_operand = current_token.substr(0, current_token.find_first_of(","));
+							dst_operand = current_token.substr(current_token.find_first_of(",")+1);
+							next_state = CHK_DST_OP; // Check DST first, for effectively no reason
+						}
+						else
+						{
+							next_state = CHK_FIRST_TOKEN;
+							error_line_array[err_cnt] = line_num;
+							err_cnt++; // ERROR, MISSING DST OPERAND FOR TWO OPERAND COMMAND
+							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] INST: Found Non-Double operand DOUBLE INST" << std::endl;
+						}
+
 						break;
 					default:
 						next_state = CHK_FIRST_TOKEN;
@@ -182,10 +240,21 @@ void first_pass(std::istream& fin)
 				}
 				
 				break;
+
+			// ================= DIRECTIVES HERE (START) ======================
+
 			case DIRECT: // id_ptr should already point to the correct INST
 				std::cout << "\t\t\t DIRECT" << std::endl;
-			
-				// SKIP FOR NOW, WILL ADD IN LATER	
+				
+
+
+
+
+
+
+
+
+
 
 
 
@@ -197,83 +266,95 @@ void first_pass(std::istream& fin)
 
 				next_state = CHK_FIRST_TOKEN;
 				break;
+
+			// =================== DIRECTIVES HERE (END) =====================================
+
 			case CHK_SRC_OP:
 				std::cout << "\t\t\t CHK_SRC_OP" << std::endl;
-				if(current_token == "")
+
+				std::cout << "\t\t\t CHECKING: >>" << src_operand << "<<" << std::endl;
+
+				addr_mode = parse(src_operand, value0, value1);
+				if(addr_mode == WRONG)
 				{
-					err_cnt++;  // ERROR: MISSING OPERAND F OPERAND INST
+					error_line_array[err_cnt] = line_num;
+					err_cnt++;	// ERROR: INVALID SRC OPERAND PARSING
+					std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] CHK_SRC_OP: Invalid SRC Operand Parsing" << std::endl;
 					next_state = CHK_FIRST_TOKEN;
-				}
-				else if(valid_symbol(current_token))
-				{
-					addr_mode = parse(current_token, value0, value1);
-					if(addr_mode == WRONG)
-					{
-						err_cnt++;	// ERROR: INVALID DST OPERAND PARSING
-						next_state == CHK_FIRST_TOKEN;
-					}
-					else
-					{
-						LC = LC + addr_mode_LC_array[addr_mode];
-
-						// No need to check if this is last token, 
-						// that has been done in CHK_DST_OP, which always precedes this
-
-						next_state = CHK_NEXT_TOKEN;
-					}
 				}
 				else
 				{
-					err_cnt++;  // ERROR, Invalid symbol or double operand detected
-					next_state = CHK_FIRST_TOKEN;
+					LC = LC + addr_mode_LC_array[addr_mode];
+
+					// Must ensure that this is the last token in the record
+					src_operand = fnt();
+					if(src_operand == "")	next_state = (two_op_flag) ? CHK_SRC_OP : CHK_NEXT_TOKEN; // Therefore this is correctly the last token
+					else
+					{
+						error_line_array[err_cnt] = line_num;
+						err_cnt++;
+						std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] CHK_SRC_OP: Invalid extra token after operand token" << std::endl;
+						next_state = CHK_FIRST_TOKEN;
+					}
+
+					next_state = CHK_NEXT_TOKEN;
 				}
+
+				src_operand = "";  // Reset variable
 				break;
 			case CHK_DST_OP:
 				std::cout << "\t\t\t CHK_DST_OP" << std::endl;
 
-				if(current_token == "")
+				std::cout << "\t\t\t CHECKING: >>" << dst_operand << "<<" << std::endl;
+				
+				addr_mode = parse(dst_operand, value0, value1);
+				if(addr_mode >= 4) // Corresponds to INDIRECT, INDIRECT_AI, IMMEDIATE, and WRONG
 				{
-					std::cout << "ERROR1" << std::endl;
+					error_line_array[err_cnt] = line_num;
+					err_cnt++;
+					std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] CHK_DST_OP: Invalid addressing mode or parsing for DST operand" << std::endl;
 					next_state = CHK_FIRST_TOKEN;
-				}
-				else if(valid_symbol(current_token)) // valid symbol can't have "," in it, meaning it can't be a double
-				{
-					addr_mode = parse(current_token, value0, value1);
-					if(addr_mode >= 4) // Corresponds to INDIRECT, INDIRECT_AI, IMMEDIATE, and WRONG
-					{
-						std::cout << "ERROR2" << std::endl;
-						next_state == CHK_FIRST_TOKEN;
-					}
-					else
-					{
-						LC = LC + addr_mode_LC_array[addr_mode];
-
-						// Must ensure that this is the last token in the record
-						current_token = fnt();
-						if(current_token == "")
-						{
-							// Then this is correctly the last token
-							// Check SRC if this is a two operand INST
-							next_state = (two_op_flag) ? CHK_SRC_OP : CHK_NEXT_TOKEN;
-						}
-						else
-						{
-							std::cout << "ERROR3" << std::endl;
-							next_state = CHK_FIRST_TOKEN;
-						}
-					}
 				}
 				else
 				{
-					std::cout << "ERROR4" << std::endl;
-					next_state = CHK_FIRST_TOKEN;
+					LC = LC + addr_mode_LC_array[addr_mode];
+
+					// Must ensure that this is the last token in the record
+					dst_operand = fnt();
+					if(dst_operand == "")	next_state = (two_op_flag) ? CHK_SRC_OP : CHK_NEXT_TOKEN; // Therefore this is correctly the last token
+					else
+					{
+						error_line_array[err_cnt] = line_num;
+						err_cnt++;
+						std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] CHK_DST_OP: Invalid extra token after operand token" << std::endl;
+						next_state = CHK_FIRST_TOKEN;
+					}
 				}
+			
 				break;
 			default:
-				std::cout << "\t\t\t\t[First Pass] DEFAULT ERROR" << std::endl;
+				std::cout << "\t\t\t\t[First Pass] DEFAULT ERROR" << std::endl; // This should literally never happen
+				std::cin >> dst_operand[0]; // To stop building and point out the error
 				break;
 		}
 	}
 
+ 	std::cout << std::endl << "First pass completed with LC of: >>" << LC << "<<" << std::endl;
+
+ 	// Error lines
+
+/*
+ 	int temp123897 = 0;
+
+ 	std::cout << "ERRORS ON THE FOLLOWING LINES" << std::endl << std::endl;
+
+ 	while(temp123897 < err_cnt)
+ 	{
+ 		std::cout << error_line_array[temp123897] << std::endl;
+ 		temp123897++;
+ 	}
+
+ 	std::cout << std::endl;
+*/
 	std::cout << "First pass ending" << std::endl;
 }

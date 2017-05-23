@@ -22,10 +22,12 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <string>
 #include <fstream>
 #include <cstdlib>
+#include <iomanip>
 
 #include "symtbl.h"
+#include "inst_dir.h"
 
-std::string types[] = {"REG", "KNO", "UNK"};
+std::string types[] = {"REGISTER", "KNOWN", "UNKNOWN"};
 
 // Actual pointer to the symbol table
 symtbl_entry* symtbl_master = NULL;
@@ -102,17 +104,41 @@ void add_symbol(std::string label, int value, SYMTBLTYPE type)
 void output_symtbl()
 {
 	int temp_cnt = 0;
-        // Iterate through points by using the "next" pointer on each value
-        symtbl_entry* temp = symtbl_master;
-        while(temp->next != NULL)
-        {
-                std::cout << "Entry #"    << temp_cnt;
-		std::cout << " | Label: " << temp->label;
-		std::cout << " | Value: " << temp->value;
-		std::cout << " | type: "  << temp->type << std::endl;
-                temp = temp->next;
-                temp_cnt++;
-        }
+    symtbl_entry* temp = symtbl_master;
+
+	// PURELY AESTECTIC PORTION (Formatting column width of output print so it looks nice)
+
+    int entry_no_length = 1;	// At least 1 length (Actually 2 because the symtbl is initialized, but this works with the code below)
+    int max_label_length = 3;	// At least 3 length
+
+	while(temp->next != NULL)
+	{
+		if(temp->label.length() > max_label_length) max_label_length = temp->label.length();
+		temp = temp->next;
+		temp_cnt++;
+	}
+
+	while(temp_cnt != temp_cnt%10)
+	{
+		temp_cnt = temp_cnt%10;
+		entry_no_length++;
+	}
+
+	// ACTUALLY PRINTING
+
+	temp_cnt = 0;
+    // Iterate through points by using the "next" pointer on each value
+	temp = symtbl_master;
+    while(temp->next != NULL)
+    {
+        std::cout << "Entry #"    << std::right << std::setfill('0') << std::setw(entry_no_length) << std::dec << temp_cnt;
+		std::cout << " | Label: " << std::left << std::setfill(' ') << std::setw(max_label_length) << temp->label;
+		// Values of -1 (Unknowns) will appear as ffffffff
+		std::cout << " | Value: " << std::right << std::setfill('0') << std::setw (4) << std::hex << temp->value;
+		std::cout << " | type: "  << types[temp->type] << std::endl;
+        temp = temp->next;
+        temp_cnt++;
+    }
 }
 
 symtbl_entry* get_symbol(std::string label)
@@ -129,7 +155,11 @@ symtbl_entry* get_symbol(std::string label)
 
 bool valid_symbol(std::string token)
 {
-	// If token is A-Z or a-z or _ (Alphabetic)
+	inst_dir* id_ptr = get_inst(token, I); 
+	if(id_ptr != NULL) return false; // SYMBOL CANNOT BE INSTRUCTION
+	id_ptr = get_inst(token, D); 
+	if(id_ptr != NULL) return false; // SYMBOL CANNOT BE DIRECTIVE
+
 	if(token.length() > 32) return false; // TOKEN IS TOO LONG
 	else if(((token[0] >= 65) && (token[0] <= 90))||((token[0] >= 97) && (token[0] <= 122))||(token[0] == 95))
 	{
