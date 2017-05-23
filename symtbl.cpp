@@ -103,9 +103,11 @@ void add_symbol(std::string label, int value, SYMTBLTYPE type)
 	new_entry->value = value;
 	new_entry->type = type;
 	new_entry->next = symtbl_master;	// Link new entry to next entry
+	new_entry->line = line_num;
 	symtbl_master = new_entry;	// Set ptr to the new entry
 
-	std::cout << "\t\t\t\tAdded >>" << label << "<< to the symbol table with type: >>" << type << "<<" << std::endl;
+	// FOR DEVELOPMENT
+	if(new_entry->type != REG) std::cout << "\t\t\t\tAdded >>" << label << "<< to the symbol table with type: >>" << type << "<< and value >>" << new_entry->value << "<<" << std::endl;
 }
 
 void output_symtbl()
@@ -116,6 +118,7 @@ void output_symtbl()
 	// PURELY AESTECTIC PORTION (Formatting column width of output print so it looks nice)
 
     int entry_no_length = 1;	// At least 1 length (Actually 2 because the symtbl is initialized, but this works with the code below)
+	int line_no_length = 1;		// At least 1 length
     int max_label_length = 3;	// At least 3 length
 
 	while(temp->next != NULL)
@@ -131,6 +134,13 @@ void output_symtbl()
 		entry_no_length++;
 	}
 
+	temp_cnt = line_num;
+	while(temp_cnt != temp_cnt%10)
+	{
+		temp_cnt = temp_cnt%10;
+		line_no_length++;
+	}
+
 	// ACTUALLY PRINTING
 
 	temp_cnt = 0;
@@ -138,14 +148,20 @@ void output_symtbl()
 	temp = symtbl_master;
     while(temp->next != NULL)
     {
+    	// Don't display registers (FOR DEVELOPMENT)
+    	if(temp->type == REG) break;
+
         std::cout << "Entry #"    << std::right << std::setfill('0') << std::setw(entry_no_length) << std::dec << temp_cnt;
 		std::cout << " | Label: " << std::left << std::setfill(' ') << std::setw(max_label_length) << temp->label;
 		// Values of -1 (Unknowns) will appear as ffffffff
-		std::cout << " | Value: " << std::right << std::setfill('0') << std::setw (4) << std::hex << temp->value;
+		std::cout << " | Value: " << std::right << std::setfill('0') << std::setw(4) << std::hex << temp->value;
+		std::cout << " | Line #"  << std::right << std::setfill('0') << std::setw(line_no_length) << std::dec << temp->line;
 		std::cout << " | type: "  << types[temp->type] << std::endl;
+
         temp = temp->next;
         temp_cnt++;
     }
+    std::cout << std::endl;
 }
 
 symtbl_entry* get_symbol(std::string label)

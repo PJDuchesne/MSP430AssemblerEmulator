@@ -105,10 +105,9 @@ inst_dir inst_dir_array[] = {
 inst_dir* get_inst(std::string input, SEARCHTYPE stype)
 {
 	// Transform input string to uppercase (Instructions and Directives are case insensitive)
-    std::cout << "\t\t\t\t[get_inst] LOOKING FOR >>" << input << "<<" << std::endl;
 	std::transform(input.begin(), input.end(), input.begin(), ::toupper);
 
-    std::cout << "\t\t\t\t[get_inst] LOOKING FOR >>" << input << "<<" << std::endl;
+    std::cout << "\t\t[get_inst] LOOKING FOR >>" << input << "<<" << std::endl;
 
 	int bottom = (stype == I) ? 0  : 61;
 	int top    = (stype == I) ? 60 : 68;
@@ -127,12 +126,12 @@ inst_dir* get_inst(std::string input, SEARCHTYPE stype)
     // Check starting top/bottom values
     if(inst_dir_array[top].mnemonic == input)
     {
-        std::cout << "\t\t\t" << ": Found >>" << input << "<< at cnt of " << top << std::endl;           
+        std::cout << "\t" << ": Found >>" << input << "<< at cnt of " << top << std::endl;           
         return &inst_dir_array[top];
     }
     if(inst_dir_array[bottom].mnemonic == input)
     {
-        std::cout << "\t\t\t" << ": Found >>" << input << "<< at cnt of " << bottom << std::endl;           
+        std::cout << "\t" << ": Found >>" << input << "<< at cnt of " << bottom << std::endl;           
         return &inst_dir_array[bottom];
     }
 
@@ -144,7 +143,7 @@ inst_dir* get_inst(std::string input, SEARCHTYPE stype)
         {
             std::string temp123 = (cnt <= 60) ? "[INST]" : "[DIR]"; 
         
-            std::cout << "\t\t\t" << temp123 << ": Found >>" << input << "<< at cnt of " << cnt << std::endl;           
+            std::cout << "\t" << temp123 << ": Found >>" << input << "<< at cnt of " << cnt << std::endl;           
             return &inst_dir_array[cnt];    // Check array and return if it is the right one
         }
 
@@ -153,7 +152,7 @@ inst_dir* get_inst(std::string input, SEARCHTYPE stype)
     }
 
 	std::string temp123 = (cnt <= 60) ? "[INST]" : "[DIR] ";	
-	std::cout << "\t\t\t " << temp123 << " " << input << ": Looked for and NOT found" << std::endl;
+	std::cout << "\t " << temp123 << " " << input << ": Looked for and NOT found" << std::endl;
 
 	return NULL;
 }

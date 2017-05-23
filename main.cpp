@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
  	init_symtbl();
 
-	std::ifstream fin("Example_Code/jmp.txt");
+	std::ifstream fin("Example_Code/two.txt");
 
  	first_pass(fin);
 

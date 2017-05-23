@@ -29,6 +29,7 @@ struct symtbl_entry {
         std::string label;
         int value;
         SYMTBLTYPE type;
+        int line;
         symtbl_entry *next;
 };
 

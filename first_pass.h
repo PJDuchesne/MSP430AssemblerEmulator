@@ -23,4 +23,6 @@ void first_pass(std::istream& fin);
 
 bool is_last_token(); // True if the token previously parsed was the last token, false if there is another token after
 
+void error_detected(std::string error_msg);
+
 #endif

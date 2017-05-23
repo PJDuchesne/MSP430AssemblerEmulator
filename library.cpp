@@ -31,7 +31,7 @@ std::string fft(std::istream& fin)
 {
 	std::getline(fin, current_record);
 
-	std::cout << std::endl << "Record : >>" << current_record << "<<" << std::endl;
+	std::cout << std::endl << "Record #" << line_num << ": >>" << current_record << "<<" << std::endl;
 
   std::string token;
 
@@ -42,11 +42,7 @@ std::string fft(std::istream& fin)
 
   char* temp_crecord = new char[current_record.length()+1];
 
-  std::cout << "Test123" << std::endl;
-
   std::strcpy(temp_crecord, current_record.c_str()+1);
-
-  std::cout << "Test123" << std::endl;
 
   char* temp_ctoken = std::strtok(temp_crecord, " \t\n");
 

@@ -74,8 +74,8 @@ void first_pass(std::istream& fin)
 			case CHK_FIRST_TOKEN: // Also iterates to next record
 				//	std::cin >> temp_dev;  // FOR DEVELOPMENT: Ask for input between lines
 				current_token = fft(fin);
-				std::cout << "\t#" << line_num << ": >>" << current_record << "<< || LC: " << LC << std::endl;
-				std::cout << "\t\t\t CHK_FIRST TOKEN" << std::endl;
+				std::cout << "\tLC at START OF RECORD >>" << LC << "<<" << std::endl;
+				std::cout << "\tCHK_FIRST TOKEN" << std::endl;
 				line_num++;
 				if(current_token == "")  // Empty line, no token on line
 				{
@@ -83,10 +83,7 @@ void first_pass(std::istream& fin)
 					break;
 				}				
 
-				std::cout << "Test 1" << std::endl;
-
 				id_ptr = get_inst(current_token, I);  // Check if it is a valid INST
-				std::cout << "Test 1" << std::endl;
 				if(id_ptr != NULL)
 				{
 					next_state = INST;
@@ -118,38 +115,31 @@ void first_pass(std::istream& fin)
 					}
 					else
 					{
+						error_detected("Chk_First_Token: Duplicate token");
 						next_state = CHK_FIRST_TOKEN;
-						std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Chk_First_Token: Duplicate token" << std::endl;
-		   				error_line_array[err_cnt] = line_num;
-						err_cnt++;
 						break;
 					}
 				}
 				else
 				{ // Either token is already in symtbl, or it is not a valid token
+					error_detected("Chk_First_Token: Invalid token");
 					next_state = CHK_FIRST_TOKEN;
-					std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Chk_First_Token: Invalid token" << std::endl;
-	   				error_line_array[err_cnt] = line_num;
-					err_cnt++;
 					break;
 				} 
 
 				break;
 			case CHK_NEXT_TOKEN: // This happens after a valid label is found
-				std::cout << "\t\t\t CHK_NEXT_TOKEN" << std::endl;
+				std::cout << "\tCHK_NEXT_TOKEN" << std::endl;
 
 				// This is either an empty token, and INST, or DIR (OR ERROR)
 				current_token = fnt();
-
-//				se
-
 				if(current_token == "") 	      // Line only had a label (and maybe a comment)
 				{
 					next_state = CHK_FIRST_TOKEN;
 					break;
 				}
 				
-				std::cout << "\t\t\t Token: >> " << current_token << "<<" << std::endl;
+				std::cout << "\tToken: >> " << current_token << "<<" << std::endl;
 				
 
 				id_ptr = get_inst(current_token, I);  // Check if it is a valid INST
@@ -166,15 +156,13 @@ void first_pass(std::istream& fin)
                 	break;
                 }
                 
-				// If it is not an instruction or directive, this is an error	
+				// If it is not an instruction or directive, this is an error
+				error_detected("Chk_Next_Token: Token is not INST or DIR");
                 next_state = CHK_FIRST_TOKEN;
-   				error_line_array[err_cnt] = line_num;
-                err_cnt++;
-				std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Chk_Next_Token: Token is not INST or DIR" << std::endl;
                 
                 break;
 			case INST:  // id_ptr should already point to the correct INST
-				std::cout << "\t\t\t INST" << std::endl;
+				std::cout << "\tINST" << std::endl;
 				LC = LC+ 0x02;
 
 				// Next token should contain either 0, 1, or 2 operands
@@ -182,25 +170,16 @@ void first_pass(std::istream& fin)
 
 
 
+				next_state = CHK_FIRST_TOKEN;
+
 				switch(id_ptr->type)
 				{
 					case NONE:
-						next_state = CHK_FIRST_TOKEN;
-						if(current_token != "")
-						{
-							error_line_array[err_cnt] = line_num;
-							err_cnt++; // ERROR: Found operand where there should not be one
-							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] INST: Found Operand on NONE INST" << std::endl;
-						}
+						if(current_token != "") error_detected("Found Operand on NONE INST");
+
 						break;
 					case SINGLE: // Only DST addr_modes are allowed
-						if(current_token == "")
-						{
-							error_line_array[err_cnt] = line_num;
-							err_cnt++;
-							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] INST: Found No Operand on SINGLE INST" << std::endl;
-							next_state = CHK_FIRST_TOKEN;
-						}
+						if(current_token == "") error_detected("INST: Found No Operand on SINGLE INST");
 						else
 						{
 							src_operand = current_token;
@@ -208,13 +187,7 @@ void first_pass(std::istream& fin)
 						}
 						break;
 					case JUMP:
-						if(current_token == "")
-						{
-							error_line_array[err_cnt] = line_num;
-							err_cnt++;
-							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] INST: Found No Operand on JMP INST" << std::endl;
-							next_state = CHK_FIRST_TOKEN;
-						}
+						if(current_token == "") error_detected("INST: Found No Operand on JMP INST");
 						else
 						{
 							src_operand = current_token;
@@ -232,13 +205,7 @@ void first_pass(std::istream& fin)
 							dst_operand = current_token.substr(current_token.find_first_of(",")+1);
 							next_state = CHK_DST_OP; // Check DST first, for effectively no reason
 						}
-						else
-						{
-							next_state = CHK_FIRST_TOKEN;
-							error_line_array[err_cnt] = line_num;
-							err_cnt++; // ERROR, MISSING DST OPERAND FOR TWO OPERAND COMMAND
-							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] INST: Found Non-Double operand DOUBLE INST" << std::endl;
-						}
+						else error_detected("INST: Found Non-Double operand DOUBLE INST");
 
 						break;
 					default:
@@ -251,8 +218,10 @@ void first_pass(std::istream& fin)
 
 			// ================= DIRECTIVES HERE (START) ======================
 
+				// NOTE: Can BYTE or WORD be #UNKNOWN (Where UNKNOWN is an unknown label that will be defined later?)
+
 			case DIRECT: // id_ptr should already point to the correct INST
-				std::cout << "\t\t\t DIRECT" << std::endl;
+				std::cout << "\tDIRECT" << std::endl;
 				
 				// The second letter of all directives are unique with this directive set
 				// This avoids having to do another enumeration set (Note: Discussed this with Tom Smith)
@@ -268,42 +237,39 @@ void first_pass(std::istream& fin)
 
 				if(id_ptr->mnemonic[1] != 'L' && id_ptr->mnemonic[1] != 'N' && id_ptr->mnemonic[1] != 'T')
 				{  // If the type is not ALIGN, END, or STRING, the value needs to be parsed
-			
+
 					// TO ADD NEGATIVE FOR BYTE OR WORD: Find "-" at the start of the value, then 2s compliment at the end
 
 					current_token = fnt();						// Find next token
 					symtbl_ptr = get_symbol(current_token);		// Check symtbl for that token
 
-					if(symtbl_ptr == NULL && valid_symbol(current_token))
-					{
-						// This is an issue: NO FORWARD REFERENCING
-						error_line_array[err_cnt] = line_num;
-						err_cnt++; // ERROR: TOKEN FOUND UNKNOWN LABEL AFTER DIRECTIVE
-						std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after DIRECTIVE" << std::endl;
-					}
+					std::cout << "\t\t[DIRECTIVE] Parsing value0 for value of >>" << current_token << "<<" << std::endl;
+
+					// No forward referecing
+					if(symtbl_ptr == NULL && valid_symbol(current_token)) error_detected("Directive: Found UNKNOWN label after DIRECTIVE (Value0 parsing, #1)");
 					else
 					{
 						current_token = "#" + current_token;  // make it an indexed value for the parser
-
 						addr_mode = parse(current_token, value0, value1);
-						if(addr_mode == INDEXED) directive_error_flag = false;
-						else // Must be wrong (unless something is wrong with the parser)
-						{
-							error_line_array[err_cnt] = line_num;
-							err_cnt++; // ERROR: Invalid Imediate number
-							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after BSS" << std::endl;
-						}
 
-						if(!is_last_token()) std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found token after DIRECTIVE" << std::endl;
+						if(addr_mode == IMMEDIATE) directive_error_flag = false;
+						else error_detected("Directive: Found Unknown Label after DIRECTIVE (Value0 parsing, #2)");
+						// Must be wrong (unless something is wrong with the parser)
+
+						if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found token after DIRECTIVE" << std::endl;
 					}
+
+					std::cout << "\t\t[DIRECTIVE] Parsing value0 yielded a result of >>" << value0 << "<< with the flag set to " << directive_error_flag << std::endl;
 				}
 
 				switch (id_ptr->mnemonic[1])  // The second letter of all directives are unique with this directive set
 				{
 					case 'L':  // Align
+						std::cout << "\t\tALIGNING LC: >>" << LC << "<< (Before)" << std::endl;
 						if(LC%2) LC++;
+						std::cout << "\t\tALIGNING LC: >>" << LC << "<< (AFTER)" << std::endl;
 
-						if(!is_last_token()) std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found token after ALIGN directive" << std::endl;
+						if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found token after ALIGN directive" << std::endl;
 						break;
 
 					case 'S':  // BSS
@@ -311,12 +277,10 @@ void first_pass(std::istream& fin)
 						break;
 
 					case 'Y':  // BYTE
-						if(value0 < 256) LC += 0x01;
-						else
+						if(!directive_error_flag)
 						{
-							error_line_array[err_cnt] = line_num;
-							err_cnt++; // ERROR: Value too large for BYTE
-							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Value too large for BYTE directive" << std::endl;
+							if(value0 < 256) LC += 0x01;
+							else error_detected("Directive: Value too large for BYTE directive");
 						}
 
 						break;
@@ -324,139 +288,112 @@ void first_pass(std::istream& fin)
 					case 'N':  // END
 						std::cout << "THE END IS COMING" << std::endl;
 						end_flag = true;
-						if(!is_last_token()) std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after END" << std::endl;
+						if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after END" << std::endl;
 						break;
 
 					case 'Q':  // EQU
-						// LABEL is required: Check symbtable for label at current LC value
-						current_token = fnt();
+						// This needs to be fixed: that label could be on a previous line
+						if(!directive_error_flag)
+						{
+							// LABEL is required: Check symbtable for label at current LC value
+							current_token = fnt();
 
-						symtbl_ptr = get_symbol(last_addition); 
-	
-						if(symtbl_ptr == NULL)
-						{
-							error_line_array[err_cnt] = line_num;
-							err_cnt++; // ERROR: Value too large for ORG
-							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: No label for EQU directive (Case 1)" << std::endl;
-						}
-						else if(symtbl_ptr->type == KNOWN && symtbl_ptr->value == LC)
-						{
-							// Therefore there is a label preceding EQU
-							if(value0 <= 65535)
+							symtbl_ptr = get_symbol(last_addition); 
+		
+							if(symtbl_ptr == NULL) error_detected("Directive: No label for EQU directive (Case 1)");
+							else if(symtbl_ptr->type == KNOWN && symtbl_ptr->line == line_num)
 							{
-								symtbl_ptr->value = value0;
-								if(!is_last_token()) std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after EQU value" << std::endl;
+								// Therefore there is a label preceding EQU
+								if(value0 <= 65535)
+								{
+									symtbl_ptr->value = value0;
+
+									std::cout << "[DIRECTIVE] SUCESSFULLY STORED value0 into label >>" << symtbl_ptr->label << "<<" << std::endl;
+
+									if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after EQU value" << std::endl;
+								}
+								else error_detected("Directive: Value too large for EQU directive");
 							}
-							else
-							{
-								error_line_array[err_cnt] = line_num;
-								err_cnt++; // ERROR: Value too large for ORG
-								std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Value too large for EQU directive" << std::endl;
-							}
-						}
-						else
-						{
-							error_line_array[err_cnt] = line_num;
-							err_cnt++; // ERROR: Value too large for ORG
-							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: No label for EQU directive (Case 2)" << std::endl;
+							else error_detected("Directive: No label for EQU directive (Case 2)");
 						}
 						break;
 
 					case 'R':  // ORG
-						if(value0 < 65535-LC) 
+						if(!directive_error_flag)
 						{
+							if(value0 < 65535-LC) 
+							{
 
 
-							LC = value0;
-							if(!is_last_token()) std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after ORG value" << std::endl;
-						}
-						else
-						{
-							error_line_array[err_cnt] = line_num;
-							err_cnt++; // ERROR: Value too large for ORG
-							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Value too large for ORG directive" << std::endl;
+								LC = value0;
+								if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after ORG value" << std::endl;
+							}
+							else error_detected("Directive: Value too large for ORG directive");
 						}
 
 						break;
 
 					case 'T':  // STRING ** Special Case **
-
 						current_token = fnt();
 
 						if(current_token.length() <= 128)
 						{
 							LC += value0;
-							if(!is_last_token()) std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after STRING value" << std::endl;
+							if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after STRING value" << std::endl;
 						}
-						else
-						{
-							error_line_array[err_cnt] = line_num;
-							err_cnt++; // ERROR: Value too large for ORG
-							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Value too large for ORG directive" << std::endl;
-						}
-
-
+						else error_detected("Directive: Value too large for ORG directive");
 
 						break;
 
 					case 'O':  // WORD
-						if(LC%2) LC += 0x01;  // Align LC first
-						if(value0 < 65535) LC += 0x02;
-						else
+						if(!directive_error_flag)
 						{
-							error_line_array[err_cnt] = line_num;
-							err_cnt++; // ERROR: Value too large for WORD
-							std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Value too large for WORD directive" << std::endl;
+							if(LC%2) LC += 0x01;  // Align LC first
+							if(value0 < 65535) LC += 0x02;
+							else error_detected("Directive: Value too large for WORD directive");
 						}
 						break;
 
 					default:
 						// This should never happen
 
-						std::cout << "\t\t\t\t[Directive] DEFAULT ERROR" << std::endl; // This should literally never happen
+						std::cout << "\t\t[Directive] DEFAULT ERROR" << std::endl; // This should literally never happen
 						std::cin >> dst_operand[0]; // To stop building and point out the error
 						break;
-				}
+					}
 
 				break;
 
 				// =================== DIRECTIVES HERE (END) =====================================
 
 			case CHK_SRC_OP:
-				std::cout << "\t\t\t CHK_SRC_OP" << std::endl;
+				std::cout << "\tCHK_SRC_OP" << std::endl;
 
 				next_state = CHK_FIRST_TOKEN;
 
-				std::cout << "\t\t\t CHECKING: >>" << src_operand << "<<" << std::endl;
+				std::cout << "\tCHECKING: >>" << src_operand << "<<" << std::endl;
 
 				addr_mode = parse(src_operand, value0, value1);
-				if(addr_mode == WRONG)
-				{
-					error_line_array[err_cnt] = line_num;
-					err_cnt++;	// ERROR: INVALID SRC OPERAND PARSING
-					std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] CHK_SRC_OP: Invalid SRC Operand Parsing" << std::endl;
-				}
+				if(addr_mode == WRONG) error_detected("CHK_SRC_OP: Invalid SRC Operand Parsing");
 				else
 				{
 					LC += addr_mode_LC_array[addr_mode];
-					if(!is_last_token()) std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after SRC operand" << std::endl;
+					if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after SRC operand" << std::endl;
 				}
 
 				src_operand = "";
 				break;
 			case CHK_DST_OP:
-				std::cout << "\t\t\t CHK_DST_OP" << std::endl;
+				std::cout << "\tCHK_DST_OP" << std::endl;
 
-				std::cout << "\t\t\t CHECKING: >>" << dst_operand << "<<" << std::endl;
+				std::cout << "\tCHECKING: >>" << dst_operand << "<<" << std::endl;
+
+				next_state = CHK_FIRST_TOKEN;
 
 				addr_mode = parse(dst_operand, value0, value1);
-				if(addr_mode >= 4) // Corresponds to INDIRECT, INDIRECT_AI, IMMEDIATE, and WRONG
-				{
-					error_line_array[err_cnt] = line_num;
-					err_cnt++;
-					std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] CHK_DST_OP: Invalid addressing mode or parsing for DST operand" << std::endl;
-					next_state = CHK_FIRST_TOKEN;
-				}
+
+				// Corresponds to INDIRECT, INDIRECT_AI, IMMEDIATE, and WRONG
+				if(addr_mode >= 4) error_detected("CHK_DST_OP: Invalid addressing mode or parsing for DST operand");
 				else
 				{
 					LC += addr_mode_LC_array[addr_mode];
@@ -464,64 +401,52 @@ void first_pass(std::istream& fin)
 					// Must ensure that this is the last token in the record
 					dst_operand = fnt();
 					if(dst_operand == "") next_state = (two_op_flag) ? CHK_SRC_OP : CHK_NEXT_TOKEN; // Therefore this is correctly the last token
-					else
-					{
-						error_line_array[err_cnt] = line_num;
-						err_cnt++;
-						std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] CHK_DST_OP: Invalid extra token after operand token" << std::endl;
-						next_state = CHK_FIRST_TOKEN;
-					}
+					else error_detected("CHK_DST_OP: Invalid extra token after operand token");
 				}
 				dst_operand = "";
 				break;
 
 			case CHK_JMP_OP:
-				std::cout << "\t\t\t CHK_JMP_OP" << std::endl;
+				std::cout << "\tCHK_JMP_OP" << std::endl;
 
-                                next_state = CHK_FIRST_TOKEN;
+                next_state = CHK_FIRST_TOKEN;
 
-                                std::cout << "\t\t\t CHECKING: >>" << jmp_operand << "<<" << std::endl;
+                std::cout << "\tCHECKING: >>" << jmp_operand << "<<" << std::endl;
 
-                                addr_mode = parse(jmp_operand, value0, value1);
-                                if(addr_mode == RELATIVE || addr_mode == ABSOLUTE || addr_mode == IMMEDIATE)
-                                {  // Jump cannot have registers, therefore must be RELATIVE, ABSOLUTE, or IMMEDIATE
-                                        error_line_array[err_cnt] = line_num;
-                                        err_cnt++;
-                                        std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] CHK_JMP_OP: Invalid addressing mode or parsing for JMP operand" << std::endl;
-                                }
-                                else
-                                {
-                                        LC += addr_mode_LC_array[addr_mode];
-					if(!is_last_token()) std::cout << "\t\t\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after JMP operand" << std::endl;
-                                }
+                addr_mode = parse(jmp_operand, value0, value1);
+                if(addr_mode == RELATIVE || addr_mode == ABSOLUTE || addr_mode == IMMEDIATE) 
+                {  // Jump cannot have registers, therefore must be RELATIVE, ABSOLUTE, or IMMEDIATE
+                    LC += addr_mode_LC_array[addr_mode];
+					if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after JMP operand" << std::endl;
+                }
+                else error_detected("CHK_JMP_OP: Invalid addressing mode or parsing for JMP operand");
 
 				jmp_operand = "";
 				break;
 
 			default:
-				std::cout << "\t\t\t\t[First Pass] DEFAULT ERROR" << std::endl; // This should literally never happen
+				std::cout << "\t\t[First Pass] DEFAULT ERROR" << std::endl; // This should literally never happen
 				std::cin >> dst_operand[0]; // To stop building and point out the error
 				break;
 		}
 	}
-
 	std::cout << std::endl << "First pass completed with LC of: >>" << LC << "<<" << std::endl;
+
 
 	// Error lines
 
-	/*
-	   int temp123897 = 0;
+					   int temp123897 = 0;
 
-	   std::cout << "ERRORS ON THE FOLLOWING LINES" << std::endl << std::endl;
+					   std::cout << "ERRORS ON THE FOLLOWING LINES" << std::endl << std::endl;
 
-	   while(temp123897 < err_cnt)
-	   {
-	   std::cout << error_line_array[temp123897] << std::endl;
-	   temp123897++;
-	   }
+					   while(temp123897 < err_cnt)
+					   {
+					   std::cout << error_line_array[temp123897] << std::endl;
+					   temp123897++;
+					   }
 
-	   std::cout << std::endl;
-	 */
+					   std::cout << std::endl;
+
 	std::cout << "First pass ending" << std::endl;
 }
 
@@ -531,9 +456,16 @@ bool is_last_token()
 	current_token = fnt();
 	if(current_token != "")
 	{
-		error_line_array[err_cnt] = line_num;
+		error_line_array[err_cnt] = line_num - 1;
 		err_cnt++; // ERROR: TOKEN FOUND AFTER ALIGN
 		return false;
 	}
 	else return true;
+}
+
+void error_detected(std::string error_msg)
+{
+	std::cout << "\t\t[ERROR MSG - FIRST PASS=] " << error_msg << std::endl;
+	error_line_array[err_cnt] = line_num - 1;
+	err_cnt++;
 }

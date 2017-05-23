@@ -116,7 +116,8 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 					operand.erase(0, 1); 
 					hex_flag = true;
 				}
-				while(operand[0] == '0') operand.erase(0, 1); // Delete preceding 0s
+				while(operand[0] == '0' && operand.length() > 1) operand.erase(0, 1); // Delete preceding 0s
+				// if(operand == "") operand = "0";			  // In the case that th
 				if(operand.length() > 8 && hex_flag) return WRONG; // TOO LONG FOR STOL (Hex)
 				if(operand.length() > 10 && !hex_flag) return WRONG; // TOO LONG FOR STOL (Decimal)
 				// Check that all remaining characters are numeric

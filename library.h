@@ -24,6 +24,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 extern std::string current_record;
 extern std::string current_token;
 extern int err_cnt;
+extern int line_num;
 
 enum SEARCHTYPE {
 	I,  // INSTRUCTION
@@ -31,43 +32,43 @@ enum SEARCHTYPE {
 };
 
 enum SYMTBLTYPE {
-        REG,
-        KNOWN,
-        UNKNOWN
+    REG,
+    KNOWN,
+    UNKNOWN
 };
 
 enum INST_TYPE {
-        NONE,
-        SINGLE,
-        DOUBLE,
-        JUMP
+    NONE,
+    SINGLE,
+    DOUBLE,
+    JUMP
 };
 
 enum BYTE_WORD {
-        BYTE,
-        WORD,
-        OFFSET
+    BYTE,
+    WORD,
+    OFFSET
 };
 
 enum STATE {
-        CHK_FIRST_TOKEN,
-        CHK_NEXT_TOKEN,
-        INST,
-        DIRECT,
-        CHK_SRC_OP,
-        CHK_DST_OP,
-	CHK_JMP_OP
+    CHK_FIRST_TOKEN,
+    CHK_NEXT_TOKEN,
+    INST,
+    DIRECT,
+    CHK_SRC_OP,
+    CHK_DST_OP,
+    CHK_JMP_OP
 };
 
 enum ADDR_MODE {
-        REG_DIRECT,
-        INDEXED,
-        RELATIVE,
-        ABSOLUTE,
-        INDIRECT,
-        INDIRECT_AI,
-        IMMEDIATE,
-        WRONG
+    REG_DIRECT,
+    INDEXED,
+    RELATIVE,
+    ABSOLUTE,
+    INDIRECT,
+    INDIRECT_AI,
+    IMMEDIATE,
+    WRONG
 };
 
 std::string fft(std::istream& fin);
