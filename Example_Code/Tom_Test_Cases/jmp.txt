@@ -1,0 +1,23 @@
+; Test Case: Jump Testing
+; This test case is for the first pass of the assembler
+; The first pass should have an error for the lines specified
+; Written by Tom Smith
+
+; The following lines should NOT give an error within the first pass
+
+Label	jne	Label	;test relative addressing
+	jeq	Label2	;test forward referencing
+	JNZ	&Label	;test absolute addressing
+Label2	JZ	#Label	;test immediate addressing
+	Jmp	#1	;test immediate addressing
+	Jhs	#$1	;test immediate	addressing
+	Jl	#-1	;??? I think this is allowed because -1 is just going to underflow
+
+;The following lines should give an error
+
+	jne	r1	;registers can not be jumped to
+	jmp	Label(r1)	;indexed is not allowed for jumps
+	jmp		;no operand should give an error
+	jlo	@r1	;indirect is not allowed
+	jl	@r9+	;indirect post increment also not allowed
+

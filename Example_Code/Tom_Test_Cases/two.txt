@@ -1,0 +1,50 @@
+; Test Case: Two Operand First Pass
+; This test case is for the first pass of the assembler
+; The first pass should have an error for the lines specified at the end of the file.
+; Written by: Tom Smith
+
+; The following line should NOT have an error within them.
+
+label	org	10
+label1	MOV	r1,r2	; Direct testing
+	adD	label(r1),label(R2)	;indexed testing
+	addc.w	label,label	;relative testing
+	ADD.b	@r13,&label1	;indriect and absolute testing
+	and.w	@r0+,r1		;indirect auto increment testing
+	sub	#1,r1		;test immediate decimal
+	subc.b	#-200,r9	;test negative immediate
+	sub.w	#$10,r3		;test immediate hex
+	xor	#label,label	;test immediate label
+
+; The following lines should give an error.
+
+	bic	#1,#2	;immediates can not be desintations
+	bic	#1,#-2	;immediates can not be desintations (negative test)
+	bic.b	#1,#$ff	;immediates can not be desintations (hex test)
+	bic.w	#2,#label	;immediates can not be desintations (label test)
+	bic	r1,#label	;immediates can not be desinations
+	bic.w	label,@r1	;indirect can not be used for destination
+	bic	label,@r1+	;indirect post increment can not be used for destination
+	rra	#1,r1	; one operand instruction can not take two
+	add	#1	; two operand instruction can not take one
+	add		; two operand instruction requires two operands
+	reti	#1,#1	; no operand instruction can not take two instructions
+	subc	subc,subc	;can not use instructions as labels
+	subc	add.w	;can not use instructions as labels
+	sub	label(r20),r1	;invalid index. r20 does not exist
+	sub	labelr2),r1	;invalid index
+	sub	label(r2,r1	;invalid index
+	sub	label[r1],r1	;invalid index
+	sub	label{r1},r1	;invalid index
+	sub	label(label),r1	;invalid index
+	add	#,r1	;invalid immediate
+	add	##1,r1	;invalid immediate
+	add	#$,r1	;invalid immediate
+	add	#-,r1	;invalid immediate
+	add	#$-,r1	;invalid immediate
+	add	#-label,r1	;invalid immediate
+	add	#-36000,r1	;invalid immediate
+	add	#100000,r1	;invalid immediate
+	xor	-r1,r1	;invalid direct
+	xor	@@r1,r1	;invalid indirect
+	xor	&&label,r1	;invalid absolute

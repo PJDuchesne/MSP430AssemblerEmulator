@@ -63,9 +63,10 @@ int main(int argc, char *argv[])
 */
 	// Initialize a few things (Open file for one)
 
- 	init_symtbl();
+ 
+init_symtbl();
 
-	std::ifstream fin("Example_Code/two.txt");
+	std::ifstream fin("Example_Code/Tom_Test_Cases/two.txt");
 
  	first_pass(fin);
 

@@ -1,0 +1,38 @@
+; Test Case: Single Operand First Pass
+; This test case is for the first pass of the assembler
+; The first pass should have an error for the lines specified at the end of the file.
+; Written by: Tom Smith
+
+; The following lines should NOT have an error within the first pass.
+	
+	org	$1000
+Label1	BSS	10
+	RRA	#192		;Test decimal immediate
+	RRA	#-100		;Test negative decimal immediate
+	RRA	#$1abc		;Test hex immediate
+	RRA	#$-ff		;Test negative hex immediate
+	RRC	r1		;Test direct addr mode
+Label2	SwPB	label3		;Test forward reference when it is not in the symbol table
+	PUSH	label3		;Test forward reference when it is already unknown
+	PusH	&Label1		;Test absolute addressing mode
+	sxt	@R12+		;Test indirect auto increment
+	sXt	@r0		;Test indirect
+label3	call	#label3		;Test immediate label
+LabeL3	swpb	Label1(r1)	;Test indexed
+
+; The following lines should induce an error in the first pass.
+
+	RRA	#r1		;Registers can not act as immediates
+	RRC	&R11		;Registers can not act as absolutes
+	caLL	r1(label3)	;Registers have to be in the brackets in indexed.
+	SXT	#-label3	;Labels can not be negative in immediate reference.
+	rrC	label3(@r12+)	;Can not auto increment registers in indexed mode.
+	SWPB	r1,r2		;Two operands should not be allowed
+	RRA	#$label3	;label3 should not be able to be called as an immediate with the '$'
+label	inst	#1		;Invalid instruction name
+	RRC	;label		;The operand should be removed when the comment is removed from the string.
+	SXT.B	#9		;There is no SXT.B instruction.
+label1	Call	label1(label1)	;You can not put a label in the relative operand.
+	RRA	end		;end is not a valid operand
+	RRA	#$1ffff		;Exceed a word capacity
+	

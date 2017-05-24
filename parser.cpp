@@ -35,7 +35,6 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 	std::string temp_indexed;
 
 	bool hex_flag = false;
-	bool neg_flag = false;
 
 	int temp_cnt = 0;
 
@@ -48,33 +47,46 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 	switch (operand[0]) // Switch 
 	{
 		case '&': 	// (38) Absolute Mode or BUST    // 38
+
+			std::cout << "ABSOLUTELY" << std::endl;
+
 			operand.erase(0, 1);
+			if(operand == "") return WRONG; // This means the input was just "&"
 			
 			se_ptr = get_symbol(operand);
 
+			std::cout << "ABSOLUTELY" << std::endl;
 		 	// If symbol not in table, and the operand is a valid label, add to symbol table
 			if(se_ptr==NULL && valid_symbol(operand))
 			{ // Valid symbol that isnt already on symbol table, FORWARD REFERNCE
+				std::cout << "ABSOLUTELY" << std::endl;
 				add_symbol(operand, -1, UNKNOWN);
 				value0 = -1;
-				return ABSOLUTE; 
+				if(value0 < -32768 || value0 > 65535) return WRONG; // Value0 cannot be larger than a word
+				else return ABSOLUTE; 
 			}
-			else 
+			else if(se_ptr != NULL)
 			{ // Valid symbol from symbol table, need to check that it isn't a REG
 				if(se_ptr->type != REG)
 				{
 					value0 = se_ptr->value;
-					return ABSOLUTE;
+					if(value0 < -32768 || value0 > 65535) return WRONG; // Value0 cannot be larger than a word
+					else return ABSOLUTE;
 				}
+				else return WRONG; // Cannot be REG
 			}
+			else return WRONG; // Therefore not in symbol table, but also not valid symbol
 			break;
 		case '@':	// (64) Indirect or Indirect auto-increment (OR BUST)
 			operand.erase(0, 1);
+
+			if(operand == "") return WRONG; // This means the input was "@" alone
 
 			// If auto indirect, it will have a + after the symbol. Remove it and trigger flag if so
 			if(operand.find_last_of("+") == operand.length()-1)
 			{
 				operand.erase(operand.length()-1, operand.length()); // This needs testing
+				if(operand == "") return WRONG; // This means the input was "@+" alone
 				auto_flag = true;
 			}
 
@@ -82,13 +94,16 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 			se_ptr = get_symbol(operand);
 			if (se_ptr == NULL) return WRONG; // INVALID SYMBOL FROM INDIRECT AUTO INCREMENT
 			else if (se_ptr->type !=REG) return WRONG; // INVALID SYMTBOL TYPE FROM INDIRECT AUTO INCREMENT
-			else value0 = se_ptr->value;
+			else value0 = se_ptr->value;	// Register value, will be between 0 and 15
+			
 			if(auto_flag) return INDIRECT_AI;
 			else return INDIRECT;
 			break;
 
 		case '#':	// (35) Immediate (OR BUST)
 			operand.erase(0, 1);
+
+			if(operand == "") return WRONG; // This means the input was "#" alone
 			
 			se_ptr = get_symbol(operand);
 
@@ -101,7 +116,8 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 			if(se_ptr != NULL && se_ptr->type != REG)
 			{ // Constant is the value from the label
 				value0 = se_ptr->value;
-				return IMMEDIATE;
+				if(value0 < -32768 || value0 > 65535) return WRONG; // Value0 cannot be larger than a word
+				else return IMMEDIATE;
 			}
 			else
 			{ // Value is a HEX number or DECIMAL number (Or bust!)
@@ -109,10 +125,10 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 	 			if(operand[0] == '$')
 				{
 					operand.erase(0, 1); 
+					if(operand == "") return WRONG; // Means operand was #$
 					hex_flag = true;
-					std::cout << "HEX FLAG TRIGGER" << std::endl;
 				}
-				else if(operand[0] == '-') neg_flag = true;
+				else if(operand[0] == '-' && operand.length() == 1) return WRONG; // #- is an invalid immediate
 				while(operand[0] == '0' && operand.length() > 1) operand.erase(0, 1); // Delete preceding 0s
 
 				if(operand.length() > 8 && hex_flag) return WRONG; 					  // TOO LONG FOR STOL (Hex)
@@ -126,20 +142,25 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 
 				value0 = std::stol(operand, nullptr, hex_flag ? 16 : 10);
 
-				return IMMEDIATE;
+				if(value0 < -32768 || value0 > 65535) return WRONG; // Value0 cannot be larger than a word
+				else return IMMEDIATE;
 			}
 			break;
 		default:	// Reg, Indexed, Relative	
 			if(operand.find_first_of("(") != -1 && operand.find_first_of(")") != -1) // If either is not found, 'find_first_of' returns n_pos, which is equal to -1
 			{	// If true, this is Indexed (OR BUST)
+
 				if(operand.find_first_of("(") + 1 == operand.find_first_of(")")) return WRONG; // Invalid INDEXED OPERAND (Closing bracket appears before opening bracket?)
 				if(operand.find_first_of("(") > operand.find_first_of(")")) return WRONG; // Invalid INDEXED OPERAND (Closing bracket appears before opening bracket?)
+
 				while(operand[0] != '(')
 				{
-					temp_indexed += operand[temp_cnt]; // temp_indexed is the x in x(Rn) (the label, not REG)
+					temp_indexed += operand[0]; // temp_indexed is the x in x(Rn) (the label, not REG)
 					operand.erase(0,1);
 				}
+
 				operand.erase(0,1); // Erases the "("
+
 				if(operand.find_first_of(")") != operand.length()-1) return WRONG; // Invalid closing bracket position (Not last character)
 				operand.pop_back(); // Removes last character of the string, which is ")" in this case
 
@@ -163,22 +184,30 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 
 				// Check validity of Rn in x(Rn)
 				se_ptr = get_symbol(operand);
-				if(se_ptr->type == REG) value1 = se_ptr->value;
-				else return WRONG; // Rn in x(Rn) must be REG type
+				if(se_ptr != NULL)
+				{
+					if(se_ptr->type == REG) value1 = se_ptr->value;
+					else return WRONG; // Rn in x(Rn) must be REG type
+				}
+				else return WRONG; // Must be REG
 
-				return INDEXED;		
+				if(value0 < -32768 || value0 > 65535) return WRONG; // Value0 cannot be larger than a word
+				else if(value1 < 0 || value1 > 15) return WRONG; // Value1 cannot be outside of REG values (0, 15)
+				else return INDEXED;		
 			}
 			else if(get_symbol(operand) == NULL && valid_symbol(operand))
 			{
 				add_symbol(operand, -1, UNKNOWN);
 				value0 = -1;
-				return RELATIVE;
+				if(value0 < -32768 || value0 > 65535) return WRONG; // Value0 cannot be larger than a word
+				else return RELATIVE;
 			}
 			else if(get_symbol(operand) != NULL)
 			{ // Reg or relative	
 				se_ptr = get_symbol(operand);
 				value0 = se_ptr->value;
 				if(se_ptr->type == REG) return REG_DIRECT;
+				else if(value0 < -32768 || value0 > 65535) return WRONG; // Value0 cannot be larger than a word
 				else return RELATIVE;
 			}
 			break;

@@ -35,7 +35,7 @@ std::string fft(std::istream& fin)
 
   std::string token;
 
-	// Remove comment from line
+  // Remove comment from line
   current_record = current_record.substr(0, current_record.find_first_of(";"));
 
   current_record = " " + current_record; // Testing

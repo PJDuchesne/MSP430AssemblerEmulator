@@ -1,0 +1,34 @@
+; Test Case: Label Testing
+; This test case is for the first pass of the assembler
+; The first pass should have an error for the lines specified
+; Written by Tom Smith
+
+; The following lines should NOT have an error within the first pass
+
+_label	org	$100	;Underscore to start test. Should have value 0
+_1234	org	$0FFF	;Underscore with only numbers. Should have value 100
+abc123	org	0	;normal  label. Should have value FFF.
+AbC123			;make sure labels are case sensitive. Should have value 0.
+aBC123	RRA	Abc123	;test more case sensitivity and forward referencing.
+	RRC	Abc123	;make sure forward reference works when done twice
+	ADD	ABCAB,&ABCAB	;make sure forward reference works with two operands
+	rra	Abcab(r1)	;make sure forward referencing works with index
+	rrc	#abcab		;make sure forward referencing works with immediates
+Abc123
+ABCAB;C			;should just make the label ABCAB
+abcab;@@@@@@@@@@	;should just make the label abcab
+Abcab	equ	$10	;should just make the label Abcab with value 10
+
+; The following lines should give an error within the first pass
+
+123abc	org	0	;labels can not start with numbers
+abc abc	org	0	;labels can not have a space
+abc$abc			;labels can not have special characters
+a!bc			;labels can not have special characters
+@abc			;labels can not have special characters
+_label			;labels can not be duplicates
+	RRC	org	;labels can not be named after directives
+	RRA	add	;labels can not be named after instructions
+	RRA	123ab	;labels can not start with numbers in forward referencing
+thislabeliswaaaytoolongtobevalid	;labels can not exceed 31 characters. This label is 32.
+	RRA	r1(r1)	;can not use registers as index 'x'

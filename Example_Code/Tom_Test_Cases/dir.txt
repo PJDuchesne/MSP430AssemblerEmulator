@@ -48,22 +48,3 @@ lebel	equ	-10	;labels can not be negative
 	; string above should exceed character limit (THIS LINE WILL NOT FAIL AS IT IS JUST A COMMENT)
 	word	-200000	;-200000 too large for a word
 	word	999999	;999999 too large for a word
-	word	$fffff	;fffff too large for a word
-	org	-1	;LC position -1 does not exist
-	org	100000	;100000 out of LC bounds
-	org	$1ffff	;1ffff out of LC bounds
-	org	org	;should not create label "org"
-	org	forward	;can not forward reference org
-	bss	-1	;can not reserve -1 bytes
-	bss	100000	;should not allow user to reserve amount of bytes above LC
-	bss	$1ffff	;should not allow user to reserve amount of bytes above LC	
-	bss	#1	;# is not valid for directives.
-	bss	forward	;can not forward reference bss	
-
-; The following lines after the END should not be looked at by the compiler
-	
-	end
-husvkjfd skjfnds, cnmd
-dsokfsdkfs		d;fk oew9303jisk[apw-w2
-2kdslmsac, s  
-$$$$###@@@!!!#(*$%*^((%*$&#^2

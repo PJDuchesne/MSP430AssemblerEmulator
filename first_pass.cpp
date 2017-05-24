@@ -33,7 +33,7 @@ int addr_mode_LC_array[] = {0x0, 0x2, 0x2, 0x2, 0x0, 0x0, 0x2};
 
 int error_line_array[300] = { };
 
-int line_num = 1;
+int line_num = 0;
 
 /* Extern Globals Used
 	std::string current_record
@@ -64,6 +64,8 @@ void first_pass(std::istream& fin)
 	std::string dst_operand = "";
 	std::string jmp_operand = "";
 
+	std::string last_label = "";
+
 	char temp_dev;
 
 	next_state = CHK_FIRST_TOKEN;
@@ -72,10 +74,11 @@ void first_pass(std::istream& fin)
 		switch (next_state)
 		{
 			case CHK_FIRST_TOKEN: // Also iterates to next record
+				line_num++;
 				current_token = fft(fin);
 				std::cout << "\tLC at START OF RECORD >>" << LC << "<<" << std::endl;
+				// std::cout << "\tCURRENT_TOKEN: >>" << current_token << "<<" << std::endl;
 				std::cout << "\tCHK_FIRST TOKEN" << std::endl;
-				line_num++;
 
 				if(current_token == "")  // Empty line, no token on line
 				{
@@ -101,6 +104,7 @@ void first_pass(std::istream& fin)
 				if(symtbl_ptr == NULL && valid_symbol(current_token))  // New symbol!
 				{	
 					add_symbol(current_token, LC, KNOWN);
+					last_label = current_token;  // For EQU
 					next_state = CHK_NEXT_TOKEN;
 					break;
 				}
@@ -110,6 +114,8 @@ void first_pass(std::istream& fin)
 					{
 						symtbl_ptr->value = LC;
 						symtbl_ptr->type = KNOWN;
+						symtbl_ptr->line = line_num; // UNKNOWN
+						last_label = symtbl_ptr->label; // FOR EQU
 						next_state = CHK_NEXT_TOKEN;
 						break;
 					}
@@ -293,8 +299,11 @@ void first_pass(std::istream& fin)
 						{
 							// LABEL is required: Check symbtable for label at current LC value
 							current_token = fnt();
-							symtbl_ptr = get_symbol(last_addition); 
-		
+
+							std::cout << "Last Addition: >> " << last_label << "<<" << std::endl;
+
+							symtbl_ptr = get_symbol(last_label); 
+
 							if(symtbl_ptr == NULL) error_detected("Directive: No label for EQU directive (Case 1)");
 							else if(symtbl_ptr->type == KNOWN && symtbl_ptr->line == line_num)
 							{
@@ -319,7 +328,7 @@ void first_pass(std::istream& fin)
 							if(value0 >= 0 && value0 < 65535-LC) 
 							{
 								LC = value0;
-								if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after ORG value" << std::endl;
+								if(!is_last_token()) error_detected("Directive: Found Unknown Label after ORG value");
 							}
 							else error_detected("Directive: Value too large for ORG directive");
 						}
@@ -340,7 +349,7 @@ void first_pass(std::istream& fin)
 								value0 = current_token.length();
 
 								LC += value0;
-								if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after STRING value" << std::endl;
+								if(!is_last_token()) error_detected("Directive: Found Unknown Label after STRING value");
 							}
 						}
 						else error_detected("Directive: Value too large for ORG directive");
@@ -372,7 +381,7 @@ void first_pass(std::istream& fin)
 				std::cout << "\tCHK_SRC_OP" << std::endl;
 
 				next_state = CHK_FIRST_TOKEN;
-
+	
 				addr_mode = parse(src_operand, value0, value1);
 				if(addr_mode == WRONG) error_detected("CHK_SRC_OP: Invalid SRC Operand Parsing");
 				else
@@ -450,12 +459,7 @@ void first_pass(std::istream& fin)
 bool is_last_token()
 {
 	current_token = fnt();
-	if(current_token != "")
-	{
-		error_line_array[err_cnt] = line_num - 1;
-		err_cnt++; // ERROR: TOKEN FOUND AFTER ALIGN
-		return false;
-	}
+	if(current_token != "") return false;
 	else return true;
 }
 
@@ -463,6 +467,6 @@ bool is_last_token()
 void error_detected(std::string error_msg)
 {
 	std::cout << "\t\t[ERROR MSG - FIRST PASS=] " << error_msg << std::endl;
-	error_line_array[err_cnt] = line_num - 1;
+	error_line_array[err_cnt] = line_num;
 	err_cnt++;
 }
