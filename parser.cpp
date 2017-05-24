@@ -82,15 +82,8 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 			se_ptr = get_symbol(operand);
 			if (se_ptr == NULL) return WRONG; // INVALID SYMBOL FROM INDIRECT AUTO INCREMENT
 			else if (se_ptr->type !=REG) return WRONG; // INVALID SYMTBOL TYPE FROM INDIRECT AUTO INCREMENT
-			else
-			{
- 				value0 = se_ptr->value;
-			}
-			if(auto_flag)
-			{
-				// Increment value in register? "se_ptr->value += 1;"??
-				return INDIRECT_AI;
-			}
+			else value0 = se_ptr->value;
+			if(auto_flag) return INDIRECT_AI;
 			else return INDIRECT;
 			break;
 
@@ -129,28 +122,6 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 				if(hex_flag && operand.find_first_not_of("0123456789abcdefABCDEF") != std::string::npos) return WRONG;
 				else if(!hex_flag && operand.find_first_not_of("-0123456789") != std::string::npos) return WRONG;
 
-
-/*
-
-					while(temp_cnt < operand.length()-1)
-					{
-						if(!((operand[temp_cnt] >= 48)&&(operand[temp_cnt] <= 57)||((operand[temp_cnt] >= 65)&&(operand[temp_cnt] <= 70))||((operand[temp_cnt] <= 97)&&(operand[temp_cnt]>= 102)))) return WRONG;
-						std::cout << "Temp Cnt >>" << temp_cnt << "<<" << std::endl;
-
-						temp_cnt++;
-					}
-				}
-				else
-				{ // Decimal
-					if(neg_flag) temp_cnt++;
-					while(temp_cnt < operand.length()-1)
-					{
-						if(!((operand[temp_cnt] >= 48)&&(operand[temp_cnt] <= 57)||((operand[temp_cnt] >= 65)&&(operand[temp_cnt] <= 70)))) return WRONG;
-						temp_cnt++;
-					}
-				}
-				
-				*/
 				// THEREFORE: "Operand" is numeric and contains a number
 
 				value0 = std::stol(operand, nullptr, hex_flag ? 16 : 10);

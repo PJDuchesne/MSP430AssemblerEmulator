@@ -72,11 +72,11 @@ void first_pass(std::istream& fin)
 		switch (next_state)
 		{
 			case CHK_FIRST_TOKEN: // Also iterates to next record
-				//	std::cin >> temp_dev;  // FOR DEVELOPMENT: Ask for input between lines
 				current_token = fft(fin);
 				std::cout << "\tLC at START OF RECORD >>" << LC << "<<" << std::endl;
 				std::cout << "\tCHK_FIRST TOKEN" << std::endl;
 				line_num++;
+
 				if(current_token == "")  // Empty line, no token on line
 				{
 					next_state = CHK_FIRST_TOKEN;
@@ -121,7 +121,7 @@ void first_pass(std::istream& fin)
 					}
 				}
 				else
-				{ // Either token is already in symtbl, or it is not a valid token
+				{
 					error_detected("Chk_First_Token: Invalid token");
 					next_state = CHK_FIRST_TOKEN;
 					break;
@@ -168,8 +168,6 @@ void first_pass(std::istream& fin)
 				// Next token should contain either 0, 1, or 2 operands
 				current_token = fnt();
 
-
-
 				next_state = CHK_FIRST_TOKEN;
 
 				switch(id_ptr->type)
@@ -178,7 +176,7 @@ void first_pass(std::istream& fin)
 						if(current_token != "") error_detected("Found Operand on NONE INST");
 
 						break;
-					case SINGLE: // Only DST addr_modes are allowed
+					case SINGLE:
 						if(current_token == "") error_detected("INST: Found No Operand on SINGLE INST");
 						else
 						{
@@ -190,14 +188,12 @@ void first_pass(std::istream& fin)
 						if(current_token == "") error_detected("INST: Found No Operand on JMP INST");
 						else
 						{
-							src_operand = current_token;
-							next_state = CHK_SRC_OP;
+							jmp_operand = current_token;
+							next_state = CHK_JMP_OP;
 						}
 						break;
 					case DOUBLE:
 						two_op_flag = true;
-
-						// Need to turn "current_token" into DST_OPERAND and fill in "src_operand"
 
 						if(current_token.find_first_of(",") != std::string::npos && current_token.find_first_of(",") != current_token.length()-1)
 						{
@@ -222,28 +218,23 @@ void first_pass(std::istream& fin)
 
 			case DIRECT: // id_ptr should already point to the correct INST
 				std::cout << "\tDIRECT" << std::endl;
-				
-				// The second letter of all directives are unique with this directive set
-				// This avoids having to do another enumeration set (Note: Discussed this with Tom Smith)
+			
+				/*	
+					> The second letter of all directives are unique with this directive set
+					> This avoids having to do another enumeration set (Note: Discussed this with Tom Smith)
 
-				// ALIGN, BSS, BYTE, END, EQU, ORG, STRING, WORD
-				//  L      S    Y     N    Q    R    T       O
-
-				// Directives take either a LABEL or an IMMEDIATE (In which case the # will have to be added for the parser.cpp function call)
+					> ALIGN, BSS, BYTE, END, EQU, ORG, STRING, WORD
+					>  L      S    Y     N    Q    R    T       O
+				*/
 
 				next_state = CHK_FIRST_TOKEN; // Whether or not there's an error, this is always the next state
-	
-				directive_error_flag = true; // Assumed to be in error
+				directive_error_flag = true;  // Assume error until proven otherwise
 
 				if(id_ptr->mnemonic[1] != 'L' && id_ptr->mnemonic[1] != 'N' && id_ptr->mnemonic[1] != 'T')
 				{  // If the type is not ALIGN, END, or STRING, the value needs to be parsed
 
-					// TO ADD NEGATIVE FOR BYTE OR WORD: Find "-" at the start of the value, then 2s compliment at the end
-
 					current_token = fnt();						// Find next token
 					symtbl_ptr = get_symbol(current_token);		// Check symtbl for that token
-
-					std::cout << "\t\t[DIRECTIVE] Parsing value0 for value of >>" << current_token << "<<" << std::endl;
 
 					// No forward referecing
 					if(symtbl_ptr == NULL && valid_symbol(current_token)) error_detected("Directive: Found UNKNOWN label after DIRECTIVE (Value0 parsing, #1)");
@@ -260,8 +251,6 @@ void first_pass(std::istream& fin)
 
 						if(!is_last_token()) error_detected("Directive: Found token after DIRECTIVE");
 					}
-
-					std::cout << "\t\t[DIRECTIVE] Parsing value0 yielded a result of >>" << value0 << "<< with the flag set to " << directive_error_flag << std::endl;
 				}
 
 				switch (id_ptr->mnemonic[1])  // The second letter of all directives are unique with this directive set
@@ -269,7 +258,7 @@ void first_pass(std::istream& fin)
 					case 'L':  // Align
 						if(LC%2) LC++;
 
-						if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found token after ALIGN directive" << std::endl;
+						if(!is_last_token()) error_detected("Directive: Found token after ALIGN directive");
 						break;
 
 					case 'S':  // BSS
@@ -294,18 +283,16 @@ void first_pass(std::istream& fin)
 						end_flag = true;
 						if(!is_last_token())
 						{
-							std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after END" << std::endl;
+							error_detected("Directive: Found Unknown Label after END");
 							end_flag = false;
 						}
 						break;
 
 					case 'Q':  // EQU
-						// This needs to be fixed: that label could be on a previous line
 						if(!directive_error_flag)
 						{
 							// LABEL is required: Check symbtable for label at current LC value
 							current_token = fnt();
-
 							symtbl_ptr = get_symbol(last_addition); 
 		
 							if(symtbl_ptr == NULL) error_detected("Directive: No label for EQU directive (Case 1)");
@@ -318,7 +305,7 @@ void first_pass(std::istream& fin)
 
 									std::cout << "[DIRECTIVE] SUCESSFULLY STORED value0 into label >>" << symtbl_ptr->label << "<<" << std::endl;
 
-									if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after EQU value" << std::endl;
+									if(!is_last_token()) error_detected("Directive: Found Unknown Label after EQU value");
 								}
 								else error_detected("Directive: Value too large for EQU directive");
 							}
@@ -331,8 +318,6 @@ void first_pass(std::istream& fin)
 						{
 							if(value0 >= 0 && value0 < 65535-LC) 
 							{
-
-
 								LC = value0;
 								if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after ORG value" << std::endl;
 							}
@@ -388,22 +373,18 @@ void first_pass(std::istream& fin)
 
 				next_state = CHK_FIRST_TOKEN;
 
-				std::cout << "\tCHECKING: >>" << src_operand << "<<" << std::endl;
-
 				addr_mode = parse(src_operand, value0, value1);
 				if(addr_mode == WRONG) error_detected("CHK_SRC_OP: Invalid SRC Operand Parsing");
 				else
 				{
 					LC += addr_mode_LC_array[addr_mode];
-					if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after SRC operand" << std::endl;
+					if(!is_last_token()) error_detected("Directive: Found Unknown Label after SRC operand");
 				}
 
 				src_operand = "";
 				break;
 			case CHK_DST_OP:
 				std::cout << "\tCHK_DST_OP" << std::endl;
-
-				std::cout << "\tCHECKING: >>" << dst_operand << "<<" << std::endl;
 
 				next_state = CHK_FIRST_TOKEN;
 
@@ -428,13 +409,11 @@ void first_pass(std::istream& fin)
 
                 next_state = CHK_FIRST_TOKEN;
 
-                std::cout << "\tCHECKING: >>" << jmp_operand << "<<" << std::endl;
-
                 addr_mode = parse(jmp_operand, value0, value1);
                 if(addr_mode == RELATIVE || addr_mode == ABSOLUTE || addr_mode == IMMEDIATE) 
                 {  // Jump cannot have registers, therefore must be RELATIVE, ABSOLUTE, or IMMEDIATE
                     LC += addr_mode_LC_array[addr_mode];
-					if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after JMP operand" << std::endl;
+					if(!is_last_token()) error_detected("Directive: Found Unknown Label after JMP operand");
                 }
                 else error_detected("CHK_JMP_OP: Invalid addressing mode or parsing for JMP operand");
 
@@ -450,7 +429,7 @@ void first_pass(std::istream& fin)
 	std::cout << std::endl << "First pass completed with LC of: >>" << LC << "<<" << std::endl;
 
 
-	// Error lines
+	// Error lines (For debugging)
 
 					   int temp123897 = 0;
 
@@ -480,6 +459,7 @@ bool is_last_token()
 	else return true;
 }
 
+// Used to shorten code: could make this inline to be faaaaaancy
 void error_detected(std::string error_msg)
 {
 	std::cout << "\t\t[ERROR MSG - FIRST PASS=] " << error_msg << std::endl;

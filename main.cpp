@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
  	init_symtbl();
 
-	std::ifstream fin("Example_Code/dir_tom.txt");
+	std::ifstream fin("Example_Code/two.txt");
 
  	first_pass(fin);
 
@@ -73,16 +73,14 @@ int main(int argc, char *argv[])
 
 	symtbl_unknown_check();
 
-	std::cout << std::endl << std::endl << "First pass completed with >>" << err_cnt << "<< Errors (Including Unknowns)" << std::endl << std::endl;
+	std::cout << std::endl << "First pass completed with >>" << err_cnt << "<< Errors (Including Unknowns)" << std::endl << std::endl;
 
  	output_symtbl();
 
-
-	// Check first pass validity
-
-	// Run second pass (if first pass was valid)
-
-	// Tidy up to finish (Close file, etc.)
+ 	if(err_cnt == 0)
+ 	{
+ 		// second_pass(fin);
+ 	}
 
 	fin.close();
 
