@@ -30,6 +30,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "library.h"
 #include "parser.h"
 #include "first_pass.h"
+#include "second_pass.h"
 
 // TO ADD
 	// Input argument options (Drag and drop, input text, etc.)
@@ -66,7 +67,7 @@ int main(int argc, char *argv[])
  
 init_symtbl();
 
-	std::ifstream fin("Example_Code/Tom_Test_Cases/two.txt");
+	std::ifstream fin("Example_Code/one.txt");
 
  	first_pass(fin);
 
@@ -80,7 +81,8 @@ init_symtbl();
 
  	if(err_cnt == 0)
  	{
- 		// second_pass(fin);
+		// LC = 0;
+  		second_pass(fin);
  	}
 
 	fin.close();
