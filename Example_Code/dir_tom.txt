@@ -1,0 +1,69 @@
+; Test Case: Directive Testing
+; This test case is for the first pass of the assembler
+; The first pass should have an error for the lines specified
+; Written by Tom Smith
+
+; The following lines should NOT have an error within the first pass.
+
+	orG	$1000	;LC should now be 1000
+	ORg 	200	;LC should now be 00C8
+label	BsS 	100	;LC should now be 012C
+	byte 	20	;LC should now be 012D
+	byte	-20	;LC should now be 012E
+	byte 	$00001f	;LC should now be 012F
+	align		;LC should now be 0130
+label1	word 	10	;LC should now be 0132
+	word 	$30	;LC should now be 0134
+	org 	label	;LC should now be 00C8
+label2	equ 	2	;LC should now be 00C8
+	BSS 	label2	;LC should now be 00CA
+	align		;LC should now be 00CA
+	byte	label2	;LC should now be 00CB
+	align		;LC should now be 00CC
+	string "hello"	;LC should now be 00D1
+	BSS 	1	;LC should now be 00D2
+LABEL	equ	$FFF	;LC should now be 00D2
+
+; The following should be shown for the values of the labels
+; label = 00C8
+; label1 = 0130
+; label2 = 0002
+; LABEL = 0FFF
+
+; The following lines should give an error within the first pass
+
+	equ 	label	;EQU requires a label in the same record
+Lebal	equ	$fffff	;fffff too large to be stored in a label value
+lebel	equ	-10	;labels can not be negative	
+	align	label	;align expects no operand
+	end	end	;end expects no operand
+	byte	-200	;-200 too large for a byte
+	byte	1000	;1000 too large for a byte
+	byte	LABEL	;0FFF too lagre for a byte
+	byte	$FFFF	;FFFF too large for a byte
+	string 	hello	;string requires quotes
+	string 	"hello	;string requires quotes on both sides
+	string	hello"	;string requires quotes on both sides
+	string "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	; string above should exceed character limit (THIS LINE WILL NOT FAIL AS IT IS JUST A COMMENT)
+	word	-200000	;-200000 too large for a word
+	word	999999	;999999 too large for a word
+	word	$fffff	;fffff too large for a word
+	org	-1	;LC position -1 does not exist
+	org	100000	;100000 out of LC bounds
+	org	$1ffff	;1ffff out of LC bounds
+	org	org	;should not create label "org"
+	org	forward	;can not forward reference org
+	bss	-1	;can not reserve -1 bytes
+	bss	100000	;should not allow user to reserve amount of bytes above LC
+	bss	$1ffff	;should not allow user to reserve amount of bytes above LC	
+	bss	#1	;# is not valid for directives.
+	bss	forward	;can not forward reference bss	
+
+; The following lines after the END should not be looked at by the compiler
+	
+	end
+husvkjfd skjfnds, cnmd
+dsokfsdkfs		d;fk oew9303jisk[apw-w2
+2kdslmsac, s  
+$$$$###@@@!!!#(*$%*^((%*$&#^2

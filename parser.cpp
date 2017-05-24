@@ -35,6 +35,7 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 	std::string temp_indexed;
 
 	bool hex_flag = false;
+	bool neg_flag = false;
 
 	int temp_cnt = 0;
 
@@ -111,22 +112,45 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 			}
 			else
 			{ // Value is a HEX number or DECIMAL number (Or bust!)
+				std::cout << "OPERAND >> " << operand << "<<" << std::endl;
 	 			if(operand[0] == '$')
 				{
 					operand.erase(0, 1); 
 					hex_flag = true;
+					std::cout << "HEX FLAG TRIGGER" << std::endl;
 				}
+				else if(operand[0] == '-') neg_flag = true;
 				while(operand[0] == '0' && operand.length() > 1) operand.erase(0, 1); // Delete preceding 0s
-				// if(operand == "") operand = "0";			  // In the case that th
-				if(operand.length() > 8 && hex_flag) return WRONG; // TOO LONG FOR STOL (Hex)
-				if(operand.length() > 10 && !hex_flag) return WRONG; // TOO LONG FOR STOL (Decimal)
+
+				if(operand.length() > 8 && hex_flag) return WRONG; 					  // TOO LONG FOR STOL (Hex)
+				if(operand.length() > 10 && !hex_flag) return WRONG; 				  // TOO LONG FOR STOL (Decimal)
 				// Check that all remaining characters are numeric
-				while(temp_cnt < operand.length()-1)
-				{
-					if(!((operand[temp_cnt] >= 48)&&(operand[temp_cnt] <= 57))) return WRONG;
-					temp_cnt++;
+
+				if(hex_flag && operand.find_first_not_of("0123456789abcdefABCDEF") != std::string::npos) return WRONG;
+				else if(!hex_flag && operand.find_first_not_of("-0123456789") != std::string::npos) return WRONG;
+
+
+/*
+
+					while(temp_cnt < operand.length()-1)
+					{
+						if(!((operand[temp_cnt] >= 48)&&(operand[temp_cnt] <= 57)||((operand[temp_cnt] >= 65)&&(operand[temp_cnt] <= 70))||((operand[temp_cnt] <= 97)&&(operand[temp_cnt]>= 102)))) return WRONG;
+						std::cout << "Temp Cnt >>" << temp_cnt << "<<" << std::endl;
+
+						temp_cnt++;
+					}
+				}
+				else
+				{ // Decimal
+					if(neg_flag) temp_cnt++;
+					while(temp_cnt < operand.length()-1)
+					{
+						if(!((operand[temp_cnt] >= 48)&&(operand[temp_cnt] <= 57)||((operand[temp_cnt] >= 65)&&(operand[temp_cnt] <= 70)))) return WRONG;
+						temp_cnt++;
+					}
 				}
 				
+				*/
 				// THEREFORE: "Operand" is numeric and contains a number
 
 				value0 = std::stol(operand, nullptr, hex_flag ? 16 : 10);

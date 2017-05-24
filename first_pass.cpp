@@ -252,11 +252,13 @@ void first_pass(std::istream& fin)
 						current_token = "#" + current_token;  // make it an indexed value for the parser
 						addr_mode = parse(current_token, value0, value1);
 
+						std::cout << "\t\tCurrent addr mode is: >>" << addr_mode << "<<" << std::endl;
+
 						if(addr_mode == IMMEDIATE) directive_error_flag = false;
 						else error_detected("Directive: Found Unknown Label after DIRECTIVE (Value0 parsing, #2)");
 						// Must be wrong (unless something is wrong with the parser)
 
-						if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found token after DIRECTIVE" << std::endl;
+						if(!is_last_token()) error_detected("Directive: Found token after DIRECTIVE");
 					}
 
 					std::cout << "\t\t[DIRECTIVE] Parsing value0 yielded a result of >>" << value0 << "<< with the flag set to " << directive_error_flag << std::endl;
@@ -265,21 +267,23 @@ void first_pass(std::istream& fin)
 				switch (id_ptr->mnemonic[1])  // The second letter of all directives are unique with this directive set
 				{
 					case 'L':  // Align
-						std::cout << "\t\tALIGNING LC: >>" << LC << "<< (Before)" << std::endl;
 						if(LC%2) LC++;
-						std::cout << "\t\tALIGNING LC: >>" << LC << "<< (AFTER)" << std::endl;
 
 						if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found token after ALIGN directive" << std::endl;
 						break;
 
 					case 'S':  // BSS
-						if(!directive_error_flag)  LC += value0;
+						if(!directive_error_flag)
+						{
+							if(value0 >= 0) LC == value0;  // No upper bound on BSS
+							else error_detected("Directive: Negative value for BSS");
+						}
 						break;
 
 					case 'Y':  // BYTE
 						if(!directive_error_flag)
 						{
-							if(value0 < 256) LC += 0x01;
+							if(value0 >= -128 && value0 < 256) LC += 0x01;
 							else error_detected("Directive: Value too large for BYTE directive");
 						}
 
@@ -288,7 +292,11 @@ void first_pass(std::istream& fin)
 					case 'N':  // END
 						std::cout << "THE END IS COMING" << std::endl;
 						end_flag = true;
-						if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after END" << std::endl;
+						if(!is_last_token())
+						{
+							std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after END" << std::endl;
+							end_flag = false;
+						}
 						break;
 
 					case 'Q':  // EQU
@@ -304,7 +312,7 @@ void first_pass(std::istream& fin)
 							else if(symtbl_ptr->type == KNOWN && symtbl_ptr->line == line_num)
 							{
 								// Therefore there is a label preceding EQU
-								if(value0 <= 65535)
+								if(value0 >= 0 && value0 <= 65535)
 								{
 									symtbl_ptr->value = value0;
 
@@ -321,7 +329,7 @@ void first_pass(std::istream& fin)
 					case 'R':  // ORG
 						if(!directive_error_flag)
 						{
-							if(value0 < 65535-LC) 
+							if(value0 >= 0 && value0 < 65535-LC) 
 							{
 
 
@@ -336,10 +344,19 @@ void first_pass(std::istream& fin)
 					case 'T':  // STRING ** Special Case **
 						current_token = fnt();
 
-						if(current_token.length() <= 128)
+						if(current_token.length() <= 130)
 						{
-							LC += value0;
-							if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after STRING value" << std::endl;
+							if(current_token.find_first_of("\"")!= 0 || current_token.find_last_of("\"") != current_token.length()-1) error_detected("Directive: Missing Quotes for STRING");
+							else
+							{
+								current_token.erase(0,1); // Removes Opening Quote
+								current_token.pop_back(); // Removes Closing Quote
+
+								value0 = current_token.length();
+
+								LC += value0;
+								if(!is_last_token()) std::cout << "\t\t[ERROR MSG - FIRST PASS] Directive: Found Unknown Label after STRING value" << std::endl;
+							}
 						}
 						else error_detected("Directive: Value too large for ORG directive");
 
@@ -349,7 +366,7 @@ void first_pass(std::istream& fin)
 						if(!directive_error_flag)
 						{
 							if(LC%2) LC += 0x01;  // Align LC first
-							if(value0 < 65535) LC += 0x02;
+							if(value0 > -65536 && value0 < 65535) LC += 0x02;
 							else error_detected("Directive: Value too large for WORD directive");
 						}
 						break;
