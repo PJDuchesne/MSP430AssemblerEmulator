@@ -31,6 +31,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "parser.h"
 #include "first_pass.h"
 #include "second_pass.h"
+#include "emitter.h"
 
 // TO ADD
 	// Input argument options (Drag and drop, input text, etc.)
@@ -49,8 +50,8 @@ symtbl_entry* se_ptr = NULL;
 int main(int argc, char *argv[])
 {
 
-/*	
 	// Example input argument for eventual adding of input/output parameters. Hardcoded for now
+/*	
 	if(argc < 2)
 	{
 		std::cout << "ERROR" << std::endl;
@@ -61,13 +62,23 @@ int main(int argc, char *argv[])
 	{
 		std::cout << "NO ERROR" << std::endl;
 	}
-*/
 	// Initialize a few things (Open file for one)
-
+*/
  
-init_symtbl();
+	init_symtbl();
 
-	std::ifstream fin("Example_Code/one.txt");
+	std::ofstream outfile_temp;
+	outfile_temp.open ("output_temp.s19");
+
+	int LC = 100;
+
+	emit("RRA", "#192", SINGLE, outfile_temp, LC);
+
+	outfile_temp.close();
+
+
+/*
+	std::ifstream fin("Example_Code/Tom_Test_Cases/dir.txt");
 
  	first_pass(fin);
 
@@ -82,10 +93,11 @@ init_symtbl();
  	if(err_cnt == 0)
  	{
 		// LC = 0;
+		// REWIND FILE TO BEGINNING
   		second_pass(fin);
  	}
 
 	fin.close();
-
+*/
 	return 0;
 }

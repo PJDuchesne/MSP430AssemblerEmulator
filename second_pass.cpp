@@ -11,7 +11,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 -> Name:  first_pass.cpp
 -> Brief: Function file for first_pass.cpp
--> Date: May 21, 2017   (Created)
+-> Date: May 24, 2017   (Created)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
@@ -28,8 +28,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "symtbl.h"
 #include "inst_dir.h"
 #include "parser.h"
-
-// int addr_mode_LC_array[] = {0x0, 0x2, 0x2, 0x2, 0x0, 0x0, 0x2};
+#include "emitter.h"
 
 /* Extern Globals Used
    std::string current_record
@@ -41,10 +40,14 @@ void second_pass(std::istream& fin)
 {
 	std::cout << "Second Pass Starting" << std::endl;
 
+	std::ofstream outfile;
+	outfile.open("output.s19");
+	// outmyfile << "Writing this to a file.\n";
+
 	line_num = 0;
 
 	STATE next_state;
-	int LC = 0;
+ 	int LC = 0;
 	bool end_flag = false;
 	bool directive_error_flag = false;
 
@@ -138,19 +141,18 @@ void second_pass(std::istream& fin)
 				switch(id_ptr->type)
 				{
 					case NONE:
-						// EMIT INST (Emit will take an input string, and INST type)
+						emit(id_ptr->mnemonic, "", NONE, outfile, LC);
 						break;
 					case SINGLE:
-						// Emit using 'current_token = current_token + " " + fnt();' (This will be the 
-						break;
-					case JUMP:
-						// Emit using 'current_token = current_token + " " + fnt();' (This will be the 
+						emit(id_ptr->mnemonic, fnt(), SINGLE, outfile, LC);
 						break;
 					case DOUBLE:
-						// Emit using 'current_token = current_token + " " + fnt();' (This will be the 
+						emit(id_ptr->mnemonic, fnt(), DOUBLE, outfile, LC);
+						break;
+					case JUMP:
+						emit(id_ptr->mnemonic, fnt(), JUMP, outfile, LC);
 						break;
 					default:
-						next_state = CHK_FIRST_TOKEN;
 						std::cout << "[INST] THIS SHOULD NEVER TRIGGER" << std::endl;
 						break;
 				}
@@ -311,8 +313,9 @@ void second_pass(std::istream& fin)
 	}
 	std::cout << std::endl << "Second pass completed with LC of: >>" << LC << "<<" << std::endl;
 
-
 	std::cout << "Second pass ending" << std::endl;
+
+	outfile.close();
 }
 
 void error_detected_no_cnt(std::string error_msg)

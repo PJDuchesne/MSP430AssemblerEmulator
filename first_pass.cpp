@@ -76,7 +76,7 @@ void first_pass(std::istream& fin)
 			case CHK_FIRST_TOKEN: // Also iterates to next record
 				line_num++;
 				current_token = fft(fin);
-				std::cout << "\tLC at START OF RECORD >>" << LC << "<<" << std::endl;
+				std::cout << "\tLC at START OF RECORD >>" << std::hex << LC << std::dec << "<<" << std::endl;
 				// std::cout << "\tCURRENT_TOKEN: >>" << current_token << "<<" << std::endl;
 				std::cout << "\tCHK_FIRST TOKEN" << std::endl;
 
@@ -211,7 +211,6 @@ void first_pass(std::istream& fin)
 
 						break;
 					default:
-						next_state = CHK_FIRST_TOKEN;
 						std::cout << "[INST] THIS SHOULD NEVER TRIGGER" << std::endl;
 						break;
 				}
@@ -270,7 +269,7 @@ void first_pass(std::istream& fin)
 					case 'S':  // BSS
 						if(!directive_error_flag)
 						{
-							if(value0 >= 0) LC == value0;  // No upper bound on BSS
+							if(value0 >= 0) LC += value0;  // No upper bound on BSS
 							else error_detected("Directive: Negative value for BSS");
 						}
 						break;
