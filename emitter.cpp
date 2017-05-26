@@ -113,12 +113,16 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 	switch (type)
 	{
-		case NONE: // 0  // Literally only RETI
+		case NONE: // 0  -> Either RETI (NONE INST) or BYTE / WORD (Meaning no instruction)
 			std::cout << "\tINST TYPE NONE" << std::endl;  
-			outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << 0x1300 << std::endl;
 
-			// Also output to cout for debugging
-			std::cout << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << 0x1300 << std::endl;
+			if(inst != "") outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << 0x1300 << std::endl;
+			else // Emitting BYTE or WORD
+			{
+				
+				
+			}
+
 
 			break;
 		case SINGLE: // 1

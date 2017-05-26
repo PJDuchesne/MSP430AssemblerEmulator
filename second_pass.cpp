@@ -160,7 +160,7 @@ void second_pass(std::istream& fin)
 
 				// NOTE: Can BYTE or WORD be #UNKNOWN (Where UNKNOWN is an unknown label that will be defined later?)
 
-			case DIRECT: // id_ptr should already point to the correct INST
+			case DIRECT: // id_ptr should already point to the correct DIR
 				std::cout << "\tDIRECT" << std::endl;
 
 				/*	
@@ -173,9 +173,9 @@ void second_pass(std::istream& fin)
 
 				next_state = CHK_FIRST_TOKEN; // Whether or not there's an error, this is always the next state
 
-				if(id_ptr->mnemonic == "END") end_flag = true;
+//				if(id_ptr->mnemonic == "END") end_flag = true;
 
-				break; // SKIP DIRECTIVES FOR NOW
+//				break; // SKIP DIRECTIVES FOR NOW
 
 				directive_error_flag = true;  // Assume error until proven otherwise
 
@@ -210,7 +210,7 @@ void second_pass(std::istream& fin)
 					case 'S':  // BSS
 						if(!directive_error_flag)
 						{
-							if(value0 >= 0) LC == value0;  // No upper bound on BSS
+							if(value0 >= 0) LC += value0;  // No upper bound on BSS
 							else error_detected_no_cnt("Directive: Negative value for BSS");
 						}
 						break;
@@ -218,7 +218,11 @@ void second_pass(std::istream& fin)
 					case 'Y':  // BYTE
 						if(!directive_error_flag)
 						{
-							if(value0 >= -128 && value0 < 256) LC += 0x01;
+							if(value0 >= -128 && value0 < 256) 
+							{
+								// EMIT BYTE
+								LC += 0x01;
+							}
 							else error_detected_no_cnt("Directive: Value too large for BYTE directive");
 						}
 
@@ -230,39 +234,12 @@ void second_pass(std::istream& fin)
 						break;
 
 					case 'Q':  // EQU
-						if(!directive_error_flag)
-						{
-							// LABEL is required: Check symbtable for label at current LC value
-							current_token = fnt();
-
-							std::cout << "Last Addition: >> " << last_label << "<<" << std::endl;
-
-							symtbl_ptr = get_symbol(last_label); 
-
-							if(symtbl_ptr == NULL) error_detected_no_cnt("Directive: No label for EQU directive (Case 1)");
-							else if(symtbl_ptr->type == KNOWN && symtbl_ptr->line == line_num)
-							{
-								// Therefore there is a label preceding EQU
-								if(value0 >= 0 && value0 <= 65535)
-								{
-									symtbl_ptr->value = value0;
-
-									std::cout << "[DIRECTIVE] SUCESSFULLY STORED value0 into label >>" << symtbl_ptr->label << "<<" << std::endl;
-
-								}
-								else error_detected_no_cnt("Directive: Value too large for EQU directive");
-							}
-							else error_detected_no_cnt("Directive: No label for EQU directive (Case 2)");
-						}
-						break;
+						break;	// Handled in first pass
 
 					case 'R':  // ORG
 						if(!directive_error_flag)
 						{
-							if(value0 >= 0 && value0 < 65535-LC) 
-							{
-								LC = value0;
-							}
+							if(value0 >= 0 && value0 < 65535-LC) LC = value0;
 							else error_detected_no_cnt("Directive: Value too large for ORG directive");
 						}
 
@@ -292,7 +269,12 @@ void second_pass(std::istream& fin)
 						if(!directive_error_flag)
 						{
 							if(LC%2) LC += 0x01;  // Align LC first
-							if(value0 > -65536 && value0 < 65535) LC += 0x02;
+							if(value0 > -65536 && value0 < 65535)
+							{
+								// EMIT WORD
+								LC += 0x02;
+
+							}
 							else error_detected_no_cnt("Directive: Value too large for WORD directive");
 						}
 						break;
