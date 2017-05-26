@@ -10,7 +10,7 @@ Label1	BSS	10
 	RRA	#192		;Test decimal immediate
 	RRA	#-100		;Test negative decimal immediate
 	RRA	#$1abc		;Test hex immediate
-	RRA	#$-ff		;Test negative hex immediate
+;	RRA	#$-ff		;Test negative hex immediate
 	RRC	r1		;Test direct addr mode
 Label2	SwPB	label3		;Test forward reference when it is not in the symbol table
 	PUSH	label3		;Test forward reference when it is already unknown
@@ -19,6 +19,8 @@ Label2	SwPB	label3		;Test forward reference when it is not in the symbol table
 	sXt	@r0		;Test indirect
 label3	call	#label3		;Test immediate label
 LabeL3	swpb	Label1(r1)	;Test indexed
+
+end
 
 ; The following lines should induce an error in the first pass.
 

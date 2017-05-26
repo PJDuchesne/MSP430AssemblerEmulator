@@ -42,7 +42,6 @@ void second_pass(std::istream& fin)
 
 	std::ofstream outfile;
 	outfile.open("output.s19");
-	// outmyfile << "Writing this to a file.\n";
 
 	line_num = 0;
 
@@ -72,7 +71,7 @@ void second_pass(std::istream& fin)
 			case CHK_FIRST_TOKEN: // Also iterates to next record
 				line_num++;
 				current_token = fft(fin);
-				std::cout << "\tLC at START OF RECORD >>" << LC << "<<" << std::endl;
+				std::cout << "\tLC at START OF RECORD >>" << std::dec << LC << "<<" << std::endl;
 
 				std::cout << "\tCHK_FIRST TOKEN" << std::endl;
 
@@ -88,7 +87,6 @@ void second_pass(std::istream& fin)
 					next_state = INST;
 					break;
 				}
-
 				id_ptr = get_inst(current_token, D);  // Check if it is a valid DIRECTIVE
 				if(id_ptr != NULL)
 				{
@@ -96,9 +94,9 @@ void second_pass(std::istream& fin)
 					break;
 				}
 
-				symtbl_ptr = get_symbol(current_token); // Check first token for Label, ignore if found
+				next_state = CHK_NEXT_TOKEN;
 
-				break;
+					break;
 			case CHK_NEXT_TOKEN: // This happens after a valid label is found
 				std::cout << "\tCHK_NEXT_TOKEN" << std::endl;
 
@@ -130,12 +128,11 @@ void second_pass(std::istream& fin)
 				break;
 			case INST:  // id_ptr should already point to the correct INST
 				std::cout << "\tINST" << std::endl;
-				LC = LC+ 0x02;
 
 				// Next token should contain either 0, 1, or 2 operands
 
 				// Emit using 'current_token = current_token + " " + fnt();' (This will be the 
-	
+
 				next_state = CHK_FIRST_TOKEN;
 
 				switch(id_ptr->type)
@@ -175,6 +172,11 @@ void second_pass(std::istream& fin)
 				 */
 
 				next_state = CHK_FIRST_TOKEN; // Whether or not there's an error, this is always the next state
+
+				if(id_ptr->mnemonic == "END") end_flag = true;
+
+				break; // SKIP DIRECTIVES FOR NOW
+
 				directive_error_flag = true;  // Assume error until proven otherwise
 
 				if(id_ptr->mnemonic[1] != 'L' && id_ptr->mnemonic[1] != 'N' && id_ptr->mnemonic[1] != 'T')

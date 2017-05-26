@@ -46,8 +46,8 @@ enum INST_TYPE {
 };
 
 enum BYTE_WORD {
-    BYTE,
     WORD,
+    BYTE,
     OFFSET
 };
 

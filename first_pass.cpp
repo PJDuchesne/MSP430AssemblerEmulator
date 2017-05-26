@@ -415,15 +415,15 @@ void first_pass(std::istream& fin)
 			case CHK_JMP_OP:
 				std::cout << "\tCHK_JMP_OP" << std::endl;
 
-                next_state = CHK_FIRST_TOKEN;
+				next_state = CHK_FIRST_TOKEN;
 
-                addr_mode = parse(jmp_operand, value0, value1);
-                if(addr_mode == RELATIVE || addr_mode == ABSOLUTE || addr_mode == IMMEDIATE) 
-                {  // Jump cannot have registers, therefore must be RELATIVE, ABSOLUTE, or IMMEDIATE
-                    LC += addr_mode_LC_array[addr_mode];
+				addr_mode = parse(jmp_operand, value0, value1);
+				if(addr_mode == RELATIVE) 
+				{  // Jump cannot have registers, therefore must be RELATIVE (ABS and IMM are bad)
+					LC += addr_mode_LC_array[addr_mode];
 					if(!is_last_token()) error_detected("Directive: Found Unknown Label after JMP operand");
-                }
-                else error_detected("CHK_JMP_OP: Invalid addressing mode or parsing for JMP operand");
+				}
+				else error_detected("CHK_JMP_OP: Invalid addressing mode or parsing for JMP operand");
 
 				jmp_operand = "";
 				break;
@@ -439,17 +439,19 @@ void first_pass(std::istream& fin)
 
 	// Error lines (For debugging)
 
-					   int temp123897 = 0;
+	int temp123897 = 0;
 
-					   std::cout << "ERRORS ON THE FOLLOWING LINES" << std::endl << std::endl;
+	std::cout << "ERRORS ON THE FOLLOWING LINES" << std::endl << std::endl;
 
-					   while(temp123897 < err_cnt)
-					   {
-					   std::cout << error_line_array[temp123897] << std::endl;
-					   temp123897++;
-					   }
+	while(temp123897 < err_cnt)
+	{
+		std::cout << error_line_array[temp123897] << std::endl;
+		temp123897++;
+	}
 
-					   std::cout << std::endl;
+	std::cout << std::endl;
+
+	line_num = 0;
 
 	std::cout << "First pass ending" << std::endl;
 }

@@ -34,39 +34,40 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #define SR 2
 
 int as_value[] = {0, 1, 1, 1, 2, 3, 3};
-int ad_value[] = {0, 1, 1, 1};
 
 struct single_overlay {
 	union {
 		struct {
-			unsigned int reg:4;
-			unsigned int as:2;
-			unsigned int bw:1;
-			unsigned int opcode:9;
+			unsigned short reg:4;
+			unsigned short as:2;
+			unsigned short bw:1;
+			unsigned short opcode:9;
 		};
-		unsigned int us_single;
+		unsigned short us_single;  // Short = 16 bit
 	};
 };
 
 struct double_overlay {
 	union {
 		struct {
-			unsigned int dst:4;
-			unsigned int as:2;
-			unsigned int bw:1;
-			unsigned int ad:1;
-			unsigned int src:4;
-			unsigned int opcode:4;
+			unsigned short dst:4;
+			unsigned short as:2;
+			unsigned short bw:1;
+			unsigned short ad:1;
+			unsigned short src:4;
+			unsigned short opcode:4;
 		};
+		unsigned short us_double;
 	};
 };
 
 struct jump_overlay {
 	union {
 		struct {
-			unsigned int offset:10;
-			unsigned int opcode:6;
+			unsigned short offset:10;
+			unsigned short opcode:6;
 		};
+		unsigned short us_jump;
 	};
 };
 /*
@@ -78,15 +79,25 @@ union single_overlay
 */
 void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& outfile, int& LC)
 {
-	int addr_mode_LC_array[] = {0x0, 0x2, 0x2, 0x2, 0x0, 0x0, 0x2};
+	int addr_mode_LC_array_src[] = {0x0, 0x2, 0x2, 0x2, 0x0, 0x0, 0x2};
+	int addr_mode_LC_array_dst[] = {0x0, 0x2, 0x2, 0x2, 0x0, 0x0, 0x0};
 
 	std::cout << "\tEMITTING >>" << inst << "<< + >>" << operand << "<< Of type >>" << type << "<<" << std::endl; // For debugging
 
 	inst_dir* id_ptr = get_inst(inst, I);
 	symtbl_entry* symtbl_ptr = NULL;
-	ADDR_MODE addr_mode = WRONG;
+	ADDR_MODE addr_mode0 = WRONG; // Used in general
+	ADDR_MODE addr_mode1 = WRONG; // Used for DST in double operand
 
 	single_overlay single;
+
+	std::cout << "\t\tTESTING US_SINGLE OUTPUT >>" << single.us_single << "<<" << std::endl;
+
+	std::string src_string = "";
+	std::string dst_string = "";
+
+	bool emit_src_flag = false;
+	bool emit_dst_flag = false;
 
 	double_overlay dbl;
 
@@ -95,8 +106,10 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 	int value0 = -1;
 	int value1 = -1;
 
-	unsigned int value0_us = -1;
-	unsigned int value1_us = -1;
+	int value0_dbl = -1;	// Used for double
+	int value1_dbl = -1;
+
+	unsigned short us_value0 = -1;
 
 	switch (type)
 	{
@@ -117,18 +130,17 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			single.bw = id_ptr->b_w;
 
 			std::cout << "OPCODE: >>" << single.opcode << "<<" << std::endl;
-			addr_mode = parse(operand, value0, value1);
+			addr_mode0 = parse(operand, value0, value1);
 
-			single.as = as_value[addr_mode];
+			single.as = as_value[addr_mode0];
 
-			switch (addr_mode)
+			switch (addr_mode0)
 			{
 				case ABSOLUTE:
 					single.reg = SR;
 					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << single.us_single << std::endl;
 					LC += 2;
 
-					value0 -= LC;
 					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << value0 << std::endl;
 
 					break;
@@ -136,6 +148,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 				case RELATIVE:
 					single.reg = PC;
 					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << single.us_single << std::endl;
+					value0 -= LC; // LC of the INSTRUCTION, not value
 					LC += 2;
 
 					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << value0 << std::endl;
@@ -155,11 +168,17 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 					std::cout << "IMMEDIATE" << std::endl;
 					single.reg = PC;
 
-					std::cout << std::hex << "OPCODE >>" << single.opcode << "<< | BW >>" << single.bw << "<< | As >>" << single.as << "<< | REG >>" << single.reg << "<<" << std::endl;
+					//	std::cout << std::hex << "OPCODE >>" << single.opcode << "<< | BW >>" << single.bw << "<< | As >>" << single.as << "<< | REG >>" << single.reg << "<<" << std::endl;
 
 					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::setw(4) << single.us_single << std::endl;
 					LC += 2;
-					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::setw(4) << value0 << std::endl;
+
+					if(value0 < 0) us_value0 = value0;
+
+					std::cout << "VALUE0 >>" << std::hex << value0 << "<<" << std::endl;
+					std::cout << "US_VALUE0 >>" << std::hex << us_value0 << "<<" << std::endl;
+
+					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::setw(4) << (unsigned short)value0 << std::endl;
 
 					break;
 
@@ -178,7 +197,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 					break;
 
 				default: // REG_DIRECT, INDIRECT, INDIRECT_AI
-					if(addr_mode == WRONG) std::cout << "This is an issue (WRONG addr_mode found)" << std::endl;
+					if(addr_mode0 == WRONG) std::cout << "This is an issue (WRONG addr_mode0 found)" << std::endl;
 
 					single.reg = value0;
 
@@ -189,15 +208,121 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 			}
 
-			LC += addr_mode_LC_array[addr_mode];
+			LC += addr_mode_LC_array_src[addr_mode0];
 
 			break;
 
 		case DOUBLE: // 2
 			std::cout << "\tINST TYPE DOUBLE" << std::endl;
-			dbl.opcode = id_ptr->opcode/4096; // shift to the right 12 times
+			dbl.opcode = id_ptr->opcode/4096; // shift to the right 12 times before inputting
+
+			std::cout << "BW VALUE >>" << id_ptr->b_w << "<<" << std::endl;
+
 			dbl.bw = id_ptr->b_w;
 
+			std::cout << "Operand String >>" << operand << "<<" << std::endl;
+
+			src_string = operand.substr(0, operand.find_first_of(","));
+			dst_string = operand.substr(operand.find_first_of(",")+1);
+
+			std::cout << "SRC_String >>" << src_string << "<<" << std::endl;
+			std::cout << "DST_String >>" << dst_string << "<<" << std::endl;
+	
+			addr_mode0 = parse(src_string, value0, value1);
+			addr_mode1 = parse(dst_string, value0_dbl, value1_dbl);
+
+			std::cout << "AS VALUE >>" << as_value[addr_mode0] << "<<" << std::endl;
+
+			dbl.as = as_value[addr_mode0];
+			dbl.ad = as_value[addr_mode1];
+
+			// These aren't even strictly necessary, could just do if(as_value[addr_mode0]) for the check
+			emit_src_flag = as_value[addr_mode0];	// Values are 0 or 2, which will correspond to FALSE and TRUE
+			emit_dst_flag = as_value[addr_mode1];
+
+			switch(addr_mode0) // DEAL WITH SOURCE
+			{
+				case REG_DIRECT:
+				case INDIRECT:
+				case INDIRECT_AI:
+					dbl.src = value0;
+					break;
+
+				case INDEXED:
+					dbl.src = value1;
+
+					break;
+
+				case RELATIVE:
+					dbl.src = PC;
+					value0 -= LC; // LC of the INSTRUCTION, not value
+
+					break;
+
+				case ABSOLUTE:
+					dbl.src = SR;
+
+					break;
+
+				case IMMEDIATE:
+					dbl.src = PC;
+					emit_src_flag = true;
+
+					break;
+
+				default:
+					std::cout << "This should never happen (Double SRC switch case)" << std::endl;
+					break;
+
+			}
+
+			switch (addr_mode1)  // FOR DST
+			{
+				case REG_DIRECT:
+					dbl.dst = value0_dbl;
+					break;
+
+				case INDEXED:
+					dbl.dst = value1_dbl;
+					
+					break;
+
+				case RELATIVE:
+					dbl.dst = PC;
+					value0_dbl -= LC; // LC of the INSTRUCTION, not value
+
+					break;
+
+				case ABSOLUTE:
+					dbl.dst = SR;
+
+					break;
+
+				default:
+					std::cout << "This should never happen (Double DST switch case)" << std::endl;
+
+					break;
+			}
+
+			// Emit INST
+			outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << dbl.us_double << "\tLine #" << std::dec << line_num << std::endl;;
+
+			LC += 2;
+
+			if(addr_mode_LC_array_src[addr_mode0]) // Emit SRC output
+			{
+				outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::right << std::setfill('0') << std::setw(4) << std::hex << (unsigned short)value0 << std::endl;
+				LC += 2;
+			}
+
+
+			if(addr_mode_LC_array_dst[addr_mode1]) // Emit DST output
+			{
+				outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::right << std::setfill('0') << std::setw(4) << std::hex << (unsigned short)value0_dbl << std::endl;
+				LC += 2;
+			}
+
+			outfile << std::endl; // FOR DEBUGGING (Separating output of each record)
 
 			break;
 
@@ -205,14 +330,24 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			std::cout << "\tINST TYPE JUMP" << std::endl;
 			jump.opcode = id_ptr->opcode/1024; // Shift to the right 10 times
 
-			// Find magical 10 digit offset
-				// Value0 will be the starting offset, double it? Sign extend it? Etc??
+			value0 -= LC;
+			value0>>1;
+			value0 = value0 & 0x03FF;
 
+			std::cout << "JUMP OFFSET: >>" << value0 << "<<" << std::endl;
+
+			jump.offset = value0;
+
+			// EMIT
+			outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << (unsigned short)jump.us_jump << "\tLine #" << std::dec << line_num << std::endl;;
+
+			LC += 2;
 
 			break;
 
 		default:
-			std::cout << "THIS SHOULD NEVER HAPPE" << std::endl;
+			std::cout << "THIS SHOULD NEVER HAPPEN" << std::endl;
 			break;
 	}
+	std::dec;
 }

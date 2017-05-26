@@ -5,46 +5,53 @@
 
 ; The following line should NOT have an error within them.
 
-label	org	10
 label1	MOV	r1,r2	; Direct testing
-	adD	label(r1),label(R2)	;indexed testing
-	addc.w	label,label	;relative testing
-	ADD.b	@r13,&label1	;indriect and absolute testing
+	adD	label1(r1),label1(R2)	;indexed testing
+	addc.w	label1,label1	;relative testing
+	ADD.b	@r13,&label2	;indriect and absolute testing
 	and.w	@r0+,r1		;indirect auto increment testing
 	sub	#1,r1		;test immediate decimal
 	subc.b	#-200,r9	;test negative immediate
 	sub.w	#$10,r3		;test immediate hex
-	xor	#label,label	;test immediate label
+	xor	#label1,label1	;test immediate label
+label2
 
-; The following lines should give an error.
+; Expected output:
+; 0000	4102 <-- MOV R1,R2
 
-	bic	#1,#2	;immediates can not be desintations
-	bic	#1,#-2	;immediates can not be desintations (negative test)
-	bic.b	#1,#$ff	;immediates can not be desintations (hex test)
-	bic.w	#2,#label	;immediates can not be desintations (label test)
-	bic	r1,#label	;immediates can not be desinations
-	bic.w	label,@r1	;indirect can not be used for destination
-	bic	label,@r1+	;indirect post increment can not be used for destination
-	rra	#1,r1	; one operand instruction can not take two
-	add	#1	; two operand instruction can not take one
-	add		; two operand instruction requires two operands
-	reti	#1,#1	; no operand instruction can not take two instructions
-	subc	subc,subc	;can not use instructions as labels
-	subc	add.w	;can not use instructions as labels
-	sub	label(r20),r1	;invalid index. r20 does not exist
-	sub	labelr2),r1	;invalid index
-	sub	label(r2,r1	;invalid index
-	sub	label[r1],r1	;invalid index
-	sub	label{r1},r1	;invalid index
-	sub	label(label),r1	;invalid index
-	add	#,r1	;invalid immediate
-	add	##1,r1	;invalid immediate
-	add	#$,r1	;invalid immediate
-	add	#-,r1	;invalid immediate
-	add	#$-,r1	;invalid immediate
-	add	#-label,r1	;invalid immediate
-	add	#-36000,r1	;invalid immediate
-	add	#100000,r1	;invalid immediate
-	xor	-r1,r1	;invalid direct
-	xor	@@r1,r1	;invalid indirect
-	xor	&&label,r1	;invalid absolute
+; 0002	5192 <-- ADD label1(r1),label1(r2)
+; 0004  0000 <-- label1 absolute address
+; 0006	0000 <-- label1 absolute address
+
+; 0008	6090 <-- addc.w label1,label1
+; 000a 	fff8 <-- relative from 0008 to 0000
+; 000c	fff8 <-- relative from 0008 to 0000
+
+; 000e	5de2 <-- ADD.b @r13,&label1
+; 0010	0026 <-- label2 absolute address
+
+; 0012	f031 <-- and.w @r0+,r1
+
+; 0014	8031 <-- sub #1,r1
+; 0016	0001 <-- immediate #1
+
+; 0018	7079 <-- sub #-200,r9
+; 001a	FF38 <-- immediate #-200
+
+; 001c	8033 <-- sub.w #$10,r3
+; 001e	0010 <-- immediate #$10
+
+; 0020	e0b0 <-- xor #label1,label1
+; 0022	0000 <-- label1 absolute address
+; 0024	ffe0 <-- relative address from 0020 to 0000
+;
+
+
+
+
+
+
+
+
+
+

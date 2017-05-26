@@ -7,12 +7,9 @@
 
 Label	jne	Label	;test relative addressing
 	jeq	Label2	;test forward referencing
-	JNZ	&Label	;test absolute addressing
-Label2	JZ	#Label	;test immediate addressing
-	Jmp	#1	;test immediate addressing
-	Jhs	#$1	;test immediate	addressing
-	Jl	#-1	;??? I think this is allowed because -1 is just going to underflow
-
+Label2  JGE     Label	
+;
+end
 ;The following lines should give an error
 
 	jne	r1	;registers can not be jumped to

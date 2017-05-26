@@ -64,9 +64,10 @@ int main(int argc, char *argv[])
 	}
 	// Initialize a few things (Open file for one)
 */
- 
-	init_symtbl();
 
+
+	init_symtbl();
+/*
 	std::ofstream outfile_temp;
 	outfile_temp.open ("output_temp.s19");
 
@@ -75,10 +76,9 @@ int main(int argc, char *argv[])
 	emit("RRA", "#192", SINGLE, outfile_temp, LC);
 
 	outfile_temp.close();
+*/
 
-
-/*
-	std::ifstream fin("Example_Code/Tom_Test_Cases/dir.txt");
+	std::ifstream fin("Example_Code/Tom_Test_Cases/jmp.txt");
 
  	first_pass(fin);
 
@@ -92,12 +92,14 @@ int main(int argc, char *argv[])
 
  	if(err_cnt == 0)
  	{
-		// LC = 0;
 		// REWIND FILE TO BEGINNING
+		fin.clear();
+		fin.seekg(0);
+
   		second_pass(fin);
  	}
 
 	fin.close();
-*/
+
 	return 0;
 }
