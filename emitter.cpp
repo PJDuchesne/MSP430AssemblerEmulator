@@ -95,9 +95,6 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 	std::string src_string = "";
 	std::string dst_string = "";
 
-	bool emit_src_flag = false;
-	bool emit_dst_flag = false;
-
 	double_overlay dbl;
 
 	jump_overlay jump;
@@ -105,7 +102,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 	int value0 = -1;
 	int value1 = -1;
 
-	int value0_dbl = -1;	// Used for double
+	int value0_dbl = -1;	// Used for the second operand of two operand instructions
 	int value1_dbl = -1;
 
 	unsigned short us_value0 = -1;
@@ -156,87 +153,49 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 			single.as = as_value[addr_mode0];
 
-			switch (addr_mode0)
+			switch(addr_mode0) // DEAL WITH SOURCE
 			{
-				case ABSOLUTE:
-					single.reg = SR;
-					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << single.us_single << std::endl;
-					write_srec_word(single.us_single);
-					LC += 2;
-
-					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::right << std::setfill('0') << std::setw(4) << std::hex << value0 << std::endl;
-					write_srec_word((unsigned short)value0);
-
-				break;
-
-				case RELATIVE:
-					single.reg = PC;
-					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << single.us_single << std::endl;
-					write_srec_word(single.us_single);
-					value0 -= LC; // LC of the INSTRUCTION, not value
-					LC += 2;
-
-					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::right << std::setfill('0') << std::setw(4) << value0 << std::endl;
-					write_srec_word((unsigned short)value0);
-
-					break;
-
-				case REG_DIRECT:	// All 3 of these do the same thing in single operand mode
+				case REG_DIRECT: // All 3 of these do the same thing in single operand mode
 				case INDIRECT:
 				case INDIRECT_AI:
 					single.reg = value0;
-					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << single.us_single << std::endl;
-					write_srec_word(single.us_single);
-					LC += 2;
-
-				break;
-
-				case IMMEDIATE:
-					std::cout << "IMMEDIATE" << std::endl;
-					single.reg = PC;
-
-					//	std::cout << std::hex << "OPCODE >>" << single.opcode << "<< | BW >>" << single.bw << "<< | As >>" << single.as << "<< | REG >>" << single.reg << "<<" << std::endl;
-
-					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::setw(4) << single.us_single << std::endl;
-					write_srec_word(single.us_single);
-					LC += 2;
-
-					if(value0 < 0) us_value0 = value0;
-
-					std::cout << "VALUE0 >>" << std::hex << value0 << "<<" << std::endl;
-					std::cout << "US_VALUE0 >>" << std::hex << us_value0 << "<<" << std::endl;
-
-					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::setw(4) << (unsigned short)value0 << std::endl;
-					write_srec_word((unsigned short)value0);
-
-				break;
+					break;
 
 				case INDEXED:
 					single.reg = value1;
-					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << single.us_single << std::endl;
-					write_srec_word(single.us_single);
+					break;
 
-					LC +=2;
+				case RELATIVE:
+					single.reg = PC;
+					value0 -= LC; // LC of the INSTRUCTION, not value
+					break;
 
-					outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << value0 << std::endl;
-					write_srec_word((unsigned short)value0);
+				case ABSOLUTE:
+					single.reg = SR;
+					break;
 
-				break;
-
-				case WRONG:
-
-				break;
+				case IMMEDIATE:
+					single.reg = PC;
+					break;
 
 				default:
-					if(addr_mode0 == WRONG) std::cout << "This is an issue (WRONG addr_mode0 found)" << std::endl;
+					std::cout << "This is an issue (WRONG addr_mode0 found)" << std::endl;
 
-					single.reg = value0;
-
-				break;
+					break;
 
 			}
 
-			LC += addr_mode_LC_array_src[addr_mode0];
+			outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << single.us_single << std::endl;;
+			write_srec_word(single.us_single);	
+
+			LC += 2;
+
+			if(addr_mode_LC_array_src[addr_mode0]) // Emit SRC output if needed
+			{
+				outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::right << std::setfill('0') << std::setw(4) << std::hex << (unsigned short)value0 << std::endl;
+				write_srec_word((unsigned short)value0);	
+				LC += 2;
+			}
 
 			break;
 
@@ -265,24 +224,22 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			dbl.ad = as_value[addr_mode1];
 
 			// These aren't even strictly necessary, could just do if(as_value[addr_mode0]) for the check
-			emit_src_flag = as_value[addr_mode0];	// Values are 0 or 2, which will correspond to FALSE and TRUE
-			emit_dst_flag = as_value[addr_mode1];
 
 			switch(addr_mode0) // DEAL WITH SOURCE
 			{
 				case REG_DIRECT:
 				case INDIRECT:
 				case INDIRECT_AI:
-				dbl.src = value0;
+					dbl.src = value0;
 				break;
 
 				case INDEXED:
-				dbl.src = value1;
+					dbl.src = value1;
 
 				break;
 
 				case RELATIVE:
-				dbl.src = PC;
+					dbl.src = PC;
 					value0 -= LC; // LC of the INSTRUCTION, not value
 
 					break;
@@ -294,29 +251,28 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 					case IMMEDIATE:
 					dbl.src = PC;
-					emit_src_flag = true;
 
 					break;
 
-					default:
+				default:
 					std::cout << "This should never happen (Double SRC switch case)" << std::endl;
 					break;
 
-				}
+			}
 
 			switch (addr_mode1)  // FOR DST
 			{
 				case REG_DIRECT:
-				dbl.dst = value0_dbl;
+					dbl.dst = value0_dbl;
 				break;
 
 				case INDEXED:
-				dbl.dst = value1_dbl;
+					dbl.dst = value1_dbl;
 
 				break;
 
 				case RELATIVE:
-				dbl.dst = PC;
+					dbl.dst = PC;
 					value0_dbl -= LC; // LC of the INSTRUCTION, not value
 
 					break;
@@ -326,19 +282,19 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 					break;
 
-					default:
+				default:
 					std::cout << "This should never happen (Double DST switch case)" << std::endl;
 
 					break;
-				}
+			}
 
 			// Emit INST
-				outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << dbl.us_double << std::endl;;
-				write_srec_word(dbl.us_double);	
+			outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << dbl.us_double << std::endl;;
+			write_srec_word(dbl.us_double);	
 
-				LC += 2;
+			LC += 2;
 
-			if(addr_mode_LC_array_src[addr_mode0]) // Emit SRC output
+			if(addr_mode_LC_array_src[addr_mode0]) // Emit SRC output if needed
 			{
 				outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::right << std::setfill('0') << std::setw(4) << std::hex << (unsigned short)value0 << std::endl;
 				write_srec_word((unsigned short)value0);	
@@ -346,7 +302,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			}
 
 
-			if(addr_mode_LC_array_dst[addr_mode1]) // Emit DST output
+			if(addr_mode_LC_array_dst[addr_mode1]) // Emit DST output if needed
 			{
 				outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::right << std::setfill('0') << std::setw(4) << std::hex << (unsigned short)value0_dbl << std::endl;
 				write_srec_word((unsigned short)value1);	
@@ -356,7 +312,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			break;
 
 		case JUMP:	// 3
-		std::cout << "\tINST TYPE JUMP" << std::endl;
+			std::cout << "\tINST TYPE JUMP" << std::endl;
 			jump.opcode = id_ptr->opcode/1024; // Shift to the right 10 times
 
 			value0 -= LC;

@@ -28,7 +28,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 extern std::ofstream srec_file;
 
-#define SREC_MAX_DATA_SIZE 64 // 64 bytes of data, 32 hex characters
+#define SREC_MAX_DATA_SIZE 32 // 32 bytes of data, 64 hex characters
 
 unsigned short srec_buffer[SREC_MAX_DATA_SIZE];
 
@@ -55,13 +55,13 @@ void output_srec_buffer()
 {
 	if(srec_index != 0) // If the buffer is empty, don't print an empty S1. That would be silly.
 	{
-		unsigned short byte_pair_cnt = 0;
-		byte_pair_cnt = (srec_index/2) +srec_index%2 + 3; // srec is in byte pairs, this ensures the pair count always rounds up for the unlikely event of an odd set of bytes
+		unsigned char count = 0;
+		count = srec_index + 3;
 
 		// STARTING STUFF
 		// 5301 = S1
-		srec_file << "5301" << std::right << std::setfill('0') << std::setw(2) << std::hex << byte_pair_cnt 
-		<< std::right << std::setfill('0') << std::setw(4) << std::hex << srec_address <<"\t";
+		srec_file << "5301" << std::right << std::setfill('0') << std::setw(1) << std::hex << "0000" 
+		<< std::right << std::setfill('0') << std::setw(4) << std::hex << srec_address;
 
 		// DATA
 		for(int i = 0; i < srec_index; i++)
@@ -70,11 +70,11 @@ void output_srec_buffer()
 		}
 
 		// CHECKSUM
-		srec_chksum += byte_pair_cnt;
+		srec_chksum += count;
 
 		srec_chksum = (~srec_chksum) & 0xff;
 
-		srec_file << std::right << std::setfill('0') << std::setw(2) << std::hex << srec_chksum << std::endl; // END THE LINE HERE
+		srec_file << std::right << std::setfill('0') << std::setw(1) << std::hex << srec_chksum << std::endl; // END THE LINE HERE
 
 		if(first_srec_address == -1) 
 		{
@@ -83,7 +83,7 @@ void output_srec_buffer()
 		}
 
 		// This may be overwritten if the new Srec is initialized by a directive that moves the LC
-		srec_address += srec_index;
+		srec_address += srec_index/2 + srec_index%2; // Increases the "LC" of the srec_address by the number of stored bytes divided by two to get the number of words. If this value is even it is aligned and assumed the last value is lost.
 
 		init_srec(srec_address); // This may be overwritten if another emit() is called before the first byte is added to the buffer
 	}
