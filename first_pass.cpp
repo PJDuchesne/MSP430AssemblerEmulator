@@ -374,6 +374,7 @@ void first_pass(std::istream& fin)
 				next_state = CHK_FIRST_TOKEN;
 	
 				addr_mode = parse(src_operand, value0, value1);
+			
 				if(addr_mode == WRONG) error_detected("CHK_SRC_OP: Invalid SRC Operand Parsing");
 				else
 				{

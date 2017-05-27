@@ -162,12 +162,13 @@ void output_symtbl()
 symtbl_entry* get_symbol(std::string label)
 {	
 	symtbl_entry* temp = symtbl_master;
-	
+
 	while(temp->next != NULL)
 	{
 		if(temp->label == label) return temp;
 		temp=temp->next;
 	}
+	if(temp->label == label) return temp;
 	return NULL;
 }
 

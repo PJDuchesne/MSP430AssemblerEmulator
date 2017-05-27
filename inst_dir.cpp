@@ -123,7 +123,7 @@ inst_dir* get_inst(std::string input, SEARCHTYPE stype)
 		return NULL;
 	}
 
-    // Check starting top/bottom values
+    // Check top/bottom values
     if(inst_dir_array[top].mnemonic == input)
     {
         std::cout << "\t" << ": Found >>" << input << "<< at cnt of " << top << std::endl;           

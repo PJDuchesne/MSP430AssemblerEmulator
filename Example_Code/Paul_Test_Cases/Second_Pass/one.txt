@@ -1,0 +1,125 @@
+; SINGLE OPERAND TEST CASE FOR SECOND PASS (Also "NONE" operand, RETI)
+; Made by Paul Duchesne (B00332119)
+; May 26, 2017
+
+; Things to test
+;	- All 7 addressing modes
+;	- All instructions
+; 	- Byte/Word INSTs
+;	- FORWARD REFERENCES
+;
+
+ 				; EXPECTED OUTCOMES IN COMMENTS
+
+	ORG	$0000
+
+TEST0	RRC	R7		; 0000 1007	; Test0 contains 16 pairs of hex characters, or 64 bytes
+	rRC	TEST0(R9)	; 0002 1019
+				; 0004 0000
+	rRC.w	TEST0		; 0006 1010
+				; 0008 fffa
+	RRC	&TEST0		; 000a 1012
+				; 000c 0000
+	RrC	@R3		; 000e 1023
+	RRC	@R4+		; 0010 1034
+	RRC.W	#77		; 0012 1030
+				; 0014 004d
+	RRC	#$A3		; 0016 1030
+				; 0018 00a3
+	RRC.b	TEST0		; 001a 1050
+				; 001c ffe6
+	RRC.B	@R2		; 001e 1062
+
+	ORG	$1000
+
+TEST1	SWPB	R14		; 1000 108e
+	SWPB	TEST1(R9)	; 1002 1099
+				; 1004 1000
+	sWPB	TEST1		; 1006 1090
+				; 1008 fffa
+	SwPB	&TEST1		; 100a 1092
+				; 100c 1000
+	SWPB	@R0		; 100e 10a0
+	SWPB	@cg2		; 1010 10a3
+	SWPB	@R15+		; 1012 10bf
+	SWpB	#-81		; 1014 10b0
+				; 1016 ffaf
+	SWPB	#$18		; 1018 10b0
+				; 101a 0018
+
+	ORG	$2000
+
+TEST2	RRA	R7		; 2000 1107
+	RRA.w	TEST2(r12)	; 2002 111c
+				; 2004 2000
+	RRA	TEST2		; 2006 1110
+				; 2008 fffa
+	RRA	&TEST2		; 200a 1112
+				; 200c 2000
+	rra	@R14		; 200e 112e
+	RRA	@R12+		; 2010 113c
+	RRA.w	#183		; 2012 1110
+				; 2014 00b7
+	RRA	#$91		; 2016 1110
+				; 2018 0091
+	Rra.b	&TEST2		; 201a 1152
+				; 201c 2000
+	rra.b	@R10+		; 201e 117a
+
+	ORG	$3000
+
+TEST3	sxt	R12		; 3000 118c
+	Sxt	TEST3(R7)	; 3002 1197
+				; 3004 3000
+	Sxt	TEST3		; 3006 1190
+				; 3008 fffa
+	SxT	&TEST3		; 300a 1192
+				; 300c 3000
+	sXT	@R6		; 300e 11a6
+	SXT	@r12+		; 3010 11bc
+	SXT	#123		; 3012 11b0
+				; 3014 007b
+	SXT	#$123		; 3016 11b0
+				; 3014 0123
+
+	ORG	$4000
+
+TEST4	push	R9		; 4000 1209
+	PUsH.w	TEST4(R0)	; 4002 1210 // SAME CODE?
+				; 4004 4000
+	PUsH.w	TEST4		; 4006 1210 // SAME CODE?
+				; 4008 fffa
+	PuSH	&TEST4		; 400a 1212
+				; 400c 4000
+	PUSH	@r2		; 400e 1222
+	PUSH.w	@r10+		; 4010 123a
+	puSH	#1238		; 4012 1230
+				; 4014 04d6
+	PUSH	#$af		; 4016 1230
+				; 4018 00af
+	PUsh.b	#0000000000000000000000000000000000000000000000000033412
+				; 401a 1270 
+				; 401c 8284
+	puSH.b	#$000000000000000000000000000000000002
+				; 401e 1270
+				; 4020 0002
+	ORG	$5000
+
+TEST5	CALL	R8		; 5000 1288
+	CALL	TEST5(r8)	; 5002 1298
+				; 5004 5000
+	CALL	TEST5		; 5006 1290
+				; 5008 fffa
+	CALL	&TEST5		; 500a 1292
+				; 500c 5000
+	CALL	@r13		; 500e 12ad
+	CALL	@PC+		; 5010 12b0
+	CALL	#-898		; 5012 12b0
+				; 5014 fc7e
+	CALL	#$0b12		; 5016 12b0
+				; 5018 0b12
+
+	ORG	$6000
+
+TEST6	RETI			; 6000 1300
+	reti			; 6002 1300
