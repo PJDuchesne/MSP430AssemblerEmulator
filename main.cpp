@@ -51,8 +51,7 @@ int main(int argc, char *argv[])
 {
 
 	// Example input argument for eventual adding of input/output parameters. Hardcoded for now
-/*	
-	if(argc < 2)
+	if(argc < 2) // argv[0] = executable name, therefore <2 means there is 0 input given
 	{
 		std::cout << "ERROR" << std::endl;
 		getchar();
@@ -63,11 +62,10 @@ int main(int argc, char *argv[])
 		std::cout << "NO ERROR" << std::endl;
 	}
 	// Initialize a few things (Open file for one)
-*/
 
 	init_symtbl();
 
-	std::ifstream fin("Example_Code/Tom_Test_Cases/two.txt");
+	std::ifstream fin(argv[1]);
 
  	first_pass(fin);
 
