@@ -24,6 +24,8 @@ label2	equ 	2	;LC should now be 00C8
 	BSS 	1	;LC should now be 00D2
 LABEL	equ	$FFF	;LC should now be 00D2
 
+end
+
 ; The following should be shown for the values of the labels
 ; label = 00C8
 ; label1 = 0130

@@ -65,20 +65,9 @@ int main(int argc, char *argv[])
 	// Initialize a few things (Open file for one)
 */
 
-
 	init_symtbl();
-/*
-	std::ofstream outfile_temp;
-	outfile_temp.open ("output_temp.s19");
 
-	int LC = 100;
-
-	emit("RRA", "#192", SINGLE, outfile_temp, LC);
-
-	outfile_temp.close();
-*/
-
-	std::ifstream fin("Example_Code/Tom_Test_Cases/jmp.txt");
+	std::ifstream fin("Example_Code/Tom_Test_Cases/two.txt");
 
  	first_pass(fin);
 

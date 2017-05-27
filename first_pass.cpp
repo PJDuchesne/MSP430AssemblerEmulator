@@ -216,11 +216,6 @@ void first_pass(std::istream& fin)
 				}
 				
 				break;
-
-			// ================= DIRECTIVES HERE (START) ======================
-
-				// NOTE: Can BYTE or WORD be #UNKNOWN (Where UNKNOWN is an unknown label that will be defined later?)
-
 			case DIRECT: // id_ptr should already point to the correct INST
 				std::cout << "\tDIRECT" << std::endl;
 			
@@ -373,9 +368,6 @@ void first_pass(std::istream& fin)
 					}
 
 				break;
-
-				// =================== DIRECTIVES HERE (END) =====================================
-
 			case CHK_SRC_OP:
 				std::cout << "\tCHK_SRC_OP" << std::endl;
 
@@ -411,7 +403,6 @@ void first_pass(std::istream& fin)
 				}
 				dst_operand = "";
 				break;
-
 			case CHK_JMP_OP:
 				std::cout << "\tCHK_JMP_OP" << std::endl;
 
@@ -427,7 +418,6 @@ void first_pass(std::istream& fin)
 
 				jmp_operand = "";
 				break;
-
 			default:
 				std::cout << "\t\t[First Pass] DEFAULT ERROR" << std::endl; // This should literally never happen
 				std::cin >> dst_operand[0]; // To stop building and point out the error
