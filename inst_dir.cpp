@@ -52,9 +52,9 @@ inst_dir inst_dir_array[] = {
         {"CMP",  DOUBLE, 0x9000, WORD},
                 {"CMP.B", DOUBLE, 0x9000, BYTE},	// 20
                 {"CMP.W", DOUBLE, 0x9000, WORD},
-        {"DADD", DOUBLE, 0xa000, WORD},
-                {"DADD.B", DOUBLE, 0xa000, BYTE},
-                {"DADD.W", DOUBLE, 0xa000, WORD},
+        {"DADC", DOUBLE, 0xa000, WORD},
+                {"DADC.B", DOUBLE, 0xa000, BYTE},
+                {"DADC.W", DOUBLE, 0xa000, WORD},
         {"JC",   JUMP, 0x2c00, OFFSET},
         {"JEQ",  JUMP, 0x2400, OFFSET},
         {"JGE",  JUMP, 0x3400, OFFSET},

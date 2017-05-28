@@ -1,0 +1,257 @@
+; DOUBLE OPERAND TEST CASE FOR SECOND PASS
+; Made by Paul Duchesne (B00332119)
+; May 27, 2017
+
+; Things to test
+;	- All 7 addressing modes for SRC
+;	- All 4 addressing modes for DST
+;	- All instructions
+; 	- Byte/Word INSTs
+;	- FORWARD REFERENCES
+;
+
+	ORG	$0400
+
+TEST4	MOV	R7,R8			; 0400 4708
+	Mov	TEST5(R9),TEST12(R3)	; 0402 4993
+					; 0404 0500
+					; 0406 1200
+	MOV.w	TEST5,&TEST9		; 0408 4092
+					; 040a 00f8
+					; 040c 0900
+	moV.w	&TEST13,TEST9		; 040e 4290
+					; 0410 1300
+					; 0412 04f2
+	mOV.b	@R1,TEST7(R14)		; 0414 41ee
+					; 0416 0700
+	MoV.b	@R7+,&TEST13		; 0418 47f2
+					; 041a 1300
+	mOV.b	#1234,R3		; 041e 4073
+					; 0420 04d2
+
+	ORG	$0500
+
+TEST5	ADD	R1,&TEST8		; 0500 5182
+					; 0502 0800
+	ADD	TEST8(R7),TEST7		; 0504 5790
+					; 0506 0800
+					; 0508 01fc
+	ADD	TEST9,R7		; 050a 5017
+					; 050c 03f6
+	ADD	&TEST11,TEST13		; 050e 5290
+					; 0510 1100
+					; 0512 0df2
+	ADD	@R7,R1			; 0514 5721
+	ADD	@R9+,TEST8		; 0516 59b0
+					; 0518 02ea
+	ADD	#$889,TEST9(R7)		; 051a 50b7
+					; 051c 0889
+					; 051e 0900
+		
+	ORG	$0600
+
+TEST6	ADDC	R2,R8			; 0600 6208
+	ADDC	TEST11(R4),&TEST14	; 0602 6492
+					; 0604 1100
+					; 0606 1400
+	ADDC	TEST4,&TEST14		; 0608 6092
+					; 060a fdf8
+					; 060c 1400
+	ADDC	&TEST15,R9		; 060e 6219
+					; 0610 1500
+	ADDC	@R8,TEST4(R8)		; 0612 68a8
+					; 0614 0400
+	ADDC	@R1+,TEST9		; 0616 61b0
+					; 0618 02ea
+	ADDC	#-123,TEST9(R7)		; 061a 60b7
+					; 061c ff85
+
+	ORG	$0700
+
+TEST7	SUBC	R1,TEST7		; 0700 7180
+					; 0702 0000
+	SUBC	TEST8(R2),&TEST12	; 0704 7292
+					; 0706 0800
+					; 0708 1200
+	SUBC	TEST11,&TEST4		; 070a 7092
+					; 070c 09f6 
+					; 070e 0400
+	SUBC	&TEST5,R7		; 0710 7217
+					; 0712 0500
+	SUBC	@R1,TEST8		; 0714 71a0
+					; 0716 00ec
+	SUBC	@R3+,TEST9(R1)		; 0718 73b1
+					; 071a 0900
+	SUBC	#$11fe,TEST7		; 071c 70b0
+					; 071e 11fe
+					; 0720 ffe4
+
+	ORG	$0800
+
+TEST8	SUB	R3,&TEST8		; 0800 8382
+					; 0802 0800
+	SUB	TEST9(R1),&TEST11	; 0804 8192
+					; 0806 0900
+					; 0808 1100
+	SUB	TEST7,R1		; 080a 8011
+					; 080c fef6
+	SUB	&TEST11,R8		; 080e 8218
+					; 0810 1100
+	SUB	@R8,TEST8		; 0812 88a0
+					; 0814 ffee
+	SUB	@R1+,&TEST7		; 0816 81b2
+					; 0818 0700
+	SUB	#$ffff,R1		; 081a 8031
+					; 081c ffff
+
+	ORG	$0900
+
+TEST9	CMP	R5,R8			; 0900 9508
+	CMP	TEST6(R2),TEST13	; 0902 9290
+					; 0904 0600
+					; 0904 09fe
+	CMP	TEST12,&TEST6		; 0908 9092
+					; 090a 08f8
+					; 090c 0600
+	CMP	&TEST12,R6		; 090e 9216
+					; 0910 1200
+	CMP	@R7,TEST14(R1)		; 0912 97a1
+					; 0914 1400
+	CMP	@R9+,TEST7		; 0916 99b0
+					; 0918 fdea
+	CMP	#12345,&TEST5		; 091a 90b2
+					; 091c 3039
+					; 091e 0500
+
+	ORG	$1000
+
+TEST10	DADC	R7,&TEST13		; 1000 a782
+					; 1002 1300
+	DADC	TEST12(R3),&TEST5	; 1004 a392
+					; 1006 1200
+					; 1008 0500
+	DADC	TEST7,R7		; 100a a017
+					; 100c f6f6
+	DADC	&TEST15,TEST8(R1)	; 100e a291
+					; 1010 1500
+					; 1012 0800
+	DADC	@R8,TEST8		; 1014 a8a8
+					; 1016 f7ec
+	DADC	@R7+,&TEST13		; 1018 a7b2
+					; 101a 1300
+	DADC	#-1112,TEST6(R3)	; 101c a0b3
+					; 101e fba8
+
+	ORG	$1100
+
+TEST11	BIT	R9,TEST5(R4)		; 1100 b984
+					; 1102 0500
+	BIT	TEST4(R1),TEST8		; 1104 b190
+					; 1106 0400
+					; 1108 f6fc
+	BIT	TEST8,R7		; 110a b017
+					; 110c f6b6
+	BIT	&TEST7,&TEST6		; 110e b292
+					; 1110 0700
+					; 1112 0600
+	BIT	@R13,&TEST4		; 1114 bda2
+					; 1116 0400
+	BIT	@R15+,R15		; 1118 bbf3f
+	BIT	#19713,TEST5(R3)	; 111a b0b3
+					; 111c 4d01
+
+	ORG	$1200
+
+TEST12	BIC	R11,&TEST5		; 1200 cb82
+					; 1202 0500
+	BIC	TEST8(R3),TEST4		; 1204 c390
+					; 1206 0800
+					; 1208 f1fc
+	BIC	TEST5,TEST8		; 120a cc090
+					; 120c f2f6 ; WHY
+					; 120e f5f6 ; VS THIS
+	BIC	&TEST10,R9		; 1210 c219
+					; 1212 1000
+	BIC	@R9,R7			; 1214 c927
+	BIC	@R12+,TEST7(R4)		; 1216 ccb4
+					; 1218 0700
+	BIC	#$1a9f,TEST8		; 121a c0b0
+					; 121c 1a9f
+					; 121e f5e6
+
+	ORG	$1300
+
+TEST13	BIS	R13,&TEST4		; 1300 dd82
+					; 1302 0400
+	BIS	TEST5(R3),R7		; 1304 d317
+					; 1306 0500
+	BIS	TEST15,&TEST6		; 1308 d092
+					; 130a 01f8
+					; 130c 0600
+	BIS	&TEST14,TEST7(R1)	; 130e d291
+					; 1310 1400
+					; 1312 0700
+	BIS	@R3,R7			; 1314 d327
+	BIS	@R0+,TEST8		; 1316 d0b0
+					; 1318 f4ea
+	BIS	#8756,R3		; 131a d033
+					; 131c 2234
+
+	ORG	$1400
+
+TEST14	XOR	R15,R1			; 1400 ef01
+	XOR	TEST14(R15),TEST7	; 1402 ef90
+					; 1404 1400
+					; 1406 f2fe
+	XOR	TEST6,&TEST10		; 1408 e092
+					; 140a f1f8
+					; 140c 1000
+	XOR	&TEST14,TEST9(R6)	; 140e e296
+					; 1410 1400
+					; 1412 0900
+	XOR	@R8,R12			; 1414 e82c
+	XOR	@R9+,&TEST4		; 1416 e9b2
+					; 1418 0400
+	XOR	#$000011d0,TEST8	; 141a e0b0
+					; 141c 11d0
+					; 141e f3e6
+
+	ORG	$1500
+
+TEST15	AND	R2,&TEST4		; 1500 f282
+					; 1502 0400
+	AND	TEST13(R13),TEST8	; 1504 fd90
+					; 1506 1300
+					; 1508 f2fc
+	AND	TEST7,R7		; 150a f017
+					; 150c f1f6
+	AND	&TEST8,TEST7		; 150e f290
+					; 1510 0800
+					; 1512 f1f2
+	AND	@R1,TEST8(R8)		; 1514 f1a8
+					; 1516 0800
+	AND	@R12+,TEST6(R3)		; 1518 fcb3
+					; 151a 0600
+	AND	#-1243,R8		; 151c f038
+					; 151e fb25
+
+	END
+
+; EXPECTED OUTPUT FOR SREC (In human readable form)
+
+HECKSUM >>7<<
+5301    23      0500    82 51 ff ff 90 57 00 08 07 00 17 50 f6 03 90 52 00 11 ff ff 21 57 b0 59 ff ff b7 50 89 08 ff ff          || CHECKSUM >>aa<<
+5301    23      0600    08 62 92 64 00 11 04 00 92 60 f8 fd ff ff 19 62 00 15 a8 68 ff ff b0 61 ff ff b7 60 85 ff ff ff          || CHECKSUM >>36<<
+5301    23      0700    80 71 ff ff 92 72 00 08 02 00 92 70 f6 09 ff ff 17 72 00 05 a0 71 ff ff b1 73 ff ff b0 70 fe 11          || CHECKSUM >>eb<<
+5301    05      0710    ff ff   												 || CHECKSUM >>e5<<
+5301    21      0800    82 83 ff ff 92 81 00 09 01 00 11 80 f6 fe 18 82 00 11 a0 88 ff ff b2 81 ff ff 31 80 ff ff        	 || CHECKSUM >>80<<
+5301    23      0900    08 95 90 92 00 06 02 00 92 90 f8 08 ff ff 16 92 00 12 a1 97 ff ff b0 99 ff ff b2 90 39 30 ff ff          || CHECKSUM >>c<<
+5301    23      1000    82 a7 ff ff 92 a3 00 12 03 00 17 a0 f6 f6 91 a2 00 15 ff ff a0 a8 ff ff b2 a7 ff ff b3 a0 a8 fb          || CHECKSUM >>df<<
+5301    05      1010    ff ff    												 || CHECKSUM >>dc<<
+5301    23      1100    84 b9 ff ff 90 b1 00 04 01 00 17 b0 f6 f6 92 b2 00 07 ff ff a2 bd ff ff 3f bf b3 b0 01 4d ff ff          || CHECKSUM >>44<<
+5301    23      1200    82 cb ff ff 90 c3 00 08 03 00 90 c0 f6 f2 ff ff 19 c2 00 10 27 c9 b4 cc ff ff b0 c0 9f 1a ff ff          || CHECKSUM >>6b<<
+5301    21      1300    82 dd ff ff 17 d3 00 05 92 d0 f8 01 ff ff 91 d2 00 14 ff ff 27 d3 b0 d0 ff ff 33 d0 34 22        	 || CHECKSUM >>e0<<
+5301    23      1400    01 ef 90 ef 00 14 0f 00 92 e0 f8 f1 ff ff 96 e2 00 14 ff ff 2c e8 b2 e9 ff ff b0 e0 d0 11 ff ff          || CHECKSUM >>37<<
+5301    23      1500    82 f2 ff ff 90 fd 00 13 0d 00 17 f0 f6 f1 90 f2 00 08 ff ff a8 f1 ff ff b3 fc ff ff 38 f0 25 fb          || CHECKSUM >>a6<<
+5309    400
+

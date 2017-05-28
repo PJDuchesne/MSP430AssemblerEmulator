@@ -11,4 +11,4 @@ clear && g++ -std=c++11 -o main main.cpp library.cpp symtbl.cpp inst_dir.cpp par
 
 # ./main Example_Code/Tom_Test_Cases/two.txt
 
-./main Example_Code/Paul_Test_Cases/Second_Pass/dir.txt
+./main Example_Code/Paul_Test_Cases/Second_Pass/one.txt

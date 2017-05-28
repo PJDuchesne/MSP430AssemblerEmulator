@@ -101,6 +101,9 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 	unsigned short us_value0 = -1;
 
+	// Set up output settings:
+	outfile << std::setfill('0') << std::right;
+
 	switch (type)
 	{
 		case NONE: // 0  -> Either RETI (NONE INST) or BYTE / WORD (Meaning no instruction)
@@ -111,18 +114,17 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			if(inst == "BYTE")
 			{
 				addr_mode0 = parse(operand, value0, value1);
- 				outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::setw(4) << (unsigned short)value0 << std::endl;
+ 				outfile << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)value0 << std::endl;
  			}
  			else if(inst == "WORD")
  			{
  				addr_mode0 = parse(operand, value0, value1);
-				outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::setw(4) << (unsigned short)value0 << std::endl;
+				outfile << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)value0 << std::endl;
  			}
 
  			if(inst.length() == 4)
 			{
-				outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << 0x1300 << std::endl;
-
+				outfile << std::hex << std::setw(4) << LC << " " << 0x1300 << std::endl;
 				write_srec_word(0x1300);
 
 				LC += 2;
@@ -174,19 +176,18 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 				default:
 					std::cout << "This is an issue (WRONG addr_mode0 found)" << std::endl;
-
 					break;
 
 			}
 
-			outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << single.us_single << std::endl;;
+			outfile << std::hex << std::setw(4) << LC << " " << std::setw(4) << single.us_single << std::endl;;
 			write_srec_word(single.us_single);	
 
 			LC += 2;
 
 			if(addr_mode_LC_array_src[addr_mode0]) // Emit SRC output if needed
 			{
-				outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::right << std::setfill('0') << std::setw(4) << std::hex << (unsigned short)value0 << std::endl;
+				outfile << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)value0 << std::endl;
 				write_srec_word((unsigned short)value0);	
 				LC += 2;
 			}
@@ -216,8 +217,6 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 			dbl.as = as_value[addr_mode0];
 			dbl.ad = as_value[addr_mode1];	 // used as_value array again because as and ad values are the same for the first 4 addressing modes
-
-			// These aren't even strictly necessary, could just do if(as_value[addr_mode0]) for the check
 
 			switch(addr_mode0) // DEAL WITH SOURCE
 			{
@@ -250,6 +249,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 				default:
 					std::cout << "This should never happen (Double SRC switch case)" << std::endl;
+					getchar();
 					break;
 
 			}
@@ -283,14 +283,14 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			}
 
 			// Emit INST
-			outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << dbl.us_double << std::endl;;
+			outfile << std::hex << std::setw(4) << LC << " " << dbl.us_double << std::endl;;
 			write_srec_word(dbl.us_double);	
 
 			LC += 2;
 
 			if(addr_mode_LC_array_src[addr_mode0]) // Emit SRC output if needed
 			{
-				outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::right << std::setfill('0') << std::setw(4) << std::hex << (unsigned short)value0 << std::endl;
+				outfile << std::hex << std::setw(4) << LC << " " <<  std::setw(4) << (unsigned short)value0 << std::endl;
 				write_srec_word((unsigned short)value0);	
 				LC += 2;
 			}
@@ -298,7 +298,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 			if(addr_mode_LC_array_dst[addr_mode1]) // Emit DST output if needed
 			{
-				outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << std::right << std::setfill('0') << std::setw(4) << std::hex << (unsigned short)value0_dbl << std::endl;
+				outfile << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)value0_dbl << std::endl;
 				write_srec_word((unsigned short)value1);	
 				LC += 2;
 			}
@@ -328,7 +328,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			jump.offset = value0;
 
 			// EMIT
-			outfile << std::right << std::setfill('0') << std::setw(4) << std::hex << LC << " " << (unsigned short)jump.us_jump << std::endl;;
+			outfile << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)jump.us_jump << std::endl;;
 			write_srec_word(jump.us_jump);	
 
 			LC += 2;
@@ -339,5 +339,5 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			std::cout << "THIS SHOULD NEVER HAPPEN" << std::endl;
 			break;
 	}
-	std::dec;
+	std::dec; // Resets output streams to print out decimals, not hex
 }
