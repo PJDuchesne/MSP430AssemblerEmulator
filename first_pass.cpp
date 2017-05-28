@@ -332,18 +332,23 @@ void first_pass(std::istream& fin)
 					case 'T':  // STRING ** Special Case **
 						current_token = fnt();
 
-						if(current_token.length() <= 130)
+						if(current_token.length() <= 82) // Doing max 80, punch card width
 						{
-							if(current_token.find_first_of("\"")!= 0 || current_token.find_last_of("\"") != current_token.length()-1) error_detected("Directive: Missing Quotes for STRING");
+							// Note: Not actually checking the contents, I'm unsure if there are illegal characters in there. 
+							if(current_token[0] != '"') error_detected("Directive: Missing OPENING quote for STRING");
 							else
 							{
 								current_token.erase(0,1); // Removes Opening Quote
-								current_token.pop_back(); // Removes Closing Quote
+								if(current_token.find_first_of("\"") != current_token.length()-1) error_detected("Directive: Missing CLOSING quote for STRING");
+								else
+								{
+									current_token.pop_back(); // Removes Closing Quote
 
-								value0 = current_token.length();
+									value0 = current_token.length();
 
-								LC += value0;
-								if(!is_last_token()) error_detected("Directive: Found Unknown Label after STRING value");
+									LC += value0;
+									if(!is_last_token()) error_detected("Directive: Found Unknown Label after STRING value");
+								}
 							}
 						}
 						else error_detected("Directive: Value too large for ORG directive");
@@ -365,16 +370,16 @@ void first_pass(std::istream& fin)
 						std::cout << "\t\t[Directive] DEFAULT ERROR" << std::endl; // This should literally never happen
 						std::cin >> dst_operand[0]; // To stop building and point out the error
 						break;
-					}
+				}
 
 				break;
 			case CHK_SRC_OP:
 				std::cout << "\tCHK_SRC_OP" << std::endl;
 
 				next_state = CHK_FIRST_TOKEN;
-	
+
 				addr_mode = parse(src_operand, value0, value1);
-			
+
 				if(addr_mode == WRONG) error_detected("CHK_SRC_OP: Invalid SRC Operand Parsing");
 				else
 				{
@@ -458,7 +463,7 @@ bool is_last_token()
 // Used to shorten code: could make this inline to be faaaaaancy
 void error_detected(std::string error_msg)
 {
-	std::cout << "\t\t[ERROR MSG - FIRST PASS=] " << error_msg << std::endl;
+	std::cout << "\t\t[ERROR MSG - FIRST PASS] " << error_msg << std::endl;
 	error_line_array[err_cnt] = line_num;
 	err_cnt++;
 }

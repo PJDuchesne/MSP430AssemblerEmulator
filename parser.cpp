@@ -121,7 +121,7 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 			}
 			else
 			{ // Value is a HEX number or DECIMAL number (Or bust!)
-				std::cout << "OPERAND >> " << operand << "<<" << std::endl;
+				std::cout << "\t\tOPERAND >>" << operand << "<<" << std::endl;
 	 			if(operand[0] == '$')
 				{
 					operand.erase(0, 1); 

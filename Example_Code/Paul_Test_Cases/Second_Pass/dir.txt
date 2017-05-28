@@ -1,0 +1,46 @@
+; This tests DIRECTIVES in the second pass
+; The following is a breakdown of what the directives do in the second pass
+;
+;	Align:		Aligns the LC to the next even memory location (THIS MUST COORDINATE WITH THE S1 BUFFER ADDRESS LOCATION, OR AT LEAST BE CONSISTENT WITH IT, Maybe just whenever we unload the S1 buffer, we also align the LC?)
+;	BSS:		Moves the LC forward by the value after BSS, triggers an S1 buffer unload
+;	BYTE:		Emits 1 BYTE of data to the S1 buffer
+;	END:		Ends the file, triggers an S1 buffer unload followed by an S9 emission
+;	EQU:		Nothing? This sets a thing to the symbol table in the first pass
+;	ORG:		Sets the LC to the given value, triggers a S1 buffer unload
+;	STRING:		Emits the characters in a given string 1 byte at a time to the S1 buffer
+;	WORD:		Emits 1 WORD (2 bytes) of data to the S1 buffer
+;
+
+	ORG 	$5000	; Should emit nothing, first S1 should 
+LABEL2	EQU	1234	; Stores the value #1234 into LABEL2 ($04d2)
+	STRING 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!@#$%^&*()[]{}y',." ; Upper limit is 80 characters
+
+	BYTE	123	; Stores #123 (1 byte) to the S1 buffer
+	BSS	100	; THIS SHOULD TRIGGER BUFFER OUTPUT WITH ONLY #123 IN IT (Plus the overhead of an S1)
+	ORG	$0400	; THIS SHOULD NOT TRIGGER A BUFFER OUTPUT
+
+	WORD 	$1234	; Stores 1234 to buffer (in the order 34 12)
+	WORD 	LABEL2	; LABEL2 should have $1234, this will be tested in the first pass test though
+	WORD	-12313 ; Stores cfe7 to buffer (in the order e7 cf)
+
+	ORG 	0200	; Cause an emit, new S1 should have a starting address of 0200
+
+	STRING 	"jaksudhgnamknjhuyhjmjaksudhgnamknjhuyhjmjaksudhgnamknjhuyhjmjaksudhgnamknjhuyhjm" ; This is 80 char, should work
+
+	END		; Should emit the buffer
+
+; Everything below should be ignored because of the END trigger, thus the lack of ";" to comment these
+
+EXPECTED OUTPUT BELOW (In human readable format)
+
+S1 	CNT 	ADDR 	DATA 													 CHKSUM
+
+5301    23      5000    41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f 50 51 52 53 54 55 56 57 58 59 5a 61 62 63 64 65 66          || CHECKSUM >>58<<
+5301    23      5010    67 68 69 6a 6b 6c 6d 6e 6f 70 71 72 73 74 75 76 77 78 79 7a 31 32 33 34 35 36 37 38 39 30 21 40          || CHECKSUM >>44<<
+5301    16      5020    23 24 25 5e 26 2a 28 29 5b 5d 7b 7d 79 27 2c 2e 7b 00 13                                                 || CHECKSUM >>d6<<
+5301    09      0400    00 13 00 13 00 13                                                                                        || CHECKSUM >>b9<<
+5301    23      00c8    6a 61 6b 73 75 64 68 67 6e 61 6d 6b 6e 6a 68 75 79 68 6a 6d 6a 61 6b 73 75 64 68 67 6e 61 6d 6b          || CHECKSUM >>b7<<
+5301    23      00d8    6e 6a 68 75 79 68 6a 6d 6a 61 6b 73 75 64 68 67 6e 61 6d 6b 6e 6a 68 75 79 68 6a 6d 6a 61 6b 73          || CHECKSUM >>89<<
+5301    13      00e8    75 64 68 67 6e 61 6d 6b 6e 6a 68 75 79 68 6a 6d                                                          || CHECKSUM >>48<<
+5309    5000
+

@@ -71,13 +71,7 @@ struct jump_overlay {
 		unsigned short us_jump;
 	};
 };
-/*
-union single_overlay
-{
-	emit_single field;
-	unsigned int us_single;
-};
-*/
+
 void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& outfile, int& LC)
 {
 	int addr_mode_LC_array_src[] = {0x0, 0x2, 0x2, 0x2, 0x0, 0x0, 0x2};
@@ -221,7 +215,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			std::cout << "AS VALUE >>" << as_value[addr_mode0] << "<<" << std::endl;
 
 			dbl.as = as_value[addr_mode0];
-			dbl.ad = as_value[addr_mode1];
+			dbl.ad = as_value[addr_mode1];	 // used as_value array again because as and ad values are the same for the first 4 addressing modes
 
 			// These aren't even strictly necessary, could just do if(as_value[addr_mode0]) for the check
 
@@ -244,12 +238,12 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 					break;
 
-					case ABSOLUTE:
+				case ABSOLUTE:
 					dbl.src = SR;
 
 					break;
 
-					case IMMEDIATE:
+				case IMMEDIATE:
 					dbl.src = PC;
 
 					break;
@@ -264,12 +258,12 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			{
 				case REG_DIRECT:
 					dbl.dst = value0_dbl;
-				break;
+					break;
 
 				case INDEXED:
 					dbl.dst = value1_dbl;
 
-				break;
+					break;
 
 				case RELATIVE:
 					dbl.dst = PC;
@@ -277,7 +271,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 					break;
 
-					case ABSOLUTE:
+				case ABSOLUTE:
 					dbl.dst = SR;
 
 					break;
@@ -312,14 +306,24 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			break;
 
 		case JUMP:	// 3
+			addr_mode0 = parse(operand, value0, value1);
+
 			std::cout << "\tINST TYPE JUMP" << std::endl;
 			jump.opcode = id_ptr->opcode/1024; // Shift to the right 10 times
 
-			value0 -= LC;
-			value0>>1;
+			std::cout << "VALUE0 >>" << std::hex << value0 << "<< | LC >>" << std::hex << LC << std::endl;
+
+			value0 -= (unsigned)LC;
+			std::cout << "VALUE0 (AFTER LC SUBTRACTION) >>" << std::hex << value0 << std::endl;
+			value0 = value0>>1;
+
+			std::cout << "VALUE0 (AFTER BITSHIFT) >>" << std::hex << value0 << std::endl;
+
 			value0 = value0 & 0x03FF;
 
-			std::cout << "JUMP OFFSET: >>" << value0 << "<<" << std::endl;
+			std::cout << "VALUE0 (FINAL VALUE) >>" << std::hex << value0 << std::endl << std::dec;
+
+			// std::cout << "JUMP OFFSET: >>" << value0 << "<<" << std::endl;
 
 			jump.offset = value0;
 
@@ -331,9 +335,9 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 			break;
 
-			default:
+		default:
 			std::cout << "THIS SHOULD NEVER HAPPEN" << std::endl;
 			break;
-		}
-		std::dec;
 	}
+	std::dec;
+}
