@@ -31,8 +31,10 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "emitter.h"
 #include "s19_maker.h"
 
-#define PC 0
-#define SR 2
+#define PC  0	// Program  Counter
+#define SR  2	// Status   Register
+#define CG1 2	// Constant Generator 1, used for -1, 0, 1, 2
+#define CG2 3	// Constant Generator 2, Used for 4 and 8
 
 int as_value[] = {0, 1, 1, 1, 2, 3, 3};
 
@@ -84,13 +86,12 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 	ADDR_MODE addr_mode0 = WRONG; // Used in general
 	ADDR_MODE addr_mode1 = WRONG; // Used for DST in double operand
 
-	single_overlay single;
 
 	std::string src_string = "";
 	std::string dst_string = "";
 
+	single_overlay single;
 	double_overlay dbl;
-
 	jump_overlay jump;
 
 	int value0 = -1;
@@ -100,6 +101,8 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 	int value1_dbl = -1;
 
 	unsigned short us_value0 = -1;
+
+	bool constant_gen_flag = false;
 
 	// Set up output settings:
 	outfile << std::setfill('0') << std::right;
@@ -171,7 +174,29 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 					break;
 
 				case IMMEDIATE:
-					single.reg = PC;
+					if(addr_mode == IMMEDIATE && (value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8))
+					{
+						single.reg = (value0 >= 4) ? CG1 : CG2
+						constant_gen_flag = true;
+						// Then overwrite As for the specific value
+						switch value0
+						{
+							case  0:
+								single.as = 0;
+								break;
+							case  1:
+								break;
+								single.as = 1;
+							case  2:
+							case  4:
+								single.as = 2;
+								break;
+
+							default:		// Note: for "case -1:" and "case 8:", single.as is already set to 3.
+								break;	
+						}
+					}
+					else single.reg = PC;
 					break;
 
 				default:
@@ -185,7 +210,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 			LC += 2;
 
-			if(addr_mode_LC_array_src[addr_mode0]) // Emit SRC output if needed
+			if(addr_mode_LC_array_src[addr_mode0] && !constant_gen_flag) // Emit SRC output if needed
 			{
 				outfile << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)value0 << std::endl;
 				write_srec_word((unsigned short)value0);	
@@ -195,7 +220,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			break;
 
 		case DOUBLE: // 2
-		std::cout << "\tINST TYPE DOUBLE" << std::endl;
+			std::cout << "\tINST TYPE DOUBLE" << std::endl;
 			dbl.opcode = id_ptr->opcode/4096; // shift to the right 12 times before inputting
 
 			std::cout << "BW VALUE >>" << id_ptr->b_w << "<<" << std::endl;
@@ -224,12 +249,12 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 				case INDIRECT:
 				case INDIRECT_AI:
 					dbl.src = value0;
-				break;
+					break;
 
 				case INDEXED:
 					dbl.src = value1;
 
-				break;
+					break;
 
 				case RELATIVE:
 					dbl.src = PC;
@@ -243,7 +268,31 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 					break;
 
 				case IMMEDIATE:
-					dbl.src = PC;
+					// Also deals with the constant generator
+					// NEED TO ENSURE FORWARD REFERENCED LABELS DONT WORK
+					if(addr_mode == IMMEDIATE && (value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8))
+					{
+						dbl.src = (value0 >= 4) ? CG1 : CG2
+						constant_gen_flag = true;
+						// Then overwrite As for the specific value
+						switch value0
+						{
+							case  0:
+								dbl.as = 0;
+								break;
+							case  1:
+								break;
+								dbl.as = 1;
+							case  2:
+							case  4:
+								dbl.as = 2;
+								break;
+
+							default:		// Note: for "case -1:" and "case 8:", dbl.as is already set to 3.
+								break;	
+						}
+					}
+					else dbl.src = PC;
 
 					break;
 
@@ -262,23 +311,20 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 				case INDEXED:
 					dbl.dst = value1_dbl;
-
 					break;
 
 				case RELATIVE:
 					dbl.dst = PC;
 					value0_dbl -= LC; // LC of the INSTRUCTION, not value
-
 					break;
 
 				case ABSOLUTE:
 					dbl.dst = SR;
-
 					break;
 
 				default:
 					std::cout << "This should never happen (Double DST switch case)" << std::endl;
-
+					getchar();
 					break;
 			}
 
@@ -288,7 +334,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 			LC += 2;
 
-			if(addr_mode_LC_array_src[addr_mode0]) // Emit SRC output if needed
+			if(addr_mode_LC_array_src[addr_mode0] && !constant_gen_flag) // Emit SRC output if needed (Not if constant generator is used
 			{
 				outfile << std::hex << std::setw(4) << LC << " " <<  std::setw(4) << (unsigned short)value0 << std::endl;
 				write_srec_word((unsigned short)value0);	

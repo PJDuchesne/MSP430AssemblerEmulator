@@ -25,7 +25,6 @@ extern std::string current_record;
 extern std::string current_token;
 extern int err_cnt;
 extern int line_num;
-extern int LC;
 
 enum SEARCHTYPE {
 	I,  // INSTRUCTION

@@ -165,7 +165,6 @@ void second_pass(std::istream& fin)
 
 				// ================= DIRECTIVES HERE (START) ======================
 
-				// NOTE: Can BYTE or WORD be #UNKNOWN (Where UNKNOWN is an unknown label that will be defined later?)
 			case DIRECT: // id_ptr should already point to the correct DIR
 				std::cout << "\tDIRECT" << std::endl;
 

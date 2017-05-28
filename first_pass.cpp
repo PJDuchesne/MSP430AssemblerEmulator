@@ -384,6 +384,17 @@ void first_pass(std::istream& fin)
 				else
 				{
 					LC += addr_mode_LC_array[addr_mode];
+					// Constant generator check, must also avoid forward references
+					if(addr_mode == IMMEDIATE && (value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8))
+					{
+						symtbl_ptr = get_symbol(src_operand);
+						if(symtbl_ptr != NULL)
+						{
+							if(symtbl_ptr->type == UNKNOWN) break;
+							else LC -= 2; // Undo the LC increment from earlier
+						}
+						else LC -= 2; // Undo the LC increment from earlier
+					}
 					if(!is_last_token()) error_detected("Directive: Found Unknown Label after SRC operand");
 				}
 
