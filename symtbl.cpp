@@ -125,47 +125,66 @@ void add_symbol(std::string label, int value, SYMTBLTYPE type)
 void output_symtbl()
 {
 	int temp_cnt = 0;
+	int temp_cnt2 = 0;
+
     symtbl_entry* temp = symtbl_master;
 
 	// PURELY AESTECTIC PORTION (Formatting column width of output print so it looks nice)
 
-    int entry_no_length = 1;	// At least 1 length (Actually 2 because the symtbl is initialized, but this works with the code below)
-	int line_no_length = 1;		// At least 1 length
-    int max_label_length = 3;	// At least 3 length
+    int entry_no_length = 0;
+	int line_no_length = 0;
+
+	// To format, I iterate through the symbol table first, obtaining the number
+	// of entries, the maximum line number, and the maximum label length
+    int max_label_length = 0;	// 
+	int max_symbol_line = 0;
 
 	while(temp->next != NULL)
 	{
 		if(temp->label.length() > max_label_length) max_label_length = temp->label.length();
+		if(temp->line > max_symbol_line) max_symbol_line = temp->line;
 		temp = temp->next;
 		temp_cnt++;
 	}
 
-	while(temp_cnt != temp_cnt%10)
+	// Determining width of n in "ENTRY #n" column
+	while(temp_cnt >= 1)
 	{
-		temp_cnt = temp_cnt%10;
+		temp_cnt = temp_cnt/10;
 		entry_no_length++;
 	}
 
-	temp_cnt = line_num;
-	while(temp_cnt != temp_cnt%10)
+	// Determining width of n in "Line #n" column
+	while(max_symbol_line >= 1)
 	{
-		temp_cnt = temp_cnt%10;
+		max_symbol_line /= 10;
 		line_no_length++;
 	}
 
-
 	// ACTUAL PRINTING
+	std::cout << "SYMBOL TABLE: (Starting With Most Recently Added Entry)" << std::endl << std::endl;
+	outfile << "SYMBOL TABLE: (Starting With Most Recently Added Entry)" << std::endl << std::endl;
+
     // Iterate through points by using the "next" pointer on each value
     temp_cnt = 0;
 	temp = symtbl_master;
     while(temp->next != NULL)
     {
-        std::cout << "Entry #"    << std::right << std::setfill('0') << std::setw(entry_no_length) << std::dec << temp_cnt;
+	// To terminal
+        std::cout << "\tEntry #"    << std::right << std::setfill('0') << std::setw(entry_no_length) << std::dec << temp_cnt;
 		std::cout << " | Label: " << std::left << std::setfill(' ') << std::setw(max_label_length) << temp->label;
-		// Values of -1 (Unknowns) will appear as ffffffff (twos compliment output)
-		std::cout << " | Value: " << std::right << std::setfill('0') << std::setw(4) << std::hex << temp->value;
+		// Values of -1 (Unknowns) will appear as ffff (twos compliment output)
+		std::cout << " | Value: " << std::right << std::setfill('0') << std::setw(4) << std::hex << (unsigned short)temp->value;
 		std::cout << " | Line #"  << std::right << std::setfill('0') << std::setw(line_no_length) << std::dec << temp->line;
 		std::cout << " | type: "  << types[temp->type] << std::endl;
+
+	// To diagnostics
+        outfile << "\tEntry #"    << std::right << std::setfill('0') << std::setw(entry_no_length) << std::dec << temp_cnt;
+		outfile << " | Label: " << std::left << std::setfill(' ') << std::setw(max_label_length) <<temp->label;
+		// Values of -1 (Unknowns) will appear as ffff (twos compliment output)
+		outfile << " | Value: " << std::right << std::setfill('0') << std::setw(4) << std::hex << (unsigned short)temp->value;
+		outfile << " | Line #"  << std::right << std::setfill('0') << std::setw(line_no_length) << std::dec << temp->line;
+		outfile << " | type: "  << types[temp->type] << std::endl;
 
         temp = temp->next;
         temp_cnt++;
@@ -238,9 +257,30 @@ bool valid_symbol(std::string token)
 void symtbl_unknown_check()
 {
 	symtbl_entry* se_ptr = symtbl_master;
+	
+	int starting_err_cnt = err_cnt;
+
+	std::cout << std::endl << "\tChecking Symbol Table for Unresolved Unknowns:" << std::endl;
+
 	while(se_ptr->next != NULL)
 	{
-		if(se_ptr->type == 2) err_cnt++;
+		if(se_ptr->type == 2)
+		{
+			err_cnt++;
+			
+		}
 		se_ptr = se_ptr->next;
 	}
+
+	if(err_cnt == starting_err_cnt)
+	{
+		std::cout << std::endl << "\tNo unknowns found in the symbol table" << std::endl;
+		outfile << std::endl << "\tNo unknowns found in the symbol table" << std::endl;
+	}
+	else
+	{
+		std::cout << std::endl << "\tTotal unknowns found on the symbol table: >>" << (err_cnt - starting_err_cnt) << "<<" << std::endl;
+		outfile << std::endl << "\tTotal unknowns found on the symbol table: >>" << (err_cnt - starting_err_cnt) << "<<" << std::endl;
+	}
+
 }

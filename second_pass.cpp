@@ -31,8 +31,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/emitter.h"
 #include "Include/s19_maker.h"
 
-std::ofstream srec_file;
-
 /*
 	Function: second_pass
 	Input: fin: The input file to read records from.
@@ -45,11 +43,8 @@ std::ofstream srec_file;
 			 which case it calls emit and goes to the next line, or until it
 			 finds a directive, in which case it performs the directive action.
 */
-void second_pass(std::istream& fin)
+void second_pass()
 {
-	std::ofstream outfile;
-	outfile.open("output.txt");				// For debugging second pass
-
 	srec_file.open("srec_output.s19");      // For submission
 
 	line_num = 0;
@@ -75,6 +70,14 @@ void second_pass(std::istream& fin)
 	init_srec(0);
 
 	next_state = CHK_FIRST_TOKEN;
+
+	// Output the diagnostics format to diagnostics.LIS file
+
+	outfile << "\tRecord #n: >>Input Record<<" << std::endl
+  	        << "\t\tMemloc INST" << std::endl
+	        << "\t\tMemloc [SRC Address] (If it exists)" << std::endl
+	        << "\t\tMemloc [DST Address] (If it exists)" << std::endl;
+			
 	while(!fin.eof() && !end_flag)
 	{
 		switch (next_state)
@@ -82,6 +85,8 @@ void second_pass(std::istream& fin)
 			case CHK_FIRST_TOKEN:
 				line_num++;
 				current_token = fft(fin);
+				
+				outfile << std::endl << "\tRecord #" << line_num << ": >>" << current_record << "<<" << std::endl;
 
 				// If there is an empty line, move on to next line
 				if(current_token == "")
@@ -145,16 +150,16 @@ void second_pass(std::istream& fin)
 				switch(id_ptr->type)
 				{
 					case NONE:
-						emit(id_ptr->mnemonic, "", NONE, outfile, LC);
+						emit(id_ptr->mnemonic, "", NONE, LC);
 						break;
 					case SINGLE:
-						emit(id_ptr->mnemonic, fnt(), SINGLE, outfile, LC);
+						emit(id_ptr->mnemonic, fnt(), SINGLE, LC);
 						break;
 					case DOUBLE:
-						emit(id_ptr->mnemonic, fnt(), DOUBLE, outfile, LC);
+						emit(id_ptr->mnemonic, fnt(), DOUBLE, LC);
 						break;
 					case JUMP:
-						emit(id_ptr->mnemonic, fnt(), JUMP, outfile, LC);
+						emit(id_ptr->mnemonic, fnt(), JUMP, LC);
 						break;
 					default:
 						std::cout << "[INST] THIS SHOULD NEVER TRIGGER" << std::endl;
@@ -211,7 +216,7 @@ void second_pass(std::istream& fin)
 								write_srec_byte((unsigned char)value0);
 
 								// For diagnostics and increasing LC of the second_pass
-								emit("BYTE", current_token, NONE, outfile, LC);
+								emit("BYTE", current_token, NONE, LC);
 								LC += 0x01;
 							}
 							else error_detected_no_cnt("Directive: Value too large for BYTE directive");
@@ -260,7 +265,7 @@ void second_pass(std::istream& fin)
 							if(value0 > -65536 && value0 < 65535)
 							{
 								// EMIT WORD
-								emit("WORD", current_token, NONE, outfile, LC);
+								emit("WORD", current_token, NONE, LC);
 								LC += 0x02;
 
 							}
@@ -280,13 +285,12 @@ void second_pass(std::istream& fin)
 				getchar();  // This should never happen, getchar will stop the runtime and let the user know there is a serious flaw
 				break;
 		}
+		
 	}
 
 	// Output any bytes still in the buffer and then close with an S9
 	output_srec_buffer();
 	write_S9();
-
-	outfile.close();
 }
 
 /*

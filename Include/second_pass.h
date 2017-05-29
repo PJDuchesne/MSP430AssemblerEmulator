@@ -19,7 +19,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #ifndef SECOND_PASS_H
 #define SECOND_PASS_H
 
-void second_pass(std::istream& fin);
+void second_pass();
 
 void error_detected_no_cnt(std::string error_msg);
 

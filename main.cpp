@@ -32,50 +32,67 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/second_pass.h"
 #include "Include/emitter.h"
 
+// Globals
 std::string current_record = "";
 std::string current_token  = "";
 int err_cnt = 0;
 
-symtbl_entry* se_ptr = NULL;
+std::ifstream fin;
+std::ofstream outfile;
+std::ofstream srec_file;
 
 int main(int argc, char *argv[])
 {
 	// "Drag and drop" capability, used in command line personnaly
 	if(argc < 2)
 	{
-		std::cout << "INPUT ERROR" << std::endl;
+		std::cout << "ERROR: Missing input file" << std::endl;
 		getchar();
 		exit(0);
 	}
 
 	init_symtbl();
 
-	std::ifstream fin(argv[1]);
+	fin.open(argv[1]);
 
- 	first_pass(fin);
+	// For diagnostics
+	outfile.open("diagnostics.LIS");
 
-	std::cout << std::endl << std::endl << "First pass completed with >>" << err_cnt << "<< Errors" << std::endl << std::endl;
+	outfile << "FIRST PASS DIAGNOSTICS (Emitted Records are in ERROR)" << std::endl << std::endl;
 
+	// Runs the first pass
+ 	first_pass();
+
+	std::cout << std::endl << "\tFirst Pass Completed with >>" << err_cnt << "<< Errors (Not including unknowns)" << std::endl;
+	outfile << std::endl << "\tFirst Pass Completed with >>" << err_cnt << "<< Errors (Not including unknowns)" << std::endl;
+
+	// Check the symbol table for unresolved unknowns
 	symtbl_unknown_check();
 
-	std::cout << std::endl << "First pass completed with >>" << err_cnt << "<< Errors (Including Unknowns)" << std::endl << std::endl;
+	std::cout << std::endl << "\tFirst Pass Completed with >>" << err_cnt << "<< Errors (Including unknowns)" << std::endl;
+	outfile << std::endl << "\tFirst Pass Completed with >>" << err_cnt << "<< Errors (Including unknowns)" << std::endl;
 
- 	output_symtbl();
-
+	// If there are no errors, rewind file and run second pass
  	if(err_cnt == 0)
  	{
 		// Rewind file to beginning
 		fin.clear();
 		fin.seekg(0);
 
-  		second_pass(fin);
- 	}
- 	else
- 	{
- 		// Print symtbl to LOG file
+		// Run second pass
+		outfile << std::endl << "SECOND PASS DIAGNOSTICS (All Records emitted with format shown below)" << std::endl << std::endl;
+  		second_pass();
  	}
 
+	std::cout << std::endl;
+	outfile << std::endl;
+	
+	output_symtbl();
+
+	outfile << std::endl << "END OF DIAGNOSTICS OUTFILE" << std::endl;
+
 	fin.close();
+	outfile.close(); // Note: srec_file is closed in the s9 function 
 
 	return 0;
 }

@@ -25,6 +25,11 @@ extern std::string current_token;
 extern int err_cnt;
 extern int line_num;
 
+// Global fine types for input and output across all files
+extern std::ifstream fin;
+extern std::ofstream outfile;
+extern std::ofstream srec_file;
+
 enum SEARCHTYPE {
 	I,  // INSTRUCTION
 	D   //  DIRECTIVE

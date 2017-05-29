@@ -19,7 +19,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #ifndef FIRST_PASS_H
 #define FIRST_PASS_H
 
-void first_pass(std::istream& fin);
+void first_pass();
 
 bool is_last_token(); // True if the token previously parsed was the last token, false if there is another token after
 

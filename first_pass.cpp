@@ -56,7 +56,7 @@ int line_num = 0;
 			records individually, one token at a time. Please see the data flow diagram
 			in the Diagrams folder for a general overview of the state transitions.
 */
-void first_pass(std::istream& fin)
+void first_pass()
 {
 	// Enumeration of the state machine states, initialized to the first state
 	STATE next_state = CHK_FIRST_TOKEN;
@@ -511,9 +511,6 @@ void first_pass(std::istream& fin)
 		std::cout << error_line_array[temp123897] << std::endl;
 		temp123897++;
 	}
-
-	std::cout << std::endl;
-
 	line_num = 0;
 }
 
@@ -536,7 +533,12 @@ bool is_last_token()
 */
 void error_detected(std::string error_msg)
 {
-	std::cout << "\t\t[ERROR MSG - FIRST PASS] " << error_msg << std::endl;
+	std::cout << std::dec << "\tRECORD #" << line_num << ": >>"<< current_record << "<<" <<std::endl;
+	std::cout << "\t\t[ERROR MSG - FIRST PASS] " << error_msg << std::endl << std::endl;
+
+	outfile << std::dec << "\tRECORD #" << line_num << ": >>"<< current_record << "<<" <<std::endl;
+	outfile << "\t\t[ERROR MSG - FIRST PASS] " << error_msg << std::endl << std::endl;
+	
 	current_record_diagnostics.line = line_num;
 	error_line_array[err_cnt] = line_num;
 	err_cnt++;

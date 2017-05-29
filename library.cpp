@@ -42,7 +42,8 @@ std::string fft(std::istream& fin)
 	// Remove comment from line
 	current_record = current_record.substr(0, current_record.find_first_of(";"));
 
-	current_record = " " + current_record; // Testing
+	// Used to fix an error an error
+	current_record = " " + current_record;
 
 	char* temp_crecord = new char[current_record.length()+1];
 

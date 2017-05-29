@@ -19,6 +19,42 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #ifndef EMITTER_H
 #define EMITTER_H
 
-void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& outfile, int& LC);
+struct single_overlay {
+	union {
+		struct {
+			unsigned short reg:4;
+			unsigned short as:2;
+			unsigned short bw:1;
+			unsigned short opcode:9;
+		};
+		unsigned short us_single;
+	};
+};
+
+struct double_overlay {
+	union {
+		struct {
+			unsigned short dst:4;
+			unsigned short as:2;
+			unsigned short bw:1;
+			unsigned short ad:1;
+			unsigned short src:4;
+			unsigned short opcode:4;
+		};
+		unsigned short us_double;
+	};
+};
+
+struct jump_overlay {
+	union {
+		struct {
+			unsigned short offset:10;
+			unsigned short opcode:6;
+		};
+		unsigned short us_jump;
+	};
+};
+
+void emit(std::string inst, std::string operand, INST_TYPE type, int& LC);
 
 #endif
