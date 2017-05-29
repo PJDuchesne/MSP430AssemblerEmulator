@@ -32,14 +32,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/second_pass.h"
 #include "Include/emitter.h"
 
-// TO ADD
-	// Input argument options (Drag and drop, input text, etc.)
-	// Transition logic
-	// Second pass function
-	// Closing
-
-// GLOBAL VARIABLES
-
 std::string current_record = "";
 std::string current_token  = "";
 int err_cnt = 0;
@@ -48,8 +40,8 @@ symtbl_entry* se_ptr = NULL;
 
 int main(int argc, char *argv[])
 {
-	// Example input argument for eventual adding of input/output parameters. Hardcoded for now
-	if(argc < 2) // argv[0] = executable name, therefore <2 means there is 0 input given
+	// "Drag and drop" capability, used in command line personnaly
+	if(argc < 2)
 	{
 		std::cout << "ERROR" << std::endl;
 		getchar();
@@ -59,7 +51,6 @@ int main(int argc, char *argv[])
 	{
 		std::cout << "NO ERROR" << std::endl;
 	}
-	// Initialize a few things (Open file for one)
 
 	init_symtbl();
 
@@ -77,11 +68,15 @@ int main(int argc, char *argv[])
 
  	if(err_cnt == 0)
  	{
-		// REWIND FILE TO BEGINNING
+		// Rewind file to beginning
 		fin.clear();
 		fin.seekg(0);
 
   		second_pass(fin);
+ 	}
+ 	else
+ 	{
+ 		// Print symtbl to LOG file
  	}
 
 	fin.close();

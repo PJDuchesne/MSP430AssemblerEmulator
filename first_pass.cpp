@@ -14,6 +14,13 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 -> Date: May 21, 2017   (Created)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
+-> Brief:
+		The first pass performs error checking on the input .asm file
+	and fills the symbol table with all appropriate values. If an error
+	is found, it is recorded and will prevent the second pass from starting.
+	The first pass works by utilizing a state machine that cycles through
+	records individually, one token at a time. Please see the data flow diagram
+	in the Diagrams folder for a general overview of the state transitions.
 */
 
 #include <iostream>
@@ -29,87 +36,112 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/inst_dir.h"
 #include "Include/parser.h"
 
-int addr_mode_LC_array[] = {0x0, 0x2, 0x2, 0x2, 0x0, 0x0, 0x2};
+struct diagnostics {
+	std::string record;
+	std::string error_msg;
+	int line;
+};
 
-int error_line_array[300] = { };
+diagnostics current_record_diagnostics;
 
+// Array of addressing mode increments for the location counter
+int addr_mode_LC_array[] = {0, 2, 2, 2, 0, 0, 2};
+
+// Array of erros for the developer's use. (Arbitrarily capped at 500 errors)
+int error_line_array[500] = { };
+
+// A global line number to keep track of which line of the file is being processed
 int line_num = 0;
 
 void first_pass(std::istream& fin)
 {
-	std::cout << "First Pass Starting" << std::endl;
+	// Enumeration of the state machine states, initialized to the first state
+	STATE next_state = CHK_FIRST_TOKEN;
 
-	STATE next_state;
+	// Location Counter variable
 	int LC = 0;
+
+	// Various flags used within the state machine
 	bool end_flag = false;
 	bool two_op_flag = false;
 	bool directive_error_flag = false;
 
+	// Enumeration of the addressing mode, used for the return value of the parse function
 	ADDR_MODE addr_mode = WRONG;
 
+	// General use pointer to an instruction/directive table entry
 	inst_dir* id_ptr = NULL;
 
+	// General use pointer to a symbol table entry
 	symtbl_entry* symtbl_ptr = NULL;
 
+	// Return values for the Parse function
 	int value0 = -1;
 	int value1 = -1;
 
+	// Used in the state machine
 	std::string src_operand = "";
 	std::string dst_operand = "";
 	std::string jmp_operand = "";
 
 	std::string last_label = "";
 
-	char temp_dev;
-
-	next_state = CHK_FIRST_TOKEN;
 	while(!fin.eof() && !end_flag)
 	{
 		switch (next_state)
 		{
-			case CHK_FIRST_TOKEN: // Also iterates to next record
-				line_num++;
-				current_token = fft(fin);
-				std::cout << "\tLC at START OF RECORD >>" << std::dec << LC << std::dec << "<<" << std::endl;
-				// std::cout << "\tCURRENT_TOKEN: >>" << current_token << "<<" << std::endl;
-				std::cout << "\tCHK_FIRST TOKEN" << std::endl;
+			case CHK_FIRST_TOKEN:
+				/*	BRIEF STATE SUMMARY:
+					This state gets the first token (using fft()), 
+					checks whether it in an instruction, directive, 
+					or label respectively, and then sets the next
+					state to the appropriate state.
+				*/
 
-				if(current_token == "")  // Empty line, no token on line
+				line_num++;
+
+				current_token = fft(fin);	// This fetches the next record and it's first token
+
+				// If there is an empty line, move on to next line
+				if(current_token == "")
 				{
 					next_state = CHK_FIRST_TOKEN;
 					break;
 				}				
 
-				id_ptr = get_inst_dir(current_token, I);  // Check if it is a valid INST
+				// Check if token is an instruction
+				id_ptr = get_inst_dir(current_token, I);
 				if(id_ptr != NULL)
 				{
 					next_state = INST;
 					break;
 				}
 
-				id_ptr = get_inst_dir(current_token, D);  // Check if it is a valid DIRECTIVE
+				// Check if token is a directive
+				id_ptr = get_inst_dir(current_token, D);
 				if(id_ptr != NULL)
 				{
 					next_state = DIRECT;
 					break;
 				}
 
+				// Check if token is is a symbol
 				symtbl_ptr = get_symbol(current_token);
-				if(symtbl_ptr == NULL && valid_symbol(current_token))  // New symbol!
+				if(symtbl_ptr == NULL && valid_symbol(current_token))  	// Therefore this is a new symbol
 				{	
 					add_symbol(current_token, LC, KNOWN);
-					last_label = current_token;  // For EQU
+					last_label = current_token;  						// Used for the EQU directive
 					next_state = CHK_NEXT_TOKEN;
 					break;
 				}
 				else if(symtbl_ptr != NULL)
 				{
-					if(symtbl_ptr->type == 2) // Fills in forward references
+					if(symtbl_ptr->type == 2) 							// Fill in any forward references
 					{
 						symtbl_ptr->value = LC;
 						symtbl_ptr->type = KNOWN;
-						symtbl_ptr->line = line_num; // UNKNOWN
-						last_label = symtbl_ptr->label; // FOR EQU
+						symtbl_ptr->line = line_num; 					// Put in line at which the label is made known
+						last_label = symtbl_ptr->label; 				// Used for the EQU directive
 						next_state = CHK_NEXT_TOKEN;
 						break;
 					}
@@ -128,46 +160,56 @@ void first_pass(std::istream& fin)
 				} 
 
 				break;
-			case CHK_NEXT_TOKEN: // This happens after a valid label is found
-				std::cout << "\tCHK_NEXT_TOKEN" << std::endl;
+			case CHK_NEXT_TOKEN:
+				/*	BRIEF STATE SUMMARY:
+					This state occurs if the first token was a valid label.
+					At this point the token is either empty, an instruction,
+					or a directive. Otherwise it is an error. This state is
+					quite similar to the previous state in functionality and
+					thus has less explanatory comments.
+				*/
 
-				// This is either an empty token, and INST, or DIR (OR ERROR)
-				current_token = fnt();
-				if(current_token == "") 	      // Line only had a label (and maybe a comment)
+				current_token = fnt();	// This fetches the next token from the current record
+
+				if(current_token == "")
 				{
 					next_state = CHK_FIRST_TOKEN;
 					break;
 				}
-				
-				std::cout << "\tToken: >> " << current_token << "<<" << std::endl;
-				
 
-				id_ptr = get_inst_dir(current_token, I);  // Check if it is a valid INST
+				id_ptr = get_inst_dir(current_token, I);
 				if(id_ptr != NULL)
 				{
 					next_state = INST;
 					break;
 				}
 
-                id_ptr = get_inst_dir(current_token, D);  // Check if it is a valid DIRECTIVE
+                id_ptr = get_inst_dir(current_token, D);
                 if(id_ptr != NULL)
                 {
                 	next_state = DIRECT;
                 	break;
                 }
                 
-				// If it is not an instruction or directive, this is an error
-				error_detected("Chk_Next_Token: Token is not INST or DIR");
+				// If it is not empty, an instruction, or a directive, it is an error
+				error_detected("Chk_Next_Token: Token is not empty, INST, or DIR");
                 next_state = CHK_FIRST_TOKEN;
                 
                 break;
-			case INST:  // id_ptr should already point to the correct INST
-				std::cout << "\tINST" << std::endl;
-				LC = LC+ 0x02;
+			case INST:
+				/*	BRIEF STATE SUMMARY:
+					This state parses the current instruction from the provided
+					id_ptr (which is set in the previous state). The location counter
+					is incremented and the next state is set based on the type of instruction.
+					The operand for the instruction is also found and set up for the 
+					following state.
+				*/
+				LC += 2;
 
-				// Next token should contain either 0, 1, or 2 operands
-				current_token = fnt();
+				current_token = fnt();	// This fetches the next token from the current record (the operands token)
 
+				// If the next state is not set to check operands (i.e. if there is an error),
+				// the next state is set to CHK_FIRST_TOKEN by default
 				next_state = CHK_FIRST_TOKEN;
 
 				switch(id_ptr->type)
@@ -199,66 +241,69 @@ void first_pass(std::istream& fin)
 						{
 							src_operand = current_token.substr(0, current_token.find_first_of(","));
 							dst_operand = current_token.substr(current_token.find_first_of(",")+1);
-							next_state = CHK_DST_OP; // Check DST first, for effectively no reason
+							next_state = CHK_DST_OP; // CHK_DST_OP sets the next state to CHK_SRC_OP after completion
 						}
 						else error_detected("INST: Found Non-Double operand DOUBLE INST");
 
 						break;
 					default:
 						std::cout << "[INST] THIS SHOULD NEVER TRIGGER" << std::endl;
+						getchar();  // This should never happen, getchar will stop the runtime and let the user know there is a serious flaw
 						break;
 				}
 				
 				break;
-			case DIRECT: // id_ptr should already point to the correct INST
-				std::cout << "\tDIRECT" << std::endl;
-			
-				/*	
-					> The second letter of all directives are unique with this directive set
-					> This avoids having to do another enumeration set (Note: Discussed this with Tom Smith)
+			case DIRECT:
+				/*	BRIEF STATE SUMMARY:
+					This state parses the current directive from the provided id_ptr
+					(which is set in the previous state). The directives are performed
+					through a switch case that has different operations for each directive.
+					Instead of writing an enumeration for the directives, I simply noticed
+					that all directives inthe MSB-430 set have a unique 2nd character and
+					performed a switch case off it. (Note: This was discussed with a classmate,
+					Tom Smith) See below for the translates.
 
 					> ALIGN, BSS, BYTE, END, EQU, ORG, STRING, WORD
 					>  L      S    Y     N    Q    R    T       O
 				*/
 
-				next_state = CHK_FIRST_TOKEN; // Whether or not there's an error, this is always the next state
-				directive_error_flag = true;  // Assume error until proven otherwise
+				// No matter the outcome of the directive (error or not), the next state will be CHK_FIRST_TOKEN
+				next_state = CHK_FIRST_TOKEN;
 
+				// The directive is assumed to have caused an error until proven otherwise
+				directive_error_flag = true;
+
+			 	// If the type is not ALIGN, END, or STRING, the value needs to be parsed
 				if(id_ptr->mnemonic[1] != 'L' && id_ptr->mnemonic[1] != 'N' && id_ptr->mnemonic[1] != 'T')
-				{  // If the type is not ALIGN, END, or STRING, the value needs to be parsed
-
+				{ 
 					current_token = fnt();						// Find next token
 					symtbl_ptr = get_symbol(current_token);		// Check symtbl for that token
 
-					// No forward referecing
+					// "No forward referecing for directives" ~ TA Gary, 2017
 					if(symtbl_ptr == NULL && valid_symbol(current_token)) error_detected("Directive: Found UNKNOWN label after DIRECTIVE (Value0 parsing, #1)");
 					else
 					{
-						current_token = "#" + current_token;  // make it an indexed value for the parser
+						// The operand parser expects immediates to start with "#", so this is added
+						current_token = "#" + current_token;
 						addr_mode = parse(current_token, value0, value1);
-
-						std::cout << "\t\tCurrent addr mode is: >>" << addr_mode << "<<" << std::endl;
-
 						if(addr_mode == IMMEDIATE) directive_error_flag = false;
 						else error_detected("Directive: Found Unknown Label after DIRECTIVE (Value0 parsing, #2)");
-						// Must be wrong (unless something is wrong with the parser)
 
 						if(!is_last_token()) error_detected("Directive: Found token after DIRECTIVE");
 					}
 				}
 
-				switch (id_ptr->mnemonic[1])  // The second letter of all directives are unique with this directive set
+				switch (id_ptr->mnemonic[1])
 				{
 					case 'L':  // Align
 						if(LC%2) LC++;
-
 						if(!is_last_token()) error_detected("Directive: Found token after ALIGN directive");
 						break;
 
 					case 'S':  // BSS
 						if(!directive_error_flag)
 						{
-							if(value0 >= 0) LC += value0;  // No upper bound on BSS
+							if(value0 >= 0 && value0 < 65536) LC += value0;
 							else error_detected("Directive: Negative value for BSS");
 						}
 						break;
@@ -273,7 +318,6 @@ void first_pass(std::istream& fin)
 						break;
 
 					case 'N':  // END
-						std::cout << "THE END IS COMING" << std::endl;
 						end_flag = true;
 						if(!is_last_token())
 						{
@@ -285,10 +329,9 @@ void first_pass(std::istream& fin)
 					case 'Q':  // EQU
 						if(!directive_error_flag)
 						{
-							// LABEL is required: Check symbtable for label at current LC value
+							// EQU requires a label, therefore the 'last_label' added to the symbol table is found
+							// If that symbol's line number matches the current line number, EQU can proceed
 							current_token = fnt();
-
-							std::cout << "Last Addition: >> " << last_label << "<<" << std::endl;
 
 							symtbl_ptr = get_symbol(last_label); 
 
@@ -300,8 +343,6 @@ void first_pass(std::istream& fin)
 								{
 									symtbl_ptr->value = value0;
 									symtbl_ptr->line = line_num;
-
-									std::cout << "[DIRECTIVE] SUCESSFULLY STORED value0 into label >>" << symtbl_ptr->label << "<<" << std::endl;
 
 									if(!is_last_token()) error_detected("Directive: Found Unknown Label after EQU value");
 								}
@@ -324,12 +365,11 @@ void first_pass(std::istream& fin)
 
 						break;
 
-					case 'T':  // STRING ** Special Case **
+					case 'T':  // STRING
 						current_token = fnt();
-
-						if(current_token.length() <= 82) // Doing max 80, punch card width
+						if(current_token.length() <= 82) // Doing max 80 (Plus two for the quotation marks), vintage punch card width
 						{
-							// Note: Not actually checking the contents, I'm unsure if there are illegal characters in there. 
+							// Note: I'm not actually checking the contents, I'm unsure if there are illegal characters for this. 
 							if(current_token[0] != '"') error_detected("Directive: Missing OPENING quote for STRING");
 							else
 							{
@@ -360,16 +400,22 @@ void first_pass(std::istream& fin)
 						break;
 
 					default:
-						// This should never happen
-
 						std::cout << "\t\t[Directive] DEFAULT ERROR" << std::endl; // This should literally never happen
-						std::cin >> dst_operand[0]; // To stop building and point out the error
+						getchar();  // This should never happen, getchar will stop the runtime and let the user know there is a serious flaw
 						break;
 				}
 
 				break;
 			case CHK_SRC_OP:
-				std::cout << "\tCHK_SRC_OP" << std::endl;
+				/*	BRIEF STATE SUMMARY:
+					This state parses the source operand for either one or two
+					operand instructions. Most of the work here is done by the
+					operand parser. Note: The constant generator check is also
+					performed here, it cannot use forward references and takes
+					measures to avoid it. If the constant generator is used,
+					the location counter is not incremented for the immediate
+					addressing mode.
+				*/
 
 				next_state = CHK_FIRST_TOKEN;
 
@@ -379,6 +425,7 @@ void first_pass(std::istream& fin)
 				else
 				{
 					LC += addr_mode_LC_array[addr_mode];
+
 					// Constant generator check, must also avoid forward references
 					if(addr_mode == IMMEDIATE && (value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8))
 					{
@@ -396,13 +443,19 @@ void first_pass(std::istream& fin)
 				src_operand = "";
 				break;
 			case CHK_DST_OP:
-				std::cout << "\tCHK_DST_OP" << std::endl;
+				/*	BRIEF STATE SUMMARY:
+					This state parses the destination operand for two operand
+					instructions. Most of the work here is done by the
+					operand parser. Only the first 4 addressing modes are valid,
+					so if the parser returns an invalid addressing mode, an error
+					is triggered.
+				*/
 
 				next_state = CHK_FIRST_TOKEN;
 
 				addr_mode = parse(dst_operand, value0, value1);
 
-				// Corresponds to INDIRECT, INDIRECT_AI, IMMEDIATE, and WRONG
+				// If the addressing mode is INDIRECT, INDIRECT_AI, IMMEDIATE, or WRONG, there is an error
 				if(addr_mode >= 4) error_detected("CHK_DST_OP: Invalid addressing mode or parsing for DST operand");
 				else
 				{
@@ -410,19 +463,26 @@ void first_pass(std::istream& fin)
 
 					// Must ensure that this is the last token in the record
 					dst_operand = fnt();
-					if(dst_operand == "") next_state = (two_op_flag) ? CHK_SRC_OP : CHK_NEXT_TOKEN; // Therefore this is correctly the last token
+					if(dst_operand == "") next_state = (two_op_flag) ? CHK_SRC_OP : CHK_NEXT_TOKEN;
 					else error_detected("CHK_DST_OP: Invalid extra token after operand token");
 				}
 				dst_operand = "";
 				break;
 			case CHK_JMP_OP:
-				std::cout << "\tCHK_JMP_OP" << std::endl;
+				/*	BRIEF STATE SUMMARY:
+					This state parses the jump operand for jump instructions.
+					Again, most of the work here is done by the operand
+					parser. The only addressing mode allowed by jump instructions
+					is relative.
+				*/
 
 				next_state = CHK_FIRST_TOKEN;
 
 				addr_mode = parse(jmp_operand, value0, value1);
+
+				// JUMP instructions must have the relative addressing mode1
 				if(addr_mode == RELATIVE) 
-				{  // Jump cannot have registers, therefore must be RELATIVE (ABS and IMM are bad)
+				{
 					LC += addr_mode_LC_array[addr_mode];
 					if(!is_last_token()) error_detected("Directive: Found Unknown Label after JMP operand");
 				}
@@ -432,12 +492,10 @@ void first_pass(std::istream& fin)
 				break;
 			default:
 				std::cout << "\t\t[First Pass] DEFAULT ERROR" << std::endl; // This should literally never happen
-				std::cin >> dst_operand[0]; // To stop building and point out the error
+				getchar();  // This should never happen, getchar will stop the runtime and let the user know there is a serious flaw
 				break;
 		}
 	}
-	std::cout << std::endl << "First pass completed with LC of: >>" << LC << "<<" << std::endl;
-
 
 	// Error lines (For debugging)
 
@@ -454,11 +512,13 @@ void first_pass(std::istream& fin)
 	std::cout << std::endl;
 
 	line_num = 0;
-
-	std::cout << "First pass ending" << std::endl;
 }
 
-// FALSE = Extra token (This is an error), TRUE = No extra token, this is the last token
+/*
+	Function: error_detected
+	Output: bool: True means this is the last token on the line, false means this is not the last token
+	Brief: Fetches next token and checks if it is empty. Returns true or false accordingly.
+*/
 bool is_last_token()
 {
 	current_token = fnt();
@@ -466,10 +526,15 @@ bool is_last_token()
 	else return true;
 }
 
-// Used to shorten code: could make this inline to be faaaaaancy
+/*
+	Function: error_detected
+	Input: error_msg: String containing the error message to print out to diagnostics
+	Brief: Increments the error counter and performs diagnostics output
+*/
 void error_detected(std::string error_msg)
 {
 	std::cout << "\t\t[ERROR MSG - FIRST PASS] " << error_msg << std::endl;
+	current_record_diagnostics.line = line_num;
 	error_line_array[err_cnt] = line_num;
 	err_cnt++;
 }
