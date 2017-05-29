@@ -14,13 +14,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 -> Date: May 21, 2017   (Created)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
--> Brief:
-		The first pass performs error checking on the input .asm file
-	and fills the symbol table with all appropriate values. If an error
-	is found, it is recorded and will prevent the second pass from starting.
-	The first pass works by utilizing a state machine that cycles through
-	records individually, one token at a time. Please see the data flow diagram
-	in the Diagrams folder for a general overview of the state transitions.
 */
 
 #include <iostream>
@@ -53,6 +46,16 @@ int error_line_array[500] = { };
 // A global line number to keep track of which line of the file is being processed
 int line_num = 0;
 
+/*
+	Function: first_pass
+	Input: fin: The input file to read records from.
+	Brief:The first pass performs error checking on the input .asm file
+			and fills the symbol table with all appropriate values. If an error
+			is found, it is recorded and will prevent the second pass from starting.
+			The first pass works by utilizing a state machine that cycles through
+			records individually, one token at a time. Please see the data flow diagram
+			in the Diagrams folder for a general overview of the state transitions.
+*/
 void first_pass(std::istream& fin)
 {
 	// Enumeration of the state machine states, initialized to the first state

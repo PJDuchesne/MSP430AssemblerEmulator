@@ -37,6 +37,18 @@ valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 
 * S19 Generator
 
 --> DIANOSTICS FILE? (Basically what I already do for output.txt, plus some)
+* Modify output.txt to be diagnostics.LIS
+	- For failures in FIRST PASS
+		- Modify error function in "first_pass.cpp" to print out to new file the:
+			* LINE number
+			* Original record
+			* ERROR message
+		- Rewrite output_symtbl to output to output.txt if there are errors
+
+	- For success in SECOND PASS
+		- Output opcodes and memloc exactly as you already are, but add records and line numbers between groups of 1-3 (depending on what the record produces)
+		- Output the symbol table at the end to the file as well
+
 
 --> FIRST PASS TESTS
 * One operand
@@ -44,3 +56,4 @@ valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 
 * Jump operand
 * Directives
 * LABELS
+

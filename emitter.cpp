@@ -46,7 +46,7 @@ struct single_overlay {
 			unsigned short bw:1;
 			unsigned short opcode:9;
 		};
-		unsigned short us_single;  // Short = 16 bit
+		unsigned short us_single;
 	};
 };
 
@@ -74,6 +74,27 @@ struct jump_overlay {
 	};
 };
 
+/*
+	Function: emit
+	Input: 	inst: string of instruction to carry out
+			operand: string of operand(s)
+			type: type of instruction
+			outfile: file to print out to
+			LC: Pointer to LC in the second pass for syncronization
+	Brief:The first pass performs error checking on the input .asm file
+			and fills the symbol table with all appropriate values. If an error
+			is found, it is recorded and will prevent the second pass from starting.
+			The first pass works by utilizing a state machine that cycles through
+			records individually, one token at a time. Please see the data flow diagram
+			in the Diagrams folder for a general overview of the state transitions.
+
+	Note: The reason I used "std::string inst" instead of "inst_dir& inst_ptr" was
+			to allow users to input the strings to emit. This is used in the case
+			of the byte and word directives and was used heavily for debugging. This
+			does however waste clock cycles because get_inst_dir() has to be called
+			every time emit is called, but this is somewhat offset by the fact that
+			it uses a binary search to find the instruction.
+*/
 void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& outfile, int& LC)
 {
 	int addr_mode_LC_array_src[] = {0x0, 0x2, 0x2, 0x2, 0x0, 0x0, 0x2};
@@ -85,7 +106,6 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 	symtbl_entry* symtbl_ptr = NULL;
 	ADDR_MODE addr_mode0 = WRONG; // Used in general
 	ADDR_MODE addr_mode1 = WRONG; // Used for DST in double operand
-
 
 	std::string src_string = "";
 	std::string dst_string = "";
@@ -110,8 +130,6 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 	switch (type)
 	{
 		case NONE: // 0  -> Either RETI (NONE INST) or BYTE / WORD (Meaning no instruction)
-			std::cout << "\tINST TYPE NONE" << std::endl;  
-
 			addr_mode0 = parse(operand, value0, value1);
 
 			if(inst == "BYTE")
@@ -135,15 +153,12 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 			else
 			{
 				std::cout << "THIS SHOULD NEVER HAPPEN (Default case NONE emit)" << std::endl;
+				getchar();
 			}
 
 
 			break;
 		case SINGLE: // 1
-		std::cout << "\tINST TYPE SINGLE" << std::endl;
-
-		std::cout << "OPCODE: >>" << id_ptr->opcode << "<<" << std::endl;
-
 			single.opcode = id_ptr->opcode/(128);  // Bit shift the opcode to the right 7 times
 			single.bw = id_ptr->b_w;
 
@@ -174,9 +189,16 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 					break;
 
 				case IMMEDIATE:
+					single.reg = PC;
+					// Constant generator test
 					if(addr_mode0 == IMMEDIATE && (value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8))
 					{
-						single.reg = (value0 < 4) ? CG1 : CG2; // CG1 deals with -1, 0, 1, and 2, CG2 deals with 4 and 8
+						operand.erase(0,1);
+						symtbl_ptr = get_symbol(operand);
+						if(symtbl_ptr != NULL) if(symtbl_ptr->line > line_num) break; 
+
+						single.as = (value0 < 4) ? CG1 : CG2; // CG1 deals with -1, 0, 1, and 2, CG2 deals with 4 and 8
+
 						constant_gen_flag = true;
 						// Then overwrite As for the specific value
 						switch (value0)
@@ -191,16 +213,15 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 							case  4:
 								single.as = 2;
 								break;
-
-							default:		// Note: for "case -1:" and "case 8:", single.as is already set to 3.
+							default:  // Note: for "case -1:" and "case 8:", single.as is already set to 3 from before the switch statement
 								break;	
 						}
 					}
-					else single.reg = PC;
 					break;
 
 				default:
 					std::cout << "This is an issue (WRONG addr_mode0 found)" << std::endl;
+					getchar();
 					break;
 
 			}
@@ -268,11 +289,8 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 					break;
 
 				case IMMEDIATE:
-					// Also deals with the constant generator
-				
-					// NEED TO ENSURE FORWARD REFERENCED LABELS DONT WORK
-
 					dbl.src = PC;
+					// Constant generator test
 					if(addr_mode0 == IMMEDIATE && (value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8))
 					{
 						src_string.erase(0,1);

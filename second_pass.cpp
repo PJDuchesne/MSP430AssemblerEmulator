@@ -9,8 +9,8 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
        _\/\\\__________\//\\\\\\\\\______\/\\\\\\\\\\\\/___
         _\///____________\/////////_______\////////////_____
 
--> Name:  first_pass.cpp
--> Brief: Function file for first_pass.cpp
+-> Name:  second_pass.cpp
+-> Brief: Function file for second_pass.cpp
 -> Date: May 24, 2017   (Created)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
@@ -31,18 +31,22 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/emitter.h"
 #include "Include/s19_maker.h"
 
-/* Extern Globals Used
-   std::string current_record
-   std::string current_token
-   int err_cnt
- */
-
 std::ofstream srec_file;
 
+/*
+	Function: second_pass
+	Input: fin: The input file to read records from.
+	Brief: The second pass state machine functions similarly to the first
+			 pass state machine, but somewhat simpler. There are far fewew
+			 error checks, and the check operand states no longer exist.
+			 In fact, most of the effort for the second pass is within the
+			 emit function that is called from the second pass. Effectively,
+			 the second pass parses the input token until it finds an inst, in
+			 which case it calls emit and goes to the next line, or until it
+			 finds a directive, in which case it performs the directive action.
+*/
 void second_pass(std::istream& fin)
 {
-	std::cout << "Second Pass Starting" << std::endl;
-
 	std::ofstream outfile;
 	outfile.open("output.txt");				// For debugging second pass
 
@@ -75,39 +79,39 @@ void second_pass(std::istream& fin)
 	{
 		switch (next_state)
 		{
-			case CHK_FIRST_TOKEN: // Also iterates to next record
+			case CHK_FIRST_TOKEN:
 				line_num++;
 				current_token = fft(fin);
-				std::cout << "\tLC at START OF RECORD >>" << std::dec << LC << "<<" << std::endl;
 
-				std::cout << "\tCHK_FIRST TOKEN" << std::endl;
-
-				if(current_token == "")  // Empty line, no token on line
+				// If there is an empty line, move on to next line
+				if(current_token == "")
 				{
 					next_state = CHK_FIRST_TOKEN;
 					break;
 				}				
 
-				id_ptr = get_inst_dir(current_token, I);  // Check if it is a valid INST
+				// Check if token is an instruction
+				id_ptr = get_inst_dir(current_token, I);
 				if(id_ptr != NULL)
 				{
 					next_state = INST;
 					break;
 				}
-				id_ptr = get_inst_dir(current_token, D);  // Check if it is a valid DIRECTIVE
+
+				// Check if token is a directive
+				id_ptr = get_inst_dir(current_token, D);
 				if(id_ptr != NULL)
 				{
 					next_state = DIRECT;
 					break;
 				}
 
+				// Otherwise it is a label, in which case it is skipped
 				next_state = CHK_NEXT_TOKEN;
 
 					break;
-			case CHK_NEXT_TOKEN: // This happens after a valid label is found
-				std::cout << "\tCHK_NEXT_TOKEN" << std::endl;
-
-				// This is either an empty token, and INST, or DIR (OR ERROR)
+			case CHK_NEXT_TOKEN:
+				// If there is an empty token, move on to next line
 				current_token = fnt();
 				if(current_token == "") 	      // Line only had a label (and maybe a comment)
 				{
@@ -115,6 +119,7 @@ void second_pass(std::istream& fin)
 					break;
 				}
 
+				// Check if token is an instruction
 				id_ptr = get_inst_dir(current_token, I);  // Check if it is a valid INST
 				if(id_ptr != NULL)
 				{
@@ -122,6 +127,7 @@ void second_pass(std::istream& fin)
 					break;
 				}
 
+				// Check if token is a directive
 				id_ptr = get_inst_dir(current_token, D);  // Check if it is a valid DIRECTIVE
 				if(id_ptr != NULL)
 				{
@@ -129,17 +135,11 @@ void second_pass(std::istream& fin)
 					break;
 				}
 
-				// If it is not an instruction or directive, this is an error
+				// This should never happen, all such errors would be caught in the first pass
 				next_state = CHK_FIRST_TOKEN;
 
 				break;
-			case INST:  // id_ptr should already point to the correct INST
-				std::cout << "\tINST" << std::endl;
-
-				// Next token should contain either 0, 1, or 2 operands
-
-				// Emit using 'current_token = current_token + " " + fnt();' (This will be the 
-
+			case INST:
 				next_state = CHK_FIRST_TOKEN;
 
 				switch(id_ptr->type)
@@ -158,54 +158,36 @@ void second_pass(std::istream& fin)
 						break;
 					default:
 						std::cout << "[INST] THIS SHOULD NEVER TRIGGER" << std::endl;
+						getchar();
 						break;
 				}
 
 				break;
 
-				// ================= DIRECTIVES HERE (START) ======================
-
-				// NOTE: Can BYTE or WORD be #UNKNOWN (Where UNKNOWN is an unknown label that will be defined later?)
 			case DIRECT: // id_ptr should already point to the correct DIR
-				std::cout << "\tDIRECT" << std::endl;
+				// No matter the outcome of the directive (error or not), the next state will be CHK_FIRST_TOKEN
+				next_state = CHK_FIRST_TOKEN;
 
-				/*	
-					> The second letter of all directives are unique with this directive set
-					> This avoids having to do another enumeration set (Note: Discussed this with Tom Smith)
+				// The directive is assumed to have caused an error until proven otherwise
+				directive_error_flag = true;
 
-					> ALIGN, BSS, BYTE, END, EQU, ORG, STRING, WORD
-					>  L      S    Y     N    Q    R    T       O
-				 */
-
-				next_state = CHK_FIRST_TOKEN; // Whether or not there's an error, this is always the next state
-
-				directive_error_flag = true;  // Assume error until proven otherwise
-
+			 	// If the type is not ALIGN, END, or STRING, the value needs to be parsed
 				if(id_ptr->mnemonic[1] != 'L' && id_ptr->mnemonic[1] != 'N' && id_ptr->mnemonic[1] != 'T')
-				{  // If the type is not ALIGN, END, or STRING, the value needs to be parsed
-
+				{
 					current_token = fnt();						// Find next token
 					symtbl_ptr = get_symbol(current_token);		// Check symtbl for that token
 
-					// No forward referecing
-					if(symtbl_ptr == NULL && valid_symbol(current_token)) error_detected_no_cnt("Directive: Found UNKNOWN label after DIRECTIVE (Value0 parsing, #1)");
-					else
-					{
-						current_token = "#" + current_token;  // make it an indexed value for the parser
-						addr_mode = parse(current_token, value0, value1);
+					current_token = "#" + current_token;  // make it an indexed value for the parser
+					addr_mode = parse(current_token, value0, value1);
 
-						std::cout << "\t\tCurrent addr mode is: >>" << addr_mode << "<<" << std::endl;
-
-						if(addr_mode == IMMEDIATE) directive_error_flag = false;
-						else error_detected_no_cnt("Directive: Found Unknown Label after DIRECTIVE (Value0 parsing, #2)");
-					}
+					if(addr_mode == IMMEDIATE) directive_error_flag = false;
+					else error_detected_no_cnt("Directive: Found Unknown Label after DIRECTIVE (Value0 parsing, #2)");
 				}
 
-				switch (id_ptr->mnemonic[1])  // The second letter of all directives are unique with this directive set
+				switch (id_ptr->mnemonic[1])
 				{
 					case 'L':  // Align
 						if(LC%2) LC++;
-
 						break;
 
 					case 'S':  // BSS
@@ -213,7 +195,7 @@ void second_pass(std::istream& fin)
 						{
 							if(value0 >= 0)
 							{
-								LC += value0;  // No upper bound on BSS
+								LC += value0; // Bounds checked in first pass
 								output_srec_buffer();
 								init_srec(LC);
 							}
@@ -226,12 +208,9 @@ void second_pass(std::istream& fin)
 						{
 							if(value0 >= -128 && value0 < 256) 
 							{
-								// EMIT BYTE
-
-								// For S19
 								write_srec_byte((unsigned char)value0);
 
-								// For debugging and increasing LC of the main
+								// For diagnostics and increasing LC of the second_pass
 								emit("BYTE", current_token, NONE, outfile, LC);
 								LC += 0x01;
 							}
@@ -241,50 +220,36 @@ void second_pass(std::istream& fin)
 						break;
 
 					case 'N':  // END
-						std::cout << "THE END IS COMING" << std::endl;
 						end_flag = true;
 						break;
 
-					case 'Q':  // EQU
-						break;	// Handled in first pass
+					case 'Q':  // EQU (Handled in the first pass)
+						break;
 
 					case 'R':  // ORG
 						if(!directive_error_flag)
 						{
-							if(value0 >= 0 && value0 < 65535-LC)
-							{
-								LC = value0;
-								output_srec_buffer();
-								init_srec(LC);
-							}
-							else error_detected_no_cnt("Directive: Value too large for ORG directive");
+							LC = value0;
+							output_srec_buffer();
+							init_srec(LC);
 						}
-
 						break;
 
-					case 'T':  // STRING ** Special Case **
+					case 'T':  // STRING 
 						current_token = fnt();
 
-						if(current_token.length() <= 130)
+						// Error detecting for this was done in the first pass
+						current_token.erase(0,1); // Removes Opening Quote
+						current_token.pop_back(); // Removes Closing Quote
+
+						for(int i = 0; i < current_token.length(); i++)
 						{
-							if(current_token.find_first_of("\"")!= 0 || current_token.find_last_of("\"") != current_token.length()-1) error_detected_no_cnt("Directive: Missing Quotes for STRING");
-							else
-							{
-								// This was not implemented for output on the emitter test because that's a lot of effort
-								current_token.erase(0,1); // Removes Opening Quote
-								current_token.pop_back(); // Removes Closing Quote
-
-								for(int i = 0; i < current_token.length(); i++)
-								{
-									write_srec_byte(current_token[i]);
-								}
-
-								value0 = current_token.length();
-
-								LC += value0;
-							}
+							write_srec_byte(current_token[i]);
 						}
-						else error_detected_no_cnt("Directive: Value too large for ORG directive");
+
+						value0 = current_token.length();
+
+						LC += value0;
 
 						break;
 
@@ -304,17 +269,15 @@ void second_pass(std::istream& fin)
 						break;
 
 					default:
-						// This should never happen
-
-						std::cout << "\t\t[Directive] DEFAULT ERROR" << std::endl; // This should literally never happen
+						std::cout << "\t\t[Directive] DEFAULT ERROR" << std::endl;
+						getchar();  // This should never happen, getchar will stop the runtime and let the user know there is a serious flaw
 						break;
 				}
 
 				break;
-
-				// =================== DIRECTIVES HERE (END) =====================================
 			default:
-				std::cout << "\t\t[First Pass] DEFAULT ERROR" << std::endl; // This should literally never happen
+				std::cout << "\t\t[Second Pass] DEFAULT ERROR" << std::endl; // This should literally never happen
+				getchar();  // This should never happen, getchar will stop the runtime and let the user know there is a serious flaw
 				break;
 		}
 	}
@@ -323,15 +286,19 @@ void second_pass(std::istream& fin)
 	output_srec_buffer();
 	write_S9();
 
-	std::cout << std::endl << "Second pass completed with LC of: >>" << LC << "<<" << std::endl;
-
-	std::cout << "Second pass ending" << std::endl;
-
 	outfile.close();
 }
 
+/*
+	Function: error_detected_no_cnt
+	Input: error_msg: Error msg to display if triggered
+	Brief: Because there should be 0 errors in the second pass, this function
+			will actually stop the program with a getchar() to prompt the user
+			that a catastrophic failure has occurred. This is primarily for
+			testing and debugging
+*/
 void error_detected_no_cnt(std::string error_msg)
 {
 	std::cout << "\t\t[ERROR MSG - FIRST PASS=] " << error_msg << std::endl;
-	// char temp123; std::cin >> temp123;
+	getchar();
 }

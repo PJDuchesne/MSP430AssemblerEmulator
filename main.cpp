@@ -43,13 +43,9 @@ int main(int argc, char *argv[])
 	// "Drag and drop" capability, used in command line personnaly
 	if(argc < 2)
 	{
-		std::cout << "ERROR" << std::endl;
+		std::cout << "INPUT ERROR" << std::endl;
 		getchar();
 		exit(0);
-	}
-	else
-	{
-		std::cout << "NO ERROR" << std::endl;
 	}
 
 	init_symtbl();

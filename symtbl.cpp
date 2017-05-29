@@ -26,14 +26,20 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/symtbl.h"
 #include "Include/inst_dir.h"
 
+// Types as string, this order corresponds to the enumeration order in library.h
 std::string types[] = {"REGISTER", "KNOWN", "UNKNOWN"};
 
 // Pointer to the start of the symbol table
 symtbl_entry* symtbl_master = NULL;
 
+/*
+    Function: init_symtbl
+    Brief: This function takes initializes the symbol table by adding all the
+    		registers and their aliases to the symbol table.
+*/
 void init_symtbl()
 {
-	// Add r0-r15, R0-R15, plus aliases
+	// Added r0-r15, R0-R15, plus aliases (and case values)
 	add_symbol("R0",  0,  REG);
 	add_symbol("R1",  1,  REG);
 	add_symbol("R2",  2,  REG);
@@ -88,6 +94,15 @@ void init_symtbl()
 	add_symbol("cg2", 3,  REG);
 }
 
+/*
+    Function: add_symbol
+    Input: label: input strint to add
+    	   value: value associated with the label
+    	   type: symbol table type for the symbol (Unknown, Known, or REG)
+    Brief: This function adds a symbol to the symbol table. It does no validity
+    		testing, that should be done (perhaps with "Valid_Symbol(X)") before
+    		calling this function.
+*/
 void add_symbol(std::string label, int value, SYMTBLTYPE type)
 {
 	symtbl_entry* new_entry = new symtbl_entry();
@@ -97,11 +112,16 @@ void add_symbol(std::string label, int value, SYMTBLTYPE type)
 	new_entry->next = symtbl_master;
 	new_entry->line = line_num;
 	symtbl_master = new_entry;
-
-	// FOR DEVELOPMENT: Prevents printing of static portion of the symbol table (All the registers)
-	// if(new_entry->type != REG) std::cout << "\t\t\t\tAdded >>" << label << "<< to the symbol table with type: >>" << type << "<< and value >>" << new_entry->value << "<<" << std::endl;
 }
 
+/*
+    Function: output_symtbl()
+    Brief: This function outputs the symbol table when called by iterating
+    		through the table until the last result. Some aestetics were
+    		added for ease of readibility during debugging, these involve
+    		determining the maximum size for each column and setting the
+    		cout width to that value.
+*/
 void output_symtbl()
 {
 	int temp_cnt = 0;
@@ -133,16 +153,13 @@ void output_symtbl()
 		line_no_length++;
 	}
 
-	// ACTUALLY PRINTING
 
-	temp_cnt = 0;
+	// ACTUAL PRINTING
     // Iterate through points by using the "next" pointer on each value
+    temp_cnt = 0;
 	temp = symtbl_master;
     while(temp->next != NULL)
     {
-    	// Don't display registers (FOR DEVELOPMENT)
-    	if(temp->type == REG) break;
-
         std::cout << "Entry #"    << std::right << std::setfill('0') << std::setw(entry_no_length) << std::dec << temp_cnt;
 		std::cout << " | Label: " << std::left << std::setfill(' ') << std::setw(max_label_length) << temp->label;
 		// Values of -1 (Unknowns) will appear as ffffffff (twos compliment output)
@@ -156,6 +173,15 @@ void output_symtbl()
     std::cout << std::endl;
 }
 
+/*
+    Function: get_symbol
+    Input: label: The string symbol to search for.
+    Output: symtbl_entry*: Pointer to a symbol table entry, this is NULL
+    		if the symbol is not found.
+    Brief: This function linearly searches the symbol table starting with
+    		the most recently added symbol. When the correct symbol is
+    		found, it is returned.
+*/
 symtbl_entry* get_symbol(std::string label)
 {	
 	symtbl_entry* temp = symtbl_master;
@@ -169,6 +195,14 @@ symtbl_entry* get_symbol(std::string label)
 	return NULL;
 }
 
+/*
+    Function: valid_symbol
+    Input: token: The string token to check the validity of
+    Output: bool: True means the symbol is valid, false means it is not
+    Brief: This function checks whether or not the given string is a valid
+    		symbol or not. This is used before calling "add_symbol" as an
+    		error checker.
+*/
 bool valid_symbol(std::string token)
 {
 	inst_dir* id_ptr = get_inst_dir(token, I); 
@@ -194,6 +228,13 @@ bool valid_symbol(std::string token)
 	else return false;
 }
 
+/*
+    Function: symtbl_unknown_check()
+    Brief: This function linearly scans through the symbol table increasining
+    		the error count for every UNKNOWN label found. This is called after
+    		the first pass is complete in order to ensure everything is in order
+    		before starting the second pass.
+*/
 void symtbl_unknown_check()
 {
 	symtbl_entry* se_ptr = symtbl_master;

@@ -27,6 +27,16 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/symtbl.h"
 #include "Include/library.h"
 
+/*
+    Function: parse
+    Input: op: String containing the operand, 
+    	   value0: Pointer to the general return value for most addressing modes
+    	   value1: Pointer to the typically unused value storage of the register in indexed mode
+    Output: ADDR_MODE: An enumeration of the addressing mode associated with the given input
+    Brief: This function takes in an operand string and parses it into one of the 7 addressing
+    		modes, or into an error (Denoted by the "WRONG" addressing mode). This is done
+    		through a switch statement and many many checks.
+*/
 ADDR_MODE parse(std::string op, int& value0, int& value1)
 {
 	// Make a copy of the operand in case the original is needed
@@ -147,7 +157,6 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 			else
 			{
 				// Therefore, value is a HEX number or DECIMAL number
-				std::cout << "\t\tOPERAND >>" << operand << "<<" << std::endl;
 	 			if(operand[0] == '$')
 				{
 					operand.erase(0, 1); 

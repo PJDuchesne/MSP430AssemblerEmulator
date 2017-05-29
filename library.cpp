@@ -25,12 +25,17 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 #include "Include/library.h"
 
-// Find first token Implementation
+/*
+	Function: fft (find first token)
+	Output: std::string: The first token of the new record
+	Input: fin: the input .asm input file open to the assembly code
+	Brief: Fetches next the record and passes back the first token
+			after removing any comments from the line. If there is no
+			token on the line, "" is returned.
+*/
 std::string fft(std::istream& fin)
 {
 	std::getline(fin, current_record);
-
-	std::cout << std::endl << "Record #" << line_num << ": >>" << current_record << "<<" << std::endl;
 
 	std::string token;
 
@@ -52,7 +57,14 @@ std::string fft(std::istream& fin)
 	return token;
 }
 
-// Find next token implementation
+/*
+	Function: fnt (find next token)
+	Output: std::string: The next token of the current record
+	Brief: Using the internal storage of 'strtok', the next
+			token is returned without having to pass the file
+			pointer in. If there is no token on the line, ""
+			is returned.
+*/
 std::string fnt()
 {
 	std::string token;
@@ -60,9 +72,7 @@ std::string fnt()
 	char* temp_ctoken = strtok(NULL, " \t\n");
 
 	if (temp_ctoken != NULL) token.assign(temp_ctoken, strlen(temp_ctoken));
-	else return "";
-
-	//      std::cout << "Token x: >>" << token << "<<" << std::endl;
+	else return "";	
 
 	return token;
 }
