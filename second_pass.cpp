@@ -192,7 +192,12 @@ void second_pass()
 				switch (id_ptr->mnemonic[1])
 				{
 					case 'L':  // Align
-						if(LC%2) LC++;
+						if(LC%2) 
+						{
+							LC++;
+							output_srec_buffer();
+							init_srec(LC);
+						}
 						break;
 
 					case 'S':  // BSS
@@ -211,13 +216,10 @@ void second_pass()
 					case 'Y':  // BYTE
 						if(!directive_error_flag)
 						{
-							if(value0 >= -128 && value0 < 256) 
+							if(value0 > -128 && value0 < 256) 
 							{
 								write_srec_byte((unsigned char)value0);
-
-								// For diagnostics and increasing LC of the second_pass
-								emit("BYTE", current_token, NONE, LC);
-								LC += 0x01;
+								LC += 1;
 							}
 							else error_detected_no_cnt("Directive: Value too large for BYTE directive");
 						}
@@ -262,12 +264,10 @@ void second_pass()
 						if(!directive_error_flag)
 						{
 							if(LC%2) LC += 0x01;  // Align LC first
-							if(value0 > -65536 && value0 < 65535)
+							if(value0 > -32768 && value0 < 65535)
 							{
-								// EMIT WORD
-								emit("WORD", current_token, NONE, LC);
-								LC += 0x02;
-
+								write_srec_word(value0);
+								LC += 2;
 							}
 							else error_detected_no_cnt("Directive: Value too large for WORD directive");
 						}
@@ -285,7 +285,7 @@ void second_pass()
 				getchar();  // This should never happen, getchar will stop the runtime and let the user know there is a serious flaw
 				break;
 		}
-		
+
 	}
 
 	// Output any bytes still in the buffer and then close with an S9
@@ -294,13 +294,13 @@ void second_pass()
 }
 
 /*
-	Function: error_detected_no_cnt
-	Input: error_msg: Error msg to display if triggered
-	Brief: Because there should be 0 errors in the second pass, this function
-			will actually stop the program with a getchar() to prompt the user
-			that a catastrophic failure has occurred. This is primarily for
-			testing and debugging
-*/
+Function: error_detected_no_cnt
+Input: error_msg: Error msg to display if triggered
+Brief: Because there should be 0 errors in the second pass, this function
+will actually stop the program with a getchar() to prompt the user
+that a catastrophic failure has occurred. This is primarily for
+testing and debugging
+ */
 void error_detected_no_cnt(std::string error_msg)
 {
 	std::cout << "\t\t[ERROR MSG - FIRST PASS=] " << error_msg << std::endl;

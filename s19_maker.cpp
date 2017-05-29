@@ -95,7 +95,7 @@ void output_srec_buffer()
 		}
 
 		// This may be overwritten if the new Srec is initialized by a directive that moves the LC
-		srec_address += srec_index/2 + srec_index%2; // Increases the "LC" of the srec_address by the number of stored bytes divided by two to get the number of words. If this value is even it is aligned and assumed the last value is lost.
+		srec_address += srec_index;
 
 		init_srec(srec_address); // This may be overwritten if another emit() is called before the first byte is added to the buffer
 	}
@@ -117,9 +117,10 @@ void write_srec_byte(unsigned char byte)
 	else if(srec_index > SREC_MAX_DATA_SIZE)
 	{
 		std::cout << "THIS SHOULD NEVER HAPPEN (Write SREC BYTE, BUFFER OVERFILLED)" << std::endl;
+		getchar();
 	}
 
-	srec_buffer[srec_index++] = byte;
+	srec_buffer[srec_index++] = byte & 0xff;
 	srec_chksum += byte;
 }
 

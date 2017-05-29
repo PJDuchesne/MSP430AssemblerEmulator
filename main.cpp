@@ -51,9 +51,16 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
-	init_symtbl();
-
 	fin.open(argv[1]);
+
+	if(!fin.is_open())
+	{
+		std::cout << "ERROR READING FILE" << std::endl;
+		getchar();
+		exit(0);
+	}
+	
+	init_symtbl();
 
 	// For diagnostics
 	outfile.open("diagnostics.LIS");

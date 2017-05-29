@@ -231,14 +231,14 @@ bool valid_symbol(std::string token)
 
 	if(token.length() > 31) return false; // Symbol cannot be longer than 31 characters
 
-	// First token must be alphabetic (A-Z, a-z, or _)
+	// First token must be alphabetic (A(65) to Z(90), a(97) to z(122), or _(95))
 	else if(((token[0] >= 65) && (token[0] <= 90))||((token[0] >= 97) && (token[0] <= 122))||(token[0] == 95))
 	{
 		int temp_cnt = 1;
 		
 		while(temp_cnt < token.length())
 		{
-			// Remaining tokens can be alphanumeric (A-Z, a-z, 0-9, or _)	
+			// Remaining tokens can be alphanumeric ('A'(65) to 'Z'(90), 'a'(97) to 'z'(122), '0'(48) to '9'()57, or '_'(95))
 			if(!((token[temp_cnt] >= 65 && token[temp_cnt] <= 90)||(token[temp_cnt] >= 97 && token[temp_cnt] <= 122)||(token[temp_cnt] == 95)||((token[temp_cnt] >= 48)&&(token[temp_cnt] <= 57)))) break;
 			temp_cnt++;
 		}
@@ -264,23 +264,19 @@ void symtbl_unknown_check()
 
 	while(se_ptr->next != NULL)
 	{
-		if(se_ptr->type == 2)
-		{
-			err_cnt++;
-			
-		}
+		if(se_ptr->type == 2) err_cnt++;
 		se_ptr = se_ptr->next;
 	}
 
 	if(err_cnt == starting_err_cnt)
 	{
-		std::cout << std::endl << "\tNo unknowns found in the symbol table" << std::endl;
-		outfile << std::endl << "\tNo unknowns found in the symbol table" << std::endl;
+		std::cout << std::endl << "\t\tNo unknowns found in the symbol table" << std::endl;
+		outfile << std::endl << "\t\tNo unknowns found in the symbol table" << std::endl;
 	}
 	else
 	{
-		std::cout << std::endl << "\tTotal unknowns found on the symbol table: >>" << (err_cnt - starting_err_cnt) << "<<" << std::endl;
-		outfile << std::endl << "\tTotal unknowns found on the symbol table: >>" << (err_cnt - starting_err_cnt) << "<<" << std::endl;
+		std::cout << std::endl << "\t\tTotal unknowns found on the symbol table: >>" << (err_cnt - starting_err_cnt) << "<< (See symbol table below for UNKNOWN line numbers)" << std::endl;
+		outfile << std::endl << "\t\tTotal unknowns found on the symbol table: >>" << (err_cnt - starting_err_cnt) << "<< (See symbol table below for UNKNOWN line numbers)" << std::endl;
 	}
 
 }

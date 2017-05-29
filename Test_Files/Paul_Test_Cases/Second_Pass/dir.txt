@@ -21,7 +21,7 @@ LABEL2		EQU			1234			; ; Stores the value #1234 into LABEL2 ($04d2)
 			ORG			$0400			; ; THIS SHOULD NOT TRIGGER A BUFFER OUTPUT
 
 			WORD 		$1234			; ; Stores 1234 to buffer (in the order 34 12)
-			WORD 		LABEL2			; ; LABEL2 should have $1234, this will be tested in the first pass test though
+			WORD 		LABEL2			; ; LABEL2 should have 1234, this will be tested in the first pass test though
 			WORD		-12313 			; ; Stores cfe7 to buffer (in the order e7 cf)
 
 			ORG 		0200			; ; Cause an emit, new S1 should have a starting address of 0200

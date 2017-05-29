@@ -91,22 +91,11 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 
 	switch (type)
 	{
-		case NONE: // 0  -> Either RETI (NONE INST) or BYTE / WORD (Meaning no instruction)
-			addr_mode0 = parse(operand, value0, value1);
-
-			if(inst == "BYTE")
+		case NONE: // 0  (RETI)
+			if(id_ptr->mnemonic == "RETI")
 			{
 				addr_mode0 = parse(operand, value0, value1);
- 				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)value0 << std::endl;
- 			}
- 			else if(inst == "WORD")
- 			{
- 				addr_mode0 = parse(operand, value0, value1);
-				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)value0 << std::endl;
- 			}
 
- 			if(inst.length() == 4)
-			{
 				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << 0x1300 << std::endl;
 				write_srec_word(0x1300);
 
@@ -117,8 +106,6 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 				std::cout << "THIS SHOULD NEVER HAPPEN (Default case NONE emit)" << std::endl;
 				getchar();
 			}
-
-
 			break;
 		case SINGLE: // 1
 			single.opcode = id_ptr->opcode/(128);  // Bit shift the opcode to the right 7 times
@@ -325,7 +312,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 			if(addr_mode_LC_array_dst[addr_mode1]) // Emit DST output if needed
 			{
 				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)value0_dbl << std::endl;
-				write_srec_word((unsigned short)value1);	
+				write_srec_word((unsigned short)value0_dbl);	
 				LC += 2;
 			}
 
