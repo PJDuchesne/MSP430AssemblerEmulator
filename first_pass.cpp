@@ -23,11 +23,11 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <fstream>
 #include <cstdlib>
 
-#include "first_pass.h"
-#include "library.h"
-#include "symtbl.h"
-#include "inst_dir.h"
-#include "parser.h"
+#include "Include/first_pass.h"
+#include "Include/library.h"
+#include "Include/symtbl.h"
+#include "Include/inst_dir.h"
+#include "Include/parser.h"
 
 int addr_mode_LC_array[] = {0x0, 0x2, 0x2, 0x2, 0x0, 0x0, 0x2};
 
@@ -80,14 +80,14 @@ void first_pass(std::istream& fin)
 					break;
 				}				
 
-				id_ptr = get_inst(current_token, I);  // Check if it is a valid INST
+				id_ptr = get_inst_dir(current_token, I);  // Check if it is a valid INST
 				if(id_ptr != NULL)
 				{
 					next_state = INST;
 					break;
 				}
 
-				id_ptr = get_inst(current_token, D);  // Check if it is a valid DIRECTIVE
+				id_ptr = get_inst_dir(current_token, D);  // Check if it is a valid DIRECTIVE
 				if(id_ptr != NULL)
 				{
 					next_state = DIRECT;
@@ -142,14 +142,14 @@ void first_pass(std::istream& fin)
 				std::cout << "\tToken: >> " << current_token << "<<" << std::endl;
 				
 
-				id_ptr = get_inst(current_token, I);  // Check if it is a valid INST
+				id_ptr = get_inst_dir(current_token, I);  // Check if it is a valid INST
 				if(id_ptr != NULL)
 				{
 					next_state = INST;
 					break;
 				}
 
-                id_ptr = get_inst(current_token, D);  // Check if it is a valid DIRECTIVE
+                id_ptr = get_inst_dir(current_token, D);  // Check if it is a valid DIRECTIVE
                 if(id_ptr != NULL)
                 {
                 	next_state = DIRECT;

@@ -12,7 +12,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 -> Name:  symtbl.cpp
 -> Brief: Implements the symtbl with functions and such
 -> Date: May 15, 2017   (Created)
--> Date: May 17, 2017   (Last Modified)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
@@ -24,14 +23,12 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <cstdlib>
 #include <iomanip>
 
-#include "symtbl.h"
-#include "inst_dir.h"
+#include "Include/symtbl.h"
+#include "Include/inst_dir.h"
 
 std::string types[] = {"REGISTER", "KNOWN", "UNKNOWN"};
 
-// extern symtbl_entry* symtbl_master;
-
-// Actual pointer to the symbol table
+// Pointer to the start of the symbol table
 symtbl_entry* symtbl_master = NULL;
 
 void init_symtbl()
@@ -97,12 +94,12 @@ void add_symbol(std::string label, int value, SYMTBLTYPE type)
 	new_entry->label = label;
 	new_entry->value = value;
 	new_entry->type = type;
-	new_entry->next = symtbl_master;	// Link new entry to next entry
+	new_entry->next = symtbl_master;
 	new_entry->line = line_num;
-	symtbl_master = new_entry;	// Set ptr to the new entry
+	symtbl_master = new_entry;
 
-	// FOR DEVELOPMENT
-	if(new_entry->type != REG) std::cout << "\t\t\t\tAdded >>" << label << "<< to the symbol table with type: >>" << type << "<< and value >>" << new_entry->value << "<<" << std::endl;
+	// FOR DEVELOPMENT: Prevents printing of static portion of the symbol table (All the registers)
+	// if(new_entry->type != REG) std::cout << "\t\t\t\tAdded >>" << label << "<< to the symbol table with type: >>" << type << "<< and value >>" << new_entry->value << "<<" << std::endl;
 }
 
 void output_symtbl()
@@ -148,7 +145,7 @@ void output_symtbl()
 
         std::cout << "Entry #"    << std::right << std::setfill('0') << std::setw(entry_no_length) << std::dec << temp_cnt;
 		std::cout << " | Label: " << std::left << std::setfill(' ') << std::setw(max_label_length) << temp->label;
-		// Values of -1 (Unknowns) will appear as ffffffff
+		// Values of -1 (Unknowns) will appear as ffffffff (twos compliment output)
 		std::cout << " | Value: " << std::right << std::setfill('0') << std::setw(4) << std::hex << temp->value;
 		std::cout << " | Line #"  << std::right << std::setfill('0') << std::setw(line_no_length) << std::dec << temp->line;
 		std::cout << " | type: "  << types[temp->type] << std::endl;
@@ -174,12 +171,12 @@ symtbl_entry* get_symbol(std::string label)
 
 bool valid_symbol(std::string token)
 {
-	inst_dir* id_ptr = get_inst(token, I); 
-	if(id_ptr != NULL) return false; // SYMBOL CANNOT BE INSTRUCTION
-	id_ptr = get_inst(token, D); 
-	if(id_ptr != NULL) return false; // SYMBOL CANNOT BE DIRECTIVE
+	inst_dir* id_ptr = get_inst_dir(token, I); 
+	if(id_ptr != NULL) return false; // Symbol cannot be an instruction
+	id_ptr = get_inst_dir(token, D);
+	if(id_ptr != NULL) return false; // Symbol cannot be a directive
 
-	if(token.length() > 31) return false; // TOKEN IS TOO LONG
+	if(token.length() > 31) return false; // Symbol cannot be longer than 31 characters
 
 	// First token must be alphabetic (A-Z, a-z, or _)
 	else if(((token[0] >= 65) && (token[0] <= 90))||((token[0] >= 97) && (token[0] <= 122))||(token[0] == 95))

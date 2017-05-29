@@ -12,7 +12,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 -> Name:  library.cpp
 -> Brief: Implementation for the library.cpp, a helper library
 -> Date: May 15, 2017   (Created)
--> Date: May 17, 2017   (Last Modified)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
@@ -24,7 +23,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <fstream>
 #include <cstdlib>
 
-#include "library.h"
+#include "Include/library.h"
 
 // Find first token Implementation
 std::string fft(std::istream& fin)

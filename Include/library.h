@@ -12,7 +12,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 -> Name:  library.h
 -> Brief: library file for enumeration declarations and other constants
 -> Date: May 15, 2017   (Created)
--> Date: May 17, 2017   (Last Modified)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
@@ -75,4 +74,3 @@ std::string fft(std::istream& fin);
 std::string fnt();
 
 #endif
-

@@ -23,9 +23,9 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <fstream>
 #include <cstdlib>
 
-#include "parser.h"
-#include "symtbl.h"
-#include "library.h"
+#include "Include/parser.h"
+#include "Include/symtbl.h"
+#include "Include/library.h"
 
 // NOTE: Double check that I check the max number of characters of an operand
 

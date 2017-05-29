@@ -9,26 +9,39 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
        _\/\\\__________\//\\\\\\\\\______\/\\\\\\\\\\\\/___
         _\///____________\/////////_______\////////////_____
 
--> Name: inst_dir.h 
--> Brief: Header file for the inst_dir file
+-> Name:  symtbl.h
+-> Brief: Header file for the symtbl table
 -> Date: May 15, 2017   (Created)
--> Date: May 17, 2017   (Last Modified)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
 
-#ifndef INST_DIR_H
-#define INST_DIR_H
+#ifndef SYMTBL_H
+#define SYMTBL_H
 
 #include "library.h"
 
-struct inst_dir {
-	std::string mnemonic;
-	INST_TYPE type;
-	int opcode;
-	BYTE_WORD b_w;
+extern int err_cnt;
+extern std::string last_addition;
+
+struct symtbl_entry {
+        std::string label;
+        int value;
+        SYMTBLTYPE type;
+        int line;
+        symtbl_entry *next;
 };
 
-inst_dir* get_inst(std::string input, SEARCHTYPE stype);
+void init_symtbl();
+
+void add_symbol(std::string label, int value, SYMTBLTYPE type);
+
+symtbl_entry* get_symbol(std::string lbl);
+
+void output_symtbl();
+
+bool valid_symbol(std::string token);
+
+void symtbl_unknown_check();
 
 #endif

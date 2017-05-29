@@ -23,13 +23,13 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <fstream>
 #include <cstdlib>
 
-#include "second_pass.h"
-#include "library.h"
-#include "symtbl.h"
-#include "inst_dir.h"
-#include "parser.h"
-#include "emitter.h"
-#include "s19_maker.h"
+#include "Include/second_pass.h"
+#include "Include/library.h"
+#include "Include/symtbl.h"
+#include "Include/inst_dir.h"
+#include "Include/parser.h"
+#include "Include/emitter.h"
+#include "Include/s19_maker.h"
 
 /* Extern Globals Used
    std::string current_record
@@ -88,13 +88,13 @@ void second_pass(std::istream& fin)
 					break;
 				}				
 
-				id_ptr = get_inst(current_token, I);  // Check if it is a valid INST
+				id_ptr = get_inst_dir(current_token, I);  // Check if it is a valid INST
 				if(id_ptr != NULL)
 				{
 					next_state = INST;
 					break;
 				}
-				id_ptr = get_inst(current_token, D);  // Check if it is a valid DIRECTIVE
+				id_ptr = get_inst_dir(current_token, D);  // Check if it is a valid DIRECTIVE
 				if(id_ptr != NULL)
 				{
 					next_state = DIRECT;
@@ -115,14 +115,14 @@ void second_pass(std::istream& fin)
 					break;
 				}
 
-				id_ptr = get_inst(current_token, I);  // Check if it is a valid INST
+				id_ptr = get_inst_dir(current_token, I);  // Check if it is a valid INST
 				if(id_ptr != NULL)
 				{
 					next_state = INST;
 					break;
 				}
 
-				id_ptr = get_inst(current_token, D);  // Check if it is a valid DIRECTIVE
+				id_ptr = get_inst_dir(current_token, D);  // Check if it is a valid DIRECTIVE
 				if(id_ptr != NULL)
 				{
 					next_state = DIRECT;

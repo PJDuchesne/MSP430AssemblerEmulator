@@ -9,18 +9,25 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
        _\/\\\__________\//\\\\\\\\\______\/\\\\\\\\\\\\/___
         _\///____________\/////////_______\////////////_____
 
--> Name:  main.h
--> Brief: Header file for main.cpp
+-> Name: inst_dir.h 
+-> Brief: Header file for the inst_dir file
 -> Date: May 15, 2017   (Created)
--> Date: May 17, 2017   (Last Modified)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
 
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef INST_DIR_H
+#define INST_DIR_H
 
-std::string fft();
-std::string fnt();
+#include "library.h"
+
+struct inst_dir {
+	std::string mnemonic;
+	INST_TYPE type;
+	int opcode;
+	BYTE_WORD b_w;
+};
+
+inst_dir* get_inst_dir(std::string input, SEARCHTYPE stype);
 
 #endif

@@ -9,40 +9,17 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
        _\/\\\__________\//\\\\\\\\\______\/\\\\\\\\\\\\/___
         _\///____________\/////////_______\////////////_____
 
--> Name:  symtbl.h
--> Brief: Header file for the symtbl table
+-> Name:  main.h
+-> Brief: Header file for main.cpp
 -> Date: May 15, 2017   (Created)
--> Date: May 17, 2017   (Last Modified)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
 
-#ifndef SYMTBL_H
-#define SYMTBL_H
+#ifndef MAIN_H
+#define MAIN_H
 
-#include "library.h"
-
-extern int err_cnt;
-extern std::string last_addition;
-
-struct symtbl_entry {
-        std::string label;
-        int value;
-        SYMTBLTYPE type;
-        int line;
-        symtbl_entry *next;
-};
-
-void init_symtbl();
-
-void add_symbol(std::string label, int value, SYMTBLTYPE type);
-
-symtbl_entry* get_symbol(std::string lbl);
-
-void output_symtbl();
-
-bool valid_symbol(std::string token);
-
-void symtbl_unknown_check();
+std::string fft();
+std::string fnt();
 
 #endif

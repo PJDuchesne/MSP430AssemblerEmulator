@@ -24,4 +24,3 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 ADDR_MODE parse(std::string op, int& value0, int& value1);
 
 #endif
-

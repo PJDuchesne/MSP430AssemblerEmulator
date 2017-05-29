@@ -24,12 +24,12 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <cstdlib>
 #include <iomanip>
 
-#include "library.h"
-#include "symtbl.h"
-#include "inst_dir.h"
-#include "parser.h"
-#include "emitter.h"
-#include "s19_maker.h"
+#include "Include/library.h"
+#include "Include/symtbl.h"
+#include "Include/inst_dir.h"
+#include "Include/parser.h"
+#include "Include/emitter.h"
+#include "Include/s19_maker.h"
 
 #define PC  0	// Program  Counter
 #define SR  2	// Status   Register
@@ -81,7 +81,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 	std::cout << "\tEMITTING >>" << inst << "<< + >>" << operand << "<< Of type >>" << type << "<<" << std::endl; // For debugging
 
-	inst_dir* id_ptr = get_inst(inst, I);
+	inst_dir* id_ptr = get_inst_dir(inst, I);
 	symtbl_entry* symtbl_ptr = NULL;
 	ADDR_MODE addr_mode0 = WRONG; // Used in general
 	ADDR_MODE addr_mode1 = WRONG; // Used for DST in double operand

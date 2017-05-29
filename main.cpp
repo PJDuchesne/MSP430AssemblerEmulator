@@ -12,7 +12,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 -> Name:  main.cpp
 -> Brief: Implementation for the main.cpp the code that runs executive commands
 -> Date: May 15, 2017	(Created)
--> Date: May 17, 2017	(Last Modified)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
@@ -24,14 +23,14 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <fstream>
 #include <cstdlib>
 
-#include "main.h"
-#include "symtbl.h"
-#include "inst_dir.h"
-#include "library.h"
-#include "parser.h"
-#include "first_pass.h"
-#include "second_pass.h"
-#include "emitter.h"
+#include "Include/main.h"
+#include "Include/library.h"
+#include "Include/symtbl.h"
+#include "Include/inst_dir.h"
+#include "Include/parser.h"
+#include "Include/first_pass.h"
+#include "Include/second_pass.h"
+#include "Include/emitter.h"
 
 // TO ADD
 	// Input argument options (Drag and drop, input text, etc.)

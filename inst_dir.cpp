@@ -12,7 +12,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 -> Name: inst_dir.cpp
 -> Brief: Implementation file for the inst_dir file
 -> Date: May 15, 2017   (Created)
--> Date: May 17, 2017   (Last Modified)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
@@ -26,7 +25,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <cstdlib>
 #include <algorithm>
 
-#include "inst_dir.h"
+#include "Include/inst_dir.h"
 
 inst_dir inst_dir_array[] = {
         // INSTRUCTIONS
@@ -102,7 +101,7 @@ inst_dir inst_dir_array[] = {
         {"WORD"  , NONE, 0xffff, WORD},   // DIR 	// 68
 };
 
-inst_dir* get_inst(std::string input, SEARCHTYPE stype)
+inst_dir* get_inst_dir(std::string input, SEARCHTYPE stype)
 {
 	// Transform input string to uppercase (Instructions and Directives are case insensitive)
 	std::transform(input.begin(), input.end(), input.begin(), ::toupper);
