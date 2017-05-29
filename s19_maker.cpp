@@ -115,7 +115,7 @@ void write_srec_word(unsigned short word)
 
 void write_S9()
 {
-	srec_file << "5309\t" << std::setfill('0') << std::setw(2) << std::hex << first_srec_address; // Assuming I want to print out first srec address
+	srec_file << "5309\t" << std::setfill('0') << std::setw(4) << std::hex << first_srec_address; // Assuming I want to print out first srec address
 	srec_file.close();
 }
 

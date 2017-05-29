@@ -174,19 +174,19 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 					break;
 
 				case IMMEDIATE:
-					if(addr_mode == IMMEDIATE && (value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8))
+					if(addr_mode0 == IMMEDIATE && (value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8))
 					{
-						single.reg = (value0 >= 4) ? CG1 : CG2
+						single.reg = (value0 < 4) ? CG1 : CG2; // CG1 deals with -1, 0, 1, and 2, CG2 deals with 4 and 8
 						constant_gen_flag = true;
 						// Then overwrite As for the specific value
-						switch value0
+						switch (value0)
 						{
 							case  0:
 								single.as = 0;
 								break;
 							case  1:
-								break;
 								single.as = 1;
+								break;
 							case  2:
 							case  4:
 								single.as = 2;
@@ -269,30 +269,44 @@ void emit(std::string inst, std::string operand, INST_TYPE type, std::ostream& o
 
 				case IMMEDIATE:
 					// Also deals with the constant generator
+				
 					// NEED TO ENSURE FORWARD REFERENCED LABELS DONT WORK
-					if(addr_mode == IMMEDIATE && (value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8))
+
+					dbl.src = PC;
+					if(addr_mode0 == IMMEDIATE && (value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8))
 					{
-						dbl.src = (value0 >= 4) ? CG1 : CG2
+						src_string.erase(0,1);
+						symtbl_ptr = get_symbol(src_string);
+						std::cout << "IMMEDIATE CG TEST1" << std::endl;
+						if(symtbl_ptr != NULL) 
+						{
+							{
+								std::cout << std::dec << "SYM >>" << symtbl_ptr->label << "<< | SYM LINE >>" << symtbl_ptr->line << "<< | ACTUAL LINE NUM >>" << line_num << "<<" << std::endl;
+								if(symtbl_ptr->line > line_num) break;
+							}
+						}
+						std::cout << "IMMEDIATE CG TEST2" << std::endl;
+
+						dbl.src = (value0 < 4) ? CG1 : CG2; // CG1 deals with -1, 0, 1, and 2, CG2 deals with 4 and 8
+
 						constant_gen_flag = true;
 						// Then overwrite As for the specific value
-						switch value0
+						switch (value0)
 						{
 							case  0:
 								dbl.as = 0;
 								break;
 							case  1:
-								break;
 								dbl.as = 1;
+								break;
 							case  2:
 							case  4:
 								dbl.as = 2;
 								break;
-
 							default:		// Note: for "case -1:" and "case 8:", dbl.as is already set to 3.
 								break;	
 						}
 					}
-					else dbl.src = PC;
 
 					break;
 

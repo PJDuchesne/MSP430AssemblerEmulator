@@ -49,7 +49,6 @@ symtbl_entry* se_ptr = NULL;
 
 int main(int argc, char *argv[])
 {
-
 	// Example input argument for eventual adding of input/output parameters. Hardcoded for now
 	if(argc < 2) // argv[0] = executable name, therefore <2 means there is 0 input given
 	{

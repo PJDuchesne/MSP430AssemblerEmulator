@@ -35,12 +35,6 @@ int error_line_array[300] = { };
 
 int line_num = 0;
 
-/* Extern Globals Used
-	std::string current_record
-	std::string current_token
-	int err_cnt
-*/
-
 void first_pass(std::istream& fin)
 {
 	std::cout << "First Pass Starting" << std::endl;
@@ -76,7 +70,7 @@ void first_pass(std::istream& fin)
 			case CHK_FIRST_TOKEN: // Also iterates to next record
 				line_num++;
 				current_token = fft(fin);
-				std::cout << "\tLC at START OF RECORD >>" << std::hex << LC << std::dec << "<<" << std::endl;
+				std::cout << "\tLC at START OF RECORD >>" << std::dec << LC << std::dec << "<<" << std::endl;
 				// std::cout << "\tCURRENT_TOKEN: >>" << current_token << "<<" << std::endl;
 				std::cout << "\tCHK_FIRST TOKEN" << std::endl;
 
@@ -305,6 +299,7 @@ void first_pass(std::istream& fin)
 								if(value0 >= 0 && value0 <= 65535)
 								{
 									symtbl_ptr->value = value0;
+									symtbl_ptr->line = line_num;
 
 									std::cout << "[DIRECTIVE] SUCESSFULLY STORED value0 into label >>" << symtbl_ptr->label << "<<" << std::endl;
 
@@ -390,7 +385,7 @@ void first_pass(std::istream& fin)
 						symtbl_ptr = get_symbol(src_operand);
 						if(symtbl_ptr != NULL)
 						{
-							if(symtbl_ptr->type == UNKNOWN) break;
+							if(symtbl_ptr->type == UNKNOWN) break; // Breaks from case, before undoing the LC increment
 							else LC -= 2; // Undo the LC increment from earlier
 						}
 						else LC -= 2; // Undo the LC increment from earlier

@@ -1,0 +1,44 @@
+; CONSTANT GENERATOR TEST
+; Made by Paul Duchesne (B00332119)
+; May 26, 2017
+
+LABEL0
+
+			ORG		$0500
+
+ONE			EQU		1
+
+; Tests decimal numbersC
+
+LABEL1		MOV		#-1,R0		; 0500 4230
+			MOV		#0,R1		; 0502 4201
+			MOV		#1,R2		; 0504 4212
+			MOV		#2,R3		; 0506 4223
+			MOV		#4,R4		; 0508 4324
+			MOV		#8,R5		; 050a 4335
+			MOV		#5,R6		; 050c 4036 ; NOT on the list of constants
+								; 050e 0005
+; Tests hex numbers
+
+LABEL2		MOV		#$0,R1		; 0510 4201
+			MOV		#$1,R2		; 0512 4212
+			MOV		#$2,R3		; 0514 4223
+			MOV		#$4,R4		; 0516 4324
+			MOV		#$8,R5		; 0518 4335
+			MOV		#$5,R6		; 051a 4036 ; NOT on the list of constants
+								; 051c 0005								
+
+; Tests labels (Forward and backward references)
+
+LABEL3		MOV		#ONE,R7		; 051e 4217	; Backwords references should work with the CG
+			MOV		#EIGHT,R8	; 0520 4038	; Forward references should not
+								; 0522 0008
+			MOV		#LABEL4,R9	; 0524 4039	
+								; 0526 0002
+			MOV		#LABEL3,R9	; 0524 4039	; This value is not a constant
+								; 0526 051e
+
+EIGHT		EQU		8
+
+			ORG		$0002
+LABEL4
