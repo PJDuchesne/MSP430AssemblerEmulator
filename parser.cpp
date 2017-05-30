@@ -39,9 +39,8 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 */
 ADDR_MODE parse(std::string op, int& value0, int& value1)
 {
-	// Make a copy of the operand in case the original is needed
-	std::string operand = op;
-	std::string temp_indexed;
+	std::string operand = op;   // Make a copy of the operand in case the original is needed
+	std::string temp_indexed;	// Used to store the register in indexed mode
 
 	bool hex_flag = false;
 

@@ -501,7 +501,6 @@ void first_pass()
 				break;
 		}
 	}
-
 	line_num = 0;
 }
 

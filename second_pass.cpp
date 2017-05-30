@@ -48,12 +48,17 @@ bool end_flag = false;
 */
 void second_pass()
 {
-	srec_file.open("srec_output.s19");      // For submission
+	// NOTE: This state machine is very similar to the first pass state
+	// machine, thus it is far less commented
 
-	line_num = 0;
+	// Open s19 record file
+	srec_file.open("srec_output.s19");
 
-	STATE next_state;
+	STATE next_state = CHK_FIRST_TOKEN;
+
+	// Local LC variable
  	int LC = 0;
+
 	bool directive_error_flag = false;
 
 	ADDR_MODE addr_mode = WRONG;
@@ -65,13 +70,9 @@ void second_pass()
 	int value0 = -1;
 	int value1 = -1;
 
-	std::string last_label = "";
-
-	char temp_dev;
+	std::string last_label = ""; // Used by EQU
 
 	init_srec(0);
-
-	next_state = CHK_FIRST_TOKEN;
 
 	// Output the diagnostics format to diagnostics.LIS file
 	outfile << "\tRecord #n: >>Input Record<<" << std::endl

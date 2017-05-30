@@ -26,6 +26,8 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/symtbl.h"
 #include "Include/inst_dir.h"
 
+#define MAX_SYM_LENGTH 31
+
 // Types as string, this order corresponds to the enumeration order in library.h
 std::string types[] = {"REGISTER", "KNOWN", "UNKNOWN"};
 
@@ -237,7 +239,7 @@ bool valid_symbol(std::string token)
 	id_ptr = get_inst_dir(token, D);
 	if(id_ptr != NULL) return false; // Symbol cannot be a directive
 
-	if(token.length() > 31) return false; // Symbol cannot be longer than 31 characters
+	if(token.length() > MAX_SYM_LENGTH) return false; // Symbol cannot be longer than 31 characters
 
 	// First token must be alphabetic (A(65) to Z(90), a(97) to z(122), or _(95))
 	else if(((token[0] >= 65) && (token[0] <= 90))||((token[0] >= 97) && (token[0] <= 122))||(token[0] == 95))
