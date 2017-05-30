@@ -14,21 +14,22 @@ ORG 1000		; Move LC to 1000
 
 ORG test12		; Move LC to $2002
 
-byte 12
+byte 12			; Move LC to $2003
+	
+byte 257 		; Move LC to $2004
 
-byte 257
+word $000000000000000000025783 ; Should clear preceding 0s and parse properly, LC to $2006
 
-word $000000000000000000025783
+word 70000		; LC to 2008
 
-word 70000
-
-Label3 EQU 500
+Label3 EQU 500	; No LC change
 
 Label4
-Equ 300
 
 BSS 500
 
 END
 
-END
+END				; Shouldn't trigger
+
+; S19 record output

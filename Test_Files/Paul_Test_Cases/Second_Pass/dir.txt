@@ -11,34 +11,34 @@
 ;	WORD:		Emits 1 WORD (2 bytes) of data to the S1 buffer
 ;
 
-			ORG 		$5000			; ; Should emit nothing, first S1 should 
-LABEL2		EQU			1234			; ; Stores the value #1234 into LABEL2 ($04d2)
+			ORG 		$5000			; Should emit nothing, first S1 should 
+LABEL2		EQU			1234			; Stores the value #1234 into LABEL2 ($04d2)
 			STRING 		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!@#$%^&*()[]{}y',."
-										; ; Upper limit is 80 characters
+										; Upper limit is 80 characters
 
-			BYTE		123				; ; Stores #123 (1 byte) to the S1 buffer
-			BSS			100				; ; THIS SHOULD TRIGGER BUFFER OUTPUT WITH ONLY #123 IN IT (Plus the overhead of an S1)
-			ORG			$0400			; ; THIS SHOULD NOT TRIGGER A BUFFER OUTPUT
+			BYTE		123				; Stores #123 (1 byte) to the S1 buffer
+			BSS			100				; THIS SHOULD TRIGGER BUFFER OUTPUT WITH ONLY #123 IN IT (Plus the overhead of an S1)
+			ORG			$0400			; THIS SHOULD NOT TRIGGER A BUFFER OUTPUT
 
-			WORD 		$1234			; ; Stores 1234 to buffer (in the order 34 12)
-			WORD 		LABEL2			; ; LABEL2 should have 1234, this will be tested in the first pass test though
-			WORD		-12313 			; ; Stores cfe7 to buffer (in the order e7 cf)
+			WORD 		$1234			; Stores 1234 to buffer (in the order 34 12)
+			WORD 		LABEL2			; LABEL2 should have 1234, this will be tested in the first pass test though
+			WORD		-12313 			; Stores cfe7 to buffer (in the order e7 cf)
 
-			ORG 		0200			; ; Cause an emit, new S1 should have a starting address of 0200
+			ORG 		0200			; Cause an emit, new S1 should have a starting address of 0200
 
 			STRING 		"jaksudhgnamknjhuyhjmjaksudhgnamknjhuyhjmjaksudhgnamknjhuyhjmjaksudhgnamknjhuyhjm"
-										; ; This is 80 char, should work
-			END							; ; Should emit the buffer
+										; This is 80 char, should work
+			END							; Should emit the buffer
 
 ; Everything below should be ignored because of the END trigger, thus the lack of ";" to comment these
  
-EXPECTED OUTPUT BELOW (In human readable format)
+EXPECTED OUTPUT BELOW (Check the checksums)
 
-5301	23	5000	41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f 50 51 52 53 54 55 56 57 58 59 5a 61 62 63 64 65 66 	CHECKSUM >>58<<
-5301	23	5010	67 68 69 6a 6b 6c 6d 6e 6f 70 71 72 73 74 75 76 77 78 79 7a 31 32 33 34 35 36 37 38 39 30 21 40 	CHECKSUM >>44<<
-5301	16	5020	23 24 25 5e 26 2a 28 29 5b 5d 7b 7d 79 27 2c 2e 7b 00 13 	 									   	CHECKSUM >>d6<<
-5301	09	0400	00 13 00 13 00 13 	 																			   	CHECKSUM >>b9<<
-5301	23	00c8	6a 61 6b 73 75 64 68 67 6e 61 6d 6b 6e 6a 68 75 79 68 6a 6d 6a 61 6b 73 75 64 68 67 6e 61 6d 6b 	CHECKSUM >>b7<<
-5301	23	00d8	6e 6a 68 75 79 68 6a 6d 6a 61 6b 73 75 64 68 67 6e 61 6d 6b 6e 6a 68 75 79 68 6a 6d 6a 61 6b 73 	CHECKSUM >>89<<
-5301	13	00e8	75 64 68 67 6e 61 6d 6b 6e 6a 68 75 79 68 6a 6d 	 										 		CHECKSUM >>48<<
-5309	5000
+S12350004142434445464748494a4b4c4d4e4f505152535455565758595a61626364656658
+S12350206768696a6b6c6d6e6f707172737475767778797a31323334353637383930214034
+S11450402324255e262a28295b5d7b7d79272c2e7bcb
+S10904003412d204e7cf20
+S12300c86a616b73756468676e616d6b6e6a687579686a6d6a616b73756468676e616d6bb7
+S12300e86e6a687579686a6d6a616b73756468676e616d6b6e6a687579686a6d6a616b7379
+S1130108756468676e616d6b6e6a687579686a6d27
+S95000

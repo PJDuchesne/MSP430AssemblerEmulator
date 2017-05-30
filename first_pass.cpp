@@ -397,7 +397,7 @@ void first_pass()
 						if(!directive_error_flag)
 						{
 							// if(LC%2) LC += 1;  // NOTE: "Words should fall on even-byte boundaries"
-							if(value0 > -MINWORD && value0 < MAXWORD) LC += 2;
+							if(value0 > MINWORD && value0 < MAXWORD) LC += 2;
 							else error_detected("Directive: Value too large for WORD directive");
 						}
 						break;
