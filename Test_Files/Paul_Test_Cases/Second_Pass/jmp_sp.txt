@@ -1,5 +1,17 @@
-; This tests JUMP commands in the second pass
-; FIX THIS LATER
+; JUMP OPERAND TEST CASE FOR SECOND PASS
+; Made by Paul Duchesne (B00332119)
+; May 27, 2017
+
+; Things to test
+;	- All jump instructions
+;	- FORWARD REFERENCES
+;	- Negative jumps
+;
+
+; Expected results: 0 failures in first pass and
+;		    SREC should match SREC provided and
+;		    diagnostics file should match opcodes
+;		    written to the right of each line
 
 	ORG $0000
 

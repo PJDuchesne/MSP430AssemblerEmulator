@@ -11,6 +11,11 @@
 ;	WORD:		Emits 1 WORD (2 bytes) of data to the S1 buffer
 ;
 
+; Expected results: 0 failures in first pass and
+;		    SREC should match SREC provided and
+;		    diagnostics file should match opcodes
+;		    written to the right of each line
+
 			ORG 		$5000			; Should emit nothing, first S1 should 
 LABEL2		EQU			1234			; Stores the value #1234 into LABEL2 ($04d2)
 			STRING 		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!@#$%^&*()[]{}y',."

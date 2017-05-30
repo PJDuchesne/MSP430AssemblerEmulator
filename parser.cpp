@@ -77,7 +77,7 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 			if(se_ptr == NULL && valid_symbol(operand))
 			{
 				add_symbol(operand, -1, UNKNOWN);  // This creates the forward reference
-				if(value0 <= MINWORD || value0 >= MAXWORD) return WRONG; // Value0 cannot be larger than a word
+				if(value0 < MINWORD || value0 > MAXWORD) return WRONG; // Value0 cannot be larger than a word
 				else return ABSOLUTE; 
 			}
 			else if(se_ptr != NULL)
@@ -180,7 +180,7 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 				value0 = std::stol(operand, nullptr, hex_flag ? 16 : 10);
 
 				// Value0 cannot be larger than a word
-				if(value0 <= MINWORD || value0 >= MAXWORD) return WRONG;
+				if(value0 < MINWORD || value0 > MAXWORD) return WRONG;
 				else return IMMEDIATE;
 			}
 			break;
@@ -225,13 +225,19 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 
 				// Check validity of X in X(Rn)
 				se_ptr = get_symbol(temp_indexed);
-				if(get_symbol(temp_indexed) == NULL && valid_symbol(temp_indexed))
+				// If the symbol is not in the symbol table, and is a valid symbol
+				// add it as a forward reference	
+				if(se_ptr == NULL)
 				{
-					add_symbol(temp_indexed, -1, UNKNOWN);
-					value0 = -1;
+					if(valid_symbol(temp_indexed))
+					{
+						add_symbol(temp_indexed, -1, UNKNOWN);
+						value0 = -1;
+					}
+					else return WRONG; // Symbol is not in symbol table, and is also invalid
 				}
 				else if(se_ptr->type == REG) return WRONG; // X in x(Rn) cannot be a register
-				else // X is KNOWN or UNKNOWN
+				else // X is KNOWN or UNKNOWN, which is valid
 				{
 					value0 = se_ptr->value;
 				}
@@ -253,7 +259,7 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 				add_symbol(operand, -1, UNKNOWN);
 				value0 = -1;
 				// Value0 cannot be larger than a word
-				if(value0 <= MINWORD || value0 > MAXWORD) return WRONG;
+				if(value0 < MINWORD || value0 > MAXWORD) return WRONG;
 				else return RELATIVE;
 			}
 			else if(get_symbol(operand) != NULL)

@@ -1,0 +1,31 @@
+; DOUBLE OPERAND TEST CASE FOR FIRST PASS (Failures test)
+; Made by Paul Duchesne (B00332119)
+; May 27, 2017
+
+; Things to test
+;	- All 7 addressing modes for SRC
+;	- All 4 addressing modes for DST
+;	- All instructions
+; 	- Byte/Word INSTs
+;	- FORWARD REFERENCES
+;
+
+; Expected results: Every single line should fail
+; 		Note: Two operand testing in Second pass
+;		was far more extensive and covers successes of first pass
+;
+
+	ORG	$0400
+
+test0	SUBC	R7,#777		; invalid DST addr mode
+	MOV	test3,@R7+	; invalid Dst addr mode
+	CMP.b	&test4,@r9	; invalid dst addr mode
+	DADC	#$123,test7	; Unknown
+	BIT	#-$001,R1	; Negative hex
+	SUBC	#1,R1,@r8	; Too many operands
+	XOR	123,R1		; Invalid number input
+	BISS	R1,R2		; Invalid INST
+	ADD.b	#$fffce,&test0	; Immediate too big
+	Add	#-34000,test0	; Immediate too negative
+	@R7,R1			; No instruction
+	

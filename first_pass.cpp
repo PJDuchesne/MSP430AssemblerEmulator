@@ -29,11 +29,8 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/inst_dir.h"
 #include "Include/parser.h"
 
-// Array of addressing mode increments for the location counter
-int addr_mode_LC_array[] = {0, 2, 2, 2, 0, 0, 2};
 
-// Array of erros for the developer's use. (Arbitrarily capped at 500 errors)
-int error_line_array[500] = { };
+int addr_mode_LC_array[] = {0, 2, 2, 2, 0, 0, 2};
 
 // A global line number to keep track of which line of the file is being processed
 int line_num = 0;
@@ -78,6 +75,10 @@ void first_pass()
 	std::string src_operand = "";
 	std::string dst_operand = "";
 	std::string jmp_operand = "";
+
+	// Used to iterate through STRING input to search for escaped character
+	int string_cnt = 0;
+	int string_esc_cnt = 0;	// Used to keep track of number of bytes saved by using ^H instead of \t (or similarly escaped character)
 
 	std::string last_label = "";
 
@@ -270,7 +271,7 @@ void first_pass()
 				// The directive is assumed to have caused an error until proven otherwise
 				directive_error_flag = true;
 
-			 	// If the type is not ALIGN, END, or STRING, the value needs to be parsed
+			 	// If the type is not ALIGN or STRING, the value needs to be parsed
 				if(id_ptr->mnemonic[1] != 'L' && id_ptr->mnemonic[1] != 'N' && id_ptr->mnemonic[1] != 'T')
 				{ 
 					current_token = fnt();						// Find next token
@@ -278,7 +279,7 @@ void first_pass()
 
 					// "No forward referecing for directives" ~ TA Gary, 2017
 					if(symtbl_ptr == NULL && valid_symbol(current_token))
-					{
+					{ 	
 						error_detected("Directive: UNKNOWN label after DIRECTIVE (Value0 parsing, #1)");
 					}
 					else
@@ -311,7 +312,7 @@ void first_pass()
 					case 'Y':  // BYTE
 						if(!directive_error_flag)
 						{
-							if(value0 >= MINBYTE && value0 < MAXBYTE) LC += 1; // Bounds for signed byte
+							if(value0 >= MINBYTE && value0 <= MAXBYTE) LC += 1; // Bounds for signed byte
 							else error_detected("Directive: Value too large for BYTE directive");
 						}
 
@@ -319,9 +320,17 @@ void first_pass()
 
 					case 'N':  // END
 						end_flag = true;
-						if(!is_last_token())
+						current_token = fnt();				// Find next token
+						symtbl_ptr = get_symbol(current_token);		// Check symtbl for that token
+						
+						if(symtbl_ptr == NULL)
 						{
-							error_detected("Directive: Found Unknown Label after END");
+							if(current_token != "") error_detected("Directive: Invalid label after END directive (Undeclared or invalid symbol");
+						}
+						else if(symtbl_ptr->type != KNOWN) error_detected("Directive: REG or UNKNOWN label found after END directive");
+						if(!is_last_token()) // After the label, there must be no other token
+						{
+							error_detected("Directive: Found Unknown token after END");
 							end_flag = false;
 						}
 						break;
@@ -377,16 +386,32 @@ void first_pass()
 							else
 							{
 								current_token.erase(0,1); // Removes Opening Quote
-								if(current_token.find_first_of("\"") != current_token.length()-1) error_detected("Directive: Missing CLOSING quote for STRING");
-								else
+								// ITERATE THROUGH LOOKING FOR ESCAPE CHARACTERS
+								for(string_cnt = 0; string_cnt < current_token.length(); string_cnt++)
 								{
-									current_token.pop_back(); // Removes Closing Quote
-
-									value0 = current_token.length();
-
-									LC += value0;
-									if(!is_last_token()) error_detected("Directive: Found Unknown Label after STRING value");
+									if(current_token[string_cnt] == '\\')
+									{
+										string_esc_cnt++;
+										string_cnt++;
+										if(string_cnt == current_token.length()-1) error_detected("Directive: Escaping final character of STRING"); 
+									}
+									else if(current_token[string_cnt] == '\"') // Looking for end quote
+									{
+										// Unescaped double quote must be the last characer of the token
+										// meaning the string_cnt must be 1 less than the string length
+										if(current_token.length() - string_cnt != 1) error_detected("Directive: STRING error, premature quote");
+									}
 								}
+
+								current_token.pop_back(); // Removes Closing Quote
+
+								LC += current_token.length();
+								LC -= string_esc_cnt;
+
+								outfile << "ESC CNT >>" << string_esc_cnt <<"<<"<<std::endl;
+
+								string_esc_cnt = 0;
+								if(!is_last_token()) error_detected("Directive: Found Unknown Label after STRING value");
 							}
 						}
 						else error_detected("Directive: Value too large for ORG directive");
@@ -396,8 +421,7 @@ void first_pass()
 					case 'O':  // WORD
 						if(!directive_error_flag)
 						{
-							// if(LC%2) LC += 1;  // NOTE: "Words should fall on even-byte boundaries"
-							if(value0 > MINWORD && value0 < MAXWORD) LC += 2;
+							if(value0 >= MINWORD && value0 <= MAXWORD) LC += 2;
 							else error_detected("Directive: Value too large for WORD directive");
 						}
 						break;

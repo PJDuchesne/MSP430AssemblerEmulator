@@ -27,6 +27,6 @@ void write_srec_byte(unsigned char byte);
 
 void write_srec_word(unsigned short word);
 
-void write_S9();
+void write_S9(unsigned int s9_srec_address);
 
 #endif

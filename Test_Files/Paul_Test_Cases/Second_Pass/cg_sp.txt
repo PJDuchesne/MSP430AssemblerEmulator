@@ -2,13 +2,18 @@
 ; Made by Paul Duchesne (B00332119)
 ; May 26, 2017
 
+; Expected results: 0 failures in first pass and
+;		    SREC should match SREC provided and
+;		    diagnostics file should match opcodes
+;		    written to the right of each line
+
 LABEL0
 
 			ORG		$0500
 
 ONE			EQU		1
 
-; Tests decimal numbersC
+; Tests decimal numbers
 
 LABEL1		MOV		#-1,R0		; 0500 4230
 			MOV		#0,R1		; 0502 4201

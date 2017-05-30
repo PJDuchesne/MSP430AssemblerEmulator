@@ -148,9 +148,8 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 						symtbl_ptr = get_symbol(operand);
 						if(symtbl_ptr != NULL) if(symtbl_ptr->line > line_num) break; 
 
-						single.as = (value0 < 4) ? CG1 : CG2; // CG1 deals with -1, 0, 1, and 2
-															  // CG2 deals with 4 and 8
-
+						single.as = (value0 > 4) ? CG1 : CG2; // CG2 deals with -1, 0, 1, and 2
+															  // CG1 deals with 4 and 8
 						constant_gen_flag = true;
 						// Then overwrite As for the specific value
 						switch (value0)
@@ -249,8 +248,8 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 							}
 						}
 
-						dbl.src = (value0 < 4) ? CG1 : CG2; // CG1 deals with -1, 0, 1, and 2
-															// CG2 deals with 4 and 8
+						dbl.src = (value0 > 4) ? CG1 : CG2; // CG2 deals with -1, 0, 1, and 2
+															// CG1 deals with 4 and 8
 
 						constant_gen_flag = true;
 						// Then overwrite As for the specific value

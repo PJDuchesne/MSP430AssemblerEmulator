@@ -67,6 +67,9 @@ void second_pass()
 
 	symtbl_entry* symtbl_ptr = NULL;
 
+	int string_cnt = 0;
+	int string_esc_cnt = 0;	// Used to keep track of number of bytes saved by using ^H instead of \t (or similarly escaped character)
+
 	int value0 = -1;
 	int value1 = -1;
 
@@ -231,6 +234,15 @@ void second_pass()
 						break;
 
 					case 'N':  // END
+						current_token = fnt();	// Find next token
+						symtbl_ptr = get_symbol(current_token);	 // Get symbol or NULL
+						if(symtbl_ptr != NULL)
+						{
+							write_S9(symtbl_ptr->value); // Error checking done in first pass
+							std::cout << "END VALUE >>" << symtbl_ptr->value <<"<<"<<std::endl;
+							std::cout << "END VALUE >>" << symtbl_ptr->label <<"<<"<<std::endl;
+						}
+						else write_S9(0);
 						end_flag = true;
 						break;
 
@@ -251,16 +263,45 @@ void second_pass()
 
 						// Error detecting for this was done in the first pass
 						current_token.erase(0,1); // Removes Opening Quote
-						current_token.pop_back(); // Removes Closing Quote
 
-						for(int i = 0; i < current_token.length(); i++)
+						// ITERATE THROUGH LOOKING FOR ESCAPE CHARACTERS
+						for(string_cnt = 0; string_cnt < current_token.length(); string_cnt++)
 						{
-							write_srec_byte(current_token[i]);
+							if(current_token[string_cnt] == '\\')
+							{
+								string_esc_cnt++;
+								string_cnt++;
+								// USED IN SECOND PASS TO SWITCH TO ESCAPE SEQUENCES
+								switch (current_token[string_cnt])
+								{
+									case 't': // TAB
+										write_srec_byte(0x09); // 0x09 = ^H, which is the escape sequence for \t
+										break;
+									case '0': // NULL
+										write_srec_byte(0x00); // 0x00 = ^@, which is the escape sequence for \0
+										break;
+									case 'r': // RETURN/ENTER
+										write_srec_byte(0x0d); // 0x0d = ^M, which is the escape sequence for \r
+										break;
+									case 'n': // NEW LINE
+										write_srec_byte(0x0a); // 0x0a = ^J, which is the escape sequence for \n
+										break;
+									// Other sequences could be implemented here
+									default: // Therefore the character is something else (Such as double quotes)
+										write_srec_byte(current_token[string_cnt]);   // Stores backslash
+										break;
+								}
+							}
+							else if(current_token[string_cnt] != '\"') // Looking for end quote
+							{
+								write_srec_byte(current_token[string_cnt]);
+							}
 						}
 
-						value0 = current_token.length();
-
-						LC += value0;
+						LC += current_token.length();
+						LC -= string_esc_cnt; // For every esc character converted from \t to ^H, a byte is saved
+						
+						string_esc_cnt = 0; // Reset escape count
 
 						break;
 
@@ -295,8 +336,7 @@ void second_pass()
 	}
 
 	// Output any bytes still in the buffer and then close with an S9
-	output_srec_buffer();
-	write_S9();
+	if(!end_flag) write_S9(0);
 }
 
 /*

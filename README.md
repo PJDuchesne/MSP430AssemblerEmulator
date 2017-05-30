@@ -30,7 +30,7 @@ scan-build -o ./output g++ -std=c++11 -o main main.cpp library.cpp symtbl.cpp in
 
 // PRINTING (Change .cpp to .h to do headers)
 
--name "*.cpp" | xargs enscript --color=1 -C -Ecpp -fCourier8 -o - | ps2pdf - code.pdf
+find . -name "*.cpp" | xargs enscript --color=1 -C -Ecpp -fCourier8 -o - | ps2pdf - code.pdf
 
 // General Notes:
 -> There are no error messages in parse.cpp, the error count is done in first_pass.cpp

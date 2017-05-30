@@ -1,0 +1,39 @@
+; JUMP OPERAND TEST CASE FOR FIRST PASS
+; Made by Paul Duchesne (B00332119)
+; May 27, 2017
+
+; Things to test
+;	- All jump instructions
+; 	- RELATIVE addressing mode (Only valid addressing mode)
+;	- FORWARD REFERENCES
+;	- Negative jumps
+; 	- Duplicate labels
+;
+
+; Expected results: 11 errors on Lines 28-38
+
+	ORG	$0000
+
+_	JGE	Lbl2		; "_" is a valid label, tests forward jump
+	JHS	_		; Tests backwards jump
+	Jl	Lbl2		; Tests backwards jump
+	jmp	Lbl3		; Tests forward jump
+	jz	_		; Tests backwards jump
+
+	ORG	$0500
+Lbl2
+
+	ORG	$0700
+Lbl3
+	jmp	_		  Invalid comment (Missing ';')
+	jNE	Lbl2(r7)	; Invalid addressing mode
+	JnZ	#77		; Invalid addressing mode
+	JAW	Lbl3		; Invalid instruction
+	jge	Lbl4		; Unknown (Line number from SYM table)
+	JC	@R6		; Invalid addressing mode
+	Jeq	@PC+		; Invalid addressing mode (PC = R0)
+Lbl3	Jlo	@PC+		; 
+	Jz			; No operand given
+	Jl	R7,R8		; Two operands found
+	jge	lbl2		; Unknown (Labels are case sensitive)
+		

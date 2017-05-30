@@ -9,6 +9,11 @@
 ;	- FORWARD REFERENCES
 ;
 
+; Expected results: 0 failures in first pass and
+;		    SREC should match SREC provided and
+;		    diagnostics file should match opcodes
+;		    written to the right of each line
+
  							; EXPECTED OUTCOMES IN COMMENTS
 
 		ORG	$0000

@@ -35,7 +35,6 @@ extern std::ofstream srec_file;
 unsigned short srec_buffer[SREC_MAX_DATA_SIZE];
 unsigned short srec_chksum;
 unsigned int srec_address;
-unsigned int first_srec_address = -1;
 int srec_index;
 int test_cnt = 0;
 
@@ -87,11 +86,7 @@ void output_srec_buffer()
 		srec_chksum = (~srec_chksum) & 0xff;
 
 		srec_file << std::right << std::setfill('0') << std::setw(2) << std::hex << srec_chksum << std::endl;
-		if(first_srec_address == -1) 
-		{
-			first_srec_address = srec_address; // Store first srec_address emitted
-			test_cnt++;
-		}
+
 		// This may be overwritten if the new Srec is initialized by a directive that moves the LC
 		srec_address += srec_index;
 
@@ -143,8 +138,21 @@ void write_srec_word(unsigned short word)
 	the end directive and it serves to add the closing S9 record
 	to the srec_file. The srec_file is also closed.
 */
-void write_S9()
+void write_S9(unsigned int s9_srec_address)
 {
-	srec_file << "S9" << std::setfill('0') << std::setw(4) << std::hex << first_srec_address;
+	// S9 and 03, 03 is the CNT, which is always 3 for the S9 record
+
+	// Emit the previous buffer
+	output_srec_buffer();
+
+	// Calculate S9 record checksum
+	srec_chksum = 0;
+	srec_chksum += (s9_srec_address >> 8) & 0xff;
+        srec_chksum += s9_srec_address & 0xff;
+        srec_chksum += 0x03; // CNT is always 3 for S9 records
+	srec_chksum = (~srec_chksum) & 0xff;
+
+	// Emit the final S9 record and close file
+	srec_file << "S903" << std::setfill('0') << std::setw(4) << std::hex << s9_srec_address << std::setw(2) << srec_chksum;
 	srec_file.close();
 }
