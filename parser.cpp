@@ -77,8 +77,8 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 		 	// If symbol not in table, and the operand is a valid label, add to symbol table
 			if(se_ptr == NULL && valid_symbol(operand))
 			{
-				add_symbol(operand, -1, UNKNOWN);  // This creates the forward reference, value0 is left at -1
-				if(value0 < -32768 || value0 > 65535) return WRONG; // Value0 cannot be larger than a word
+				add_symbol(operand, -1, UNKNOWN);  // This creates the forward reference
+				if(value0 <= MINWORD || value0 >= MAXWORD) return WRONG; // Value0 cannot be larger than a word
 				else return ABSOLUTE; 
 			}
 			else if(se_ptr != NULL)
@@ -119,8 +119,8 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 
 			// Check symbol table for the remaining operand, it must be a REG
 			se_ptr = get_symbol(operand);
-			if (se_ptr == NULL) return WRONG; 			 // Invalid symbol from indirect or indirect auto increment
-			else if (se_ptr->type !=REG) return WRONG;   // Invalid symbol type from indirect or indirect auto increment
+			if (se_ptr == NULL) return WRONG; 			 // Invalid symbol from indirect or indirect+
+			else if (se_ptr->type !=REG) return WRONG;   // Invalid symbol type from indirect or indirect+
 			else value0 = se_ptr->value;				 // Register value, will be between 0 and 15
 			return (auto_flag ? INDIRECT_AI : INDIRECT);	
 			break;
@@ -166,12 +166,12 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 					if(operand == "") return WRONG;
 					hex_flag = true;
 				}
-				else if(operand[0] == '-' && operand.length() == 1) return WRONG; // "#-" is an invalid operand
-				while(operand[0] == '0' && operand.length() > 1) operand.erase(0, 1); // Delete preceding 0s
-//				if(operand = "") return WRONG; // Means the operand 
+				else if(operand[0] == '-' && operand.length() == 1) return WRONG; // "#-" is invalid
+				// Delete preceding 0s
+				while(operand[0] == '0' && operand.length() > 1) operand.erase(0, 1);
 
-				if(operand.length() > 8 && hex_flag) return WRONG; 					  // TOO LONG FOR STOL (Hex)
-				if(operand.length() > 10 && !hex_flag) return WRONG; 				  // TOO LONG FOR STOL (Decimal)
+				if(operand.length() > 8 && hex_flag) return WRONG; 		// TOO LONG FOR STOL (Hex)
+				if(operand.length() > 10 && !hex_flag) return WRONG; 	// TOO LONG FOR STOL (Decimal)
 
 				// Check that all remaining characters are numeric
 				if(hex_flag && operand.find_first_not_of("0123456789abcdefABCDEF") != std::string::npos) return WRONG;
@@ -181,7 +181,7 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 				value0 = std::stol(operand, nullptr, hex_flag ? 16 : 10);
 
 				// Value0 cannot be larger than a word
-				if(value0 < -32768 || value0 > 65535) return WRONG;
+				if(value0 <= MINWORD || value0 >= MAXWORD) return WRONG;
 				else return IMMEDIATE;
 			}
 			break;
@@ -199,20 +199,26 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 			if(operand.find_first_of("(") != -1 && operand.find_first_of(")") != -1)
 			{
 				// Therefore the operand is indexed mode
-				if(operand.find_first_of("(") + 1 == operand.find_first_of(")")) return WRONG; // Invalid INDEXED OPERAND (Closing bracket appears immediately after opening bracket)
-				if(operand.find_first_of("(") > operand.find_first_of(")")) return WRONG; // Invalid INDEXED OPERAND (Closing bracket appears before opening bracket)
+				// (Below, if wrong) Invalid INDEXED OPERAND 
+				// (Closing bracket just after opening bracket)
+				if(operand.find_first_of("(") + 1 == operand.find_first_of(")")) return WRONG;
+		
+				// (Below, if wrong) Invalid INDEXED OPERAND
+				// (Closing bracket appears before opening bracket)
+				if(operand.find_first_of("(") > operand.find_first_of(")")) return WRONG; 
 
 				// Obtains x from x(Rn)
 				while(operand[0] != '(')
 				{
-					temp_indexed += operand[0]; // temp_indexed is the x in x(Rn) (the label, not the register)
+					temp_indexed += operand[0]; // temp_indexed is the x in x(Rn)
 					operand.erase(0,1);
 				}
 
 				operand.erase(0,1); // Erases the "("
 
-				if(operand.find_first_of(")") != operand.length()-1) return WRONG; // Invalid closing bracket position (Not last character)
-				operand.pop_back(); // Removes last character of the string, which is ")" in this case
+				// (Below, if wrong) Invalid closing bracket position (Not last character)
+				if(operand.find_first_of(")") != operand.length()-1) return WRONG;
+				operand.pop_back(); // Removes last character of the string, ")"
 
 				// temp_indexed is the x in x(Rn)
 				// operand is now the Rn in x(Rn)
@@ -247,7 +253,8 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 			{
 				add_symbol(operand, -1, UNKNOWN);
 				value0 = -1;
-				if(value0 < -32768 || value0 > 65536) return WRONG; // Value0 cannot be larger than a word
+				// Value0 cannot be larger than a word
+				if(value0 <= MINWORD || value0 > MAXWORD) return WRONG;
 				else return RELATIVE;
 			}
 			else if(get_symbol(operand) != NULL)

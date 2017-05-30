@@ -31,6 +31,9 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/emitter.h"
 #include "Include/s19_maker.h"
 
+// Used to signify that the state machine should stop
+bool end_flag = false;
+
 /*
 	Function: second_pass
 	Input: fin: The input file to read records from.
@@ -51,7 +54,6 @@ void second_pass()
 
 	STATE next_state;
  	int LC = 0;
-	bool end_flag = false;
 	bool directive_error_flag = false;
 
 	ADDR_MODE addr_mode = WRONG;
@@ -85,7 +87,8 @@ void second_pass()
 				line_num++;
 				current_token = fft(fin);
 				
-				outfile << std::endl << "\tRecord #" << line_num << ": >>" << current_record << "<<" << std::endl;
+				outfile << std::endl << "\tRecord #" << line_num 
+					    << ": >>" << current_record << "<<" << std::endl;
 
 				// If there is an empty line, move on to next line
 				if(current_token == "")
@@ -117,7 +120,7 @@ void second_pass()
 			case CHK_NEXT_TOKEN:
 				// If there is an empty token, move on to next line
 				current_token = fnt();
-				if(current_token == "") 	      // Line only had a label (and maybe a comment)
+				if(current_token == "") // Line only had a label (and maybe a comment)
 				{
 					next_state = CHK_FIRST_TOKEN;
 					break;
@@ -169,7 +172,8 @@ void second_pass()
 				break;
 
 			case DIRECT: // id_ptr should already point to the correct DIR
-				// No matter the outcome of the directive (error or not), the next state will be CHK_FIRST_TOKEN
+				// No matter the outcome of the directive (error or not),
+				// the next state is CHK_FIRST_TOKEN
 				next_state = CHK_FIRST_TOKEN;
 
 				// The directive is assumed to have caused an error until proven otherwise
@@ -178,14 +182,13 @@ void second_pass()
 			 	// If the type is not ALIGN, END, or STRING, the value needs to be parsed
 				if(id_ptr->mnemonic[1] != 'L' && id_ptr->mnemonic[1] != 'N' && id_ptr->mnemonic[1] != 'T')
 				{
-					current_token = fnt();						// Find next token
-					symtbl_ptr = get_symbol(current_token);		// Check symtbl for that token
+					current_token = fnt();	// Find next token
 
-					current_token = "#" + current_token;  // make it an indexed value for the parser
+					current_token = "#" + current_token; // tell parser to process as IMMEDIATE
 					addr_mode = parse(current_token, value0, value1);
 
 					if(addr_mode == IMMEDIATE) directive_error_flag = false;
-					else error_detected_no_cnt("Directive: Found Unknown Label after DIRECTIVE (Value0 parsing, #2)");
+					else error_detected_no_cnt("Directive: Unknown Label after DIRECTIVE (Value0 parsing)");
 				}
 
 				switch (id_ptr->mnemonic[1])
@@ -194,6 +197,7 @@ void second_pass()
 						if(LC%2) 
 						{
 							LC++;
+							// Output the buffer in order to avoid filling the skipped memory location
 							output_srec_buffer();
 							init_srec(LC);
 						}
@@ -215,7 +219,7 @@ void second_pass()
 					case 'Y':  // BYTE
 						if(!directive_error_flag)
 						{
-							if(value0 > -128 && value0 < 256) 
+							if(value0 >= MINBYTE && value0 <= MAXBYTE) 
 							{
 								write_srec_byte((unsigned char)value0);
 								LC += 1;
@@ -263,7 +267,7 @@ void second_pass()
 						if(!directive_error_flag)
 						{
 							if(LC%2) LC += 0x01;  // Align LC first
-							if(value0 > -32768 && value0 < 65535)
+							if(value0 >= MINWORD && value0 <= MAXWORD)
 							{
 								write_srec_word(value0);
 								LC += 2;
@@ -274,14 +278,16 @@ void second_pass()
 
 					default:
 						std::cout << "\t\t[Directive] DEFAULT ERROR" << std::endl;
-						getchar();  // This should never happen, getchar will stop the runtime and let the user know there is a serious flaw
+						getchar();  // This should never happen, getchar will stop the runtime
+									// and let the user know there is a serious assembler flaw
 						break;
 				}
 
 				break;
 			default:
-				std::cout << "\t\t[Second Pass] DEFAULT ERROR" << std::endl; // This should literally never happen
-				getchar();  // This should never happen, getchar will stop the runtime and let the user know there is a serious flaw
+				std::cout << "\t\t[Second Pass] DEFAULT ERROR" << std::endl;
+				getchar();  // This should never happen, getchar will stop the runtime
+							// and let the user know there is a serious assembler flaw
 				break;
 		}
 
@@ -302,6 +308,11 @@ testing and debugging
  */
 void error_detected_no_cnt(std::string error_msg)
 {
-	std::cout << "\t\t[ERROR MSG - FIRST PASS=] " << error_msg << std::endl;
+	std::cout << "\t\t[ERROR MSG - SECOND PASS] " << error_msg << std::endl;
+	outfile << "\t\t[ERROR MSG - SECOND PASS] " << error_msg << std::endl;
 	getchar();
+	end_flag = true; // Ends run because an error is found on second pass
+					 // This is done due to the fact that this is more of an issue
+					 // on the second pass given that all errors should be caught on
+					 // the first pass
 }

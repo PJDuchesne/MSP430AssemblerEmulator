@@ -30,15 +30,13 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 #define SREC_MAX_DATA_SIZE 32 // 32 bytes of data, 64 hex characters
 
-unsigned short srec_buffer[SREC_MAX_DATA_SIZE];
-
 extern std::ofstream srec_file;
 
-int srec_index;
+unsigned short srec_buffer[SREC_MAX_DATA_SIZE];
 unsigned short srec_chksum;
 unsigned int srec_address;
 unsigned int first_srec_address = -1;
-
+int srec_index;
 int test_cnt = 0;
 
 /*
@@ -83,24 +81,22 @@ void output_srec_buffer()
 		{
 			srec_file << std::right << std::setfill('0') << std::setw(2) << std::hex << srec_buffer[i];
 		}
-
 		// CHECKSUM
 		srec_chksum += count;
 
 		srec_chksum = (~srec_chksum) & 0xff;
 
-		srec_file << std::right << std::setfill('0') << std::setw(2) << std::hex << srec_chksum << std::endl; // END THE LINE HERE
-
+		srec_file << std::right << std::setfill('0') << std::setw(2) << std::hex << srec_chksum << std::endl;
 		if(first_srec_address == -1) 
 		{
 			first_srec_address = srec_address; // Store first srec_address emitted
 			test_cnt++;
 		}
-
 		// This may be overwritten if the new Srec is initialized by a directive that moves the LC
 		srec_address += srec_index;
 
-		init_srec(srec_address); // This may be overwritten if another emit() is called before the first byte is added to the buffer
+		init_srec(srec_address); // This may be overwritten if another emit() is called 
+								 // before the first byte is added to the buffer
 	}
 }
 
@@ -149,7 +145,6 @@ void write_srec_word(unsigned short word)
 */
 void write_S9()
 {
-	srec_file << "S9" << std::setfill('0') << std::setw(4) << std::hex << first_srec_address; // Assuming I want to print out first srec address
+	srec_file << "S9" << std::setfill('0') << std::setw(4) << std::hex << first_srec_address;
 	srec_file.close();
 }
-

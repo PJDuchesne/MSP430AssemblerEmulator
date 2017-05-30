@@ -99,8 +99,6 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 		case NONE: // Just RETI
 			if(id_ptr->mnemonic == "RETI")
 			{
-				addr_mode0 = parse(operand, value0, value1);
-
 				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << 0x1300 << std::endl;
 				write_srec_word(0x1300);
 
@@ -143,14 +141,15 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 
 				case IMMEDIATE:
 					single.reg = PC;
-					// Constant generator functionality: Tests if the value is on the constant generator list
-					if(value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8)
+					// Constant generator (CG) functionality: Tests if the value is on the CG list
+					if(value0 == -1||value0 == 0||value0 == 1||value0 == 2||value0 == 4||value0 == 8)
 					{
 						operand.erase(0,1);
 						symtbl_ptr = get_symbol(operand);
 						if(symtbl_ptr != NULL) if(symtbl_ptr->line > line_num) break; 
 
-						single.as = (value0 < 4) ? CG1 : CG2; // CG1 deals with -1, 0, 1, and 2, CG2 deals with 4 and 8
+						single.as = (value0 < 4) ? CG1 : CG2; // CG1 deals with -1, 0, 1, and 2
+															  // CG2 deals with 4 and 8
 
 						constant_gen_flag = true;
 						// Then overwrite As for the specific value
@@ -166,7 +165,8 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 							case  4:
 								single.as = 2;
 								break;
-							default:  // Note: for "case -1:" and "case 8:", single.as is already set to 3 from before the switch statement
+							default:  // Note: for "case -1:" and "case 8:", single.as is 
+									  // already set to 3 from before the switch statement
 								break;	
 						}
 					}
@@ -178,7 +178,8 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 					break;
 			}
 
-			outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << std::setw(4) << single.us_single << std::endl;;
+			outfile << "\t\t" << std::hex << std::setw(4) << LC << " " 
+							  << std::setw(4) << single.us_single << std::endl;;
 			write_srec_word(single.us_single);	
 			
 			// Inrement LC for the instruction
@@ -186,9 +187,11 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 
 			if(addr_mode_LC_array_src[addr_mode0] && !constant_gen_flag) // Emit SRC output if needed
 			{
-				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)value0 << std::endl;
+				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " 
+											  << std::setw(4) << (unsigned short)value0 << std::endl;
 				write_srec_word((unsigned short)value0);	
-				LC += 2; // Because the addr_mode_LC_array_src is used to get into this statement, the LC is always increased if successful
+				LC += 2; // Because the addr_mode_LC_array_src is used to get into this statement,
+						 // the LC is always increased if successful
 			}
 
 			break;
@@ -204,8 +207,9 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 			addr_mode0 = parse(src_string, value0, value1);
 			addr_mode1 = parse(dst_string, value0_dbl, value1_dbl);
 
+			// Sets As and Ad fields for structures
 			dbl.as = as_value[addr_mode0];
-			dbl.ad = as_value[addr_mode1];	 // used as_value array again because as and ad values are the same for the first 4 addressing modes
+			dbl.ad = as_value[addr_mode1];	 // As and Ad are identical for first 4 addressing modes
 
 			switch(addr_mode0) // DEAL WITH SOURCE
 			{
@@ -234,7 +238,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 				case IMMEDIATE:
 					dbl.src = PC;
 					// Constant generator test
-					if(value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8)
+					if(value0 == -1||value0 == 0||value0 == 1||value0 == 2||value0 == 4||value0 == 8)
 					{
 						src_string.erase(0,1);
 						symtbl_ptr = get_symbol(src_string);
@@ -245,7 +249,8 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 							}
 						}
 
-						dbl.src = (value0 < 4) ? CG1 : CG2; // CG1 deals with -1, 0, 1, and 2, CG2 deals with 4 and 8
+						dbl.src = (value0 < 4) ? CG1 : CG2; // CG1 deals with -1, 0, 1, and 2
+															// CG2 deals with 4 and 8
 
 						constant_gen_flag = true;
 						// Then overwrite As for the specific value
@@ -261,7 +266,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 							case  4:
 								dbl.as = 2;
 								break;
-							default:		// Note: for "case -1:" and "case 8:", dbl.as is already set to 3.
+							default:  // Note: for "case -1:" and "case 8:", dbl.as is already set to 3
 								break;	
 						}
 					}
@@ -307,19 +312,24 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 			// Increase LC for INST
 			LC += 2;
 
-			if(addr_mode_LC_array_src[addr_mode0] && !constant_gen_flag) // Emit SRC output if needed (Not if constant generator is used
+			// Emit SRC output if needed (Not if constant generator is used
+			if(addr_mode_LC_array_src[addr_mode0] && !constant_gen_flag)
 			{
-				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " <<  std::setw(4) << (unsigned short)value0 << std::endl;
+				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " 
+											  <<  std::setw(4) << (unsigned short)value0 << std::endl;
 				write_srec_word((unsigned short)value0);	
-				LC += 2; // Because the addr_mode_LC_array_src is used to get into this statement, the LC is always increased if successful
+				LC += 2; // Because the addr_mode_LC_array_src is used to get into this statement,
+						 // the LC is always increased if successful
 			}
 
 
 			if(addr_mode_LC_array_dst[addr_mode1]) // Emit DST output if needed
 			{
-				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)value0_dbl << std::endl;
+				outfile << "\t\t" << std::hex << std::setw(4) << LC << " "
+								  << std::setw(4) << (unsigned short)value0_dbl << std::endl;
 				write_srec_word((unsigned short)value0_dbl);	
-				LC += 2; // Because the addr_mode_LC_array_dst is used to get into this statement, the LC is always increased if successful
+				LC += 2; // Because the addr_mode_LC_array_dst is used to get into this statement,
+						 // the LC is always increased if successful
 			}
 
 			break;
@@ -337,7 +347,8 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 			jump.offset = value0;
 
 			// EMIT
-			outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)jump.us_jump << std::endl;;
+			outfile << "\t\t" << std::hex << std::setw(4) << LC << " "
+						                  << std::setw(4) << (unsigned short)jump.us_jump << std::endl;;
 			write_srec_word(jump.us_jump);	
 		
 			// Increase LC for INST

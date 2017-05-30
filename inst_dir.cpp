@@ -31,8 +31,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
             a tidy table for getting at later.
 */
 inst_dir inst_dir_array[] = {
-        // Instructions on slots 0,60
-        {"ADD",  DOUBLE, 0x5000, WORD}, 
+        {"ADD",  DOUBLE, 0x5000, WORD},           // Instructions on slots 0,60
                 {"ADD.B",  DOUBLE, 0x5000, BYTE},
                 {"ADD.W",  DOUBLE, 0x5000, WORD},
         {"ADDC", DOUBLE, 0x6000, WORD},
@@ -93,9 +92,7 @@ inst_dir inst_dir_array[] = {
         {"XOR",  DOUBLE, 0xe000, WORD},
                 {"XOR.B",  DOUBLE, 0xe000, BYTE},
                 {"XOR.W",  DOUBLE, 0xe000, WORD},
-       
-        // Directives on slots 61,68
-        {"ALIGN",  NONE, 0xffff, WORD},
+        {"ALIGN",  NONE, 0xffff, WORD},  // Directives on slots 61,68
         {"BSS",    NONE, 0xffff, WORD},
         {"BYTE",   NONE, 0xffff, WORD}, 
         {"END",    NONE, 0xffff, WORD},
@@ -117,18 +114,17 @@ inst_dir* get_inst_dir(std::string input, SEARCHTYPE stype)
 {
 	std::transform(input.begin(), input.end(), input.begin(), ::toupper);
 
-	int bottom = (stype == I) ? 0  : 61;
-	int top    = (stype == I) ? 60 : 68;
-
+	int bottom = (stype == I) ? 0  : 61;   // The lower range of Instructions is 0, while the lower
+                                           //  range of Directives is 61
+	int top    = (stype == I) ? 60 : 68;   // The upper range of Instructions is 60, while the upper
+                                           // range of Directives is 68
 	int char_cnt = 0;
 	int cnt = 0;
-
 	if(stype != I && stype != D)
 	{
 		std::cout << "ERROR: INVALID SEARCH TYPE" << std::endl;
 		return NULL;
 	}
-
     // Check top/bottom values
     if(inst_dir_array[top].mnemonic == input)
     {
@@ -138,7 +134,6 @@ inst_dir* get_inst_dir(std::string input, SEARCHTYPE stype)
     {
         return &inst_dir_array[bottom];
     }
-
     // Iterate through the list, slowly narrowing down the target search
     // until the value is found or the search window gets small enough.
     while(top-bottom != 1)

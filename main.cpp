@@ -70,14 +70,18 @@ int main(int argc, char *argv[])
 	// Runs the first pass
  	first_pass();
 
-	std::cout << std::endl << "\tFirst Pass Completed with >>" << err_cnt << "<< Errors (Not including unknowns)" << std::endl;
-	outfile << std::endl << "\tFirst Pass Completed with >>" << err_cnt << "<< Errors (Not including unknowns)" << std::endl;
+	std::cout << std::endl << "\tFirst Pass Completed with >>" << err_cnt 
+	          << "<< Errors (Not including unknowns)" << std::endl;
+	outfile << std::endl << "\tFirst Pass Completed with >>" << err_cnt
+		    << "<< Errors (Not including unknowns)" << std::endl;
 
 	// Check the symbol table for unresolved unknowns
 	symtbl_unknown_check();
 
-	std::cout << std::endl << "\tFirst Pass Completed with >>" << err_cnt << "<< Errors (Including unknowns)" << std::endl;
-	outfile << std::endl << "\tFirst Pass Completed with >>" << err_cnt << "<< Errors (Including unknowns)" << std::endl;
+	std::cout << std::endl << "\tFirst Pass Completed with >>" << err_cnt
+			  << "<< Errors (Including unknowns)" << std::endl;
+	outfile << std::endl << "\tFirst Pass Completed with >>" << err_cnt
+		    << "<< Errors (Including unknowns)" << std::endl;
 
 	// If there are no errors, rewind file and run second pass
  	if(err_cnt == 0)
@@ -87,7 +91,8 @@ int main(int argc, char *argv[])
 		fin.seekg(0);
 
 		// Run second pass
-		outfile << std::endl << "SECOND PASS DIAGNOSTICS (All Records emitted with format shown below)" << std::endl << std::endl;
+		outfile << std::endl << "SECOND PASS DIAGNOSTICS (All Records emitted with format shown below)";
+		outfile << std::endl << std::endl;
   		second_pass();
  	}
 

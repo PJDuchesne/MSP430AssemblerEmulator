@@ -21,7 +21,8 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 void first_pass();
 
-bool is_last_token(); // True if the token previously parsed was the last token, false if there is another token after
+bool is_last_token(); // True if the token previously parsed was the last token, false if there 
+					  // is another token after
 
 void error_detected(std::string error_msg);
 

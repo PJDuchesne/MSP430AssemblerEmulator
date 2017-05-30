@@ -171,19 +171,27 @@ void output_symtbl()
     while(temp->next != NULL)
     {
 	// To terminal
-        std::cout << "\tEntry #"    << std::right << std::setfill('0') << std::setw(entry_no_length) << std::dec << temp_cnt;
-		std::cout << " | Label: " << std::left << std::setfill(' ') << std::setw(max_label_length) << temp->label;
+        std::cout << "\tEntry #"  << std::right << std::setfill('0') 
+        		  << std::setw(entry_no_length) << std::dec << temp_cnt;
+		std::cout << " | Label: " << std::left << std::setfill(' ') 
+				  << std::setw(max_label_length) << temp->label;
 		// Values of -1 (Unknowns) will appear as ffff (twos compliment output)
-		std::cout << " | Value: " << std::right << std::setfill('0') << std::setw(4) << std::hex << (unsigned short)temp->value;
-		std::cout << " | Line #"  << std::right << std::setfill('0') << std::setw(line_no_length) << std::dec << temp->line;
+		std::cout << " | Value: " << std::right << std::setfill('0')
+				  << std::setw(4) << std::hex << (unsigned short)temp->value;
+		std::cout << " | Line #"  << std::right << std::setfill('0')
+				  << std::setw(line_no_length) << std::dec << temp->line;
 		std::cout << " | type: "  << types[temp->type] << std::endl;
 
 	// To diagnostics
-        outfile << "\tEntry #"    << std::right << std::setfill('0') << std::setw(entry_no_length) << std::dec << temp_cnt;
-		outfile << " | Label: " << std::left << std::setfill(' ') << std::setw(max_label_length) <<temp->label;
+        outfile << "\tEntry #"    << std::right << std::setfill('0')
+        		<< std::setw(entry_no_length) << std::dec << temp_cnt;
+		outfile << " | Label: " << std::left << std::setfill(' ')
+				<< std::setw(max_label_length) <<temp->label;
 		// Values of -1 (Unknowns) will appear as ffff (twos compliment output)
-		outfile << " | Value: " << std::right << std::setfill('0') << std::setw(4) << std::hex << (unsigned short)temp->value;
-		outfile << " | Line #"  << std::right << std::setfill('0') << std::setw(line_no_length) << std::dec << temp->line;
+		outfile << " | Value: " << std::right << std::setfill('0')
+				<< std::setw(4) << std::hex << (unsigned short)temp->value;
+		outfile << " | Line #"  << std::right << std::setfill('0')
+				<< std::setw(line_no_length) << std::dec << temp->line;
 		outfile << " | type: "  << types[temp->type] << std::endl;
 
         temp = temp->next;

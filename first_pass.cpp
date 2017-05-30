@@ -29,14 +29,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/inst_dir.h"
 #include "Include/parser.h"
 
-struct diagnostics {
-	std::string record;
-	std::string error_msg;
-	int line;
-};
-
-diagnostics current_record_diagnostics;
-
 // Array of addressing mode increments for the location counter
 int addr_mode_LC_array[] = {0, 2, 2, 2, 0, 0, 2};
 
@@ -133,18 +125,18 @@ void first_pass()
 				if(symtbl_ptr == NULL && valid_symbol(current_token))  	// Therefore this is a new symbol
 				{	
 					add_symbol(current_token, LC, KNOWN);
-					last_label = current_token;  						// Used for the EQU directive
+					last_label = current_token;  				// Used for the EQU directive
 					next_state = CHK_NEXT_TOKEN;
 					break;
 				}
 				else if(symtbl_ptr != NULL)
 				{
-					if(symtbl_ptr->type == UNKNOWN) 							// Fill in any forward references
+					if(symtbl_ptr->type == UNKNOWN) 			// Fill in any forward references
 					{
 						symtbl_ptr->value = LC;
 						symtbl_ptr->type = KNOWN;
-						symtbl_ptr->line = line_num; 					// Put in line at which the label is made known
-						last_label = symtbl_ptr->label; 				// Used for the EQU directive
+						symtbl_ptr->line = line_num; 			// Put in line at which the label is made known
+						last_label = symtbl_ptr->label; 		// Used for the EQU directive
 						next_state = CHK_NEXT_TOKEN;
 						break;
 					}
@@ -209,7 +201,7 @@ void first_pass()
 				*/
 				LC += 2;
 
-				current_token = fnt();	// This fetches the next token from the current record (the operands token)
+				current_token = fnt();	// This fetches the next token from the current record
 
 				// If the next state is not set to check operands (i.e. if there is an error),
 				// the next state is set to CHK_FIRST_TOKEN by default
@@ -240,18 +232,20 @@ void first_pass()
 					case DOUBLE:
 						two_op_flag = true;
 
-						if(current_token.find_first_of(",") != std::string::npos && current_token.find_first_of(",") != current_token.length()-1)
+						if(current_token.find_first_of(",") != std::string::npos 
+							&& current_token.find_first_of(",") != current_token.length()-1)
 						{
 							src_operand = current_token.substr(0, current_token.find_first_of(","));
 							dst_operand = current_token.substr(current_token.find_first_of(",")+1);
-							next_state = CHK_DST_OP; // CHK_DST_OP sets the next state to CHK_SRC_OP after completion
+							next_state = CHK_DST_OP; // CHK_DST_OP sets the next state to CHK_SRC_OP after
 						}
 						else error_detected("INST: Found Non-Double operand DOUBLE INST");
 
 						break;
 					default:
 						std::cout << "[INST] THIS SHOULD NEVER TRIGGER" << std::endl;
-						getchar();  // This should never happen, getchar will stop the runtime and let the user know there is a serious flaw
+						getchar();  // This should never happen, getchar will stop the runtime
+									// and let the user know there is a serious assembler flaw
 						break;
 				}
 				
@@ -270,7 +264,7 @@ void first_pass()
 					>  L      S    Y     N    Q    R    T       O
 				*/
 
-				// No matter the outcome of the directive (error or not), the next state will be CHK_FIRST_TOKEN
+				// No matter the outcome of the directive (error or not), next state will be CHK_FIRST_TOKEN
 				next_state = CHK_FIRST_TOKEN;
 
 				// The directive is assumed to have caused an error until proven otherwise
@@ -283,14 +277,17 @@ void first_pass()
 					symtbl_ptr = get_symbol(current_token);		// Check symtbl for that token
 
 					// "No forward referecing for directives" ~ TA Gary, 2017
-					if(symtbl_ptr == NULL && valid_symbol(current_token)) error_detected("Directive: Found UNKNOWN label after DIRECTIVE (Value0 parsing, #1)");
+					if(symtbl_ptr == NULL && valid_symbol(current_token))
+					{
+						error_detected("Directive: UNKNOWN label after DIRECTIVE (Value0 parsing, #1)");
+					}
 					else
 					{
 						// The operand parser expects immediates to start with "#", so this is added
 						current_token = "#" + current_token;
 						addr_mode = parse(current_token, value0, value1);
 						if(addr_mode == IMMEDIATE) directive_error_flag = false;
-						else error_detected("Directive: Found Unknown Label after DIRECTIVE (Value0 parsing, #2)");
+						else error_detected("Directive: Unknown Label after DIRECTIVE (Value0 parsing, #2)");
 						if(!is_last_token()) error_detected("Directive: Found token after DIRECTIVE");
 					}
 				}
@@ -305,7 +302,8 @@ void first_pass()
 					case 'S':  // BSS
 						if(!directive_error_flag)
 						{
-							if(value0 >= 0 && value0 < 65536-LC) LC += value0; // Word max value
+							// BSS cannot put LC above max LC value (0xffff)
+							if(value0 >= 0 && value0 < MAXWORD-LC) LC += value0;
 							else error_detected("Directive: Invalid value for BSS (Negative or too small)");
 						}
 						break;
@@ -313,7 +311,7 @@ void first_pass()
 					case 'Y':  // BYTE
 						if(!directive_error_flag)
 						{
-							if(value0 >= -128 && value0 < 256) LC += 1; // Bounds for signed byte
+							if(value0 >= MINBYTE && value0 < MAXBYTE) LC += 1; // Bounds for signed byte
 							else error_detected("Directive: Value too large for BYTE directive");
 						}
 
@@ -331,7 +329,7 @@ void first_pass()
 					case 'Q':  // EQU
 						if(!directive_error_flag)
 						{
-							// EQU requires a label, therefore the 'last_label' added to the symbol table is found
+							// EQU requires a label, therefore the 'last_label' is kept track of
 							// If that symbol's line number matches the current line number, EQU can proceed
 							current_token = fnt();
 
@@ -341,8 +339,8 @@ void first_pass()
 							else if(symtbl_ptr->type == KNOWN && symtbl_ptr->line == line_num)
 							{
 								// Therefore there is a label preceding EQU
-								// EQU cannot be negative, because that would allow jumping to negative values
-								if(value0 >= 0 && value0 <= 65536)
+								// EQU cannot be negative, that would allow jumping to negative values
+								if(value0 >= 0 && value0 <= MAXWORD)
 								{
 									symtbl_ptr->value = value0;
 									symtbl_ptr->line = line_num;
@@ -358,8 +356,8 @@ void first_pass()
 					case 'R':  // ORG
 						if(!directive_error_flag)
 						{
-							// LC cannot be negative or  greater than 65536 at any point
-							if(value0 >= 0 && value0 < 65536) 
+							// LC cannot be negative or  greater than MAXWORD at any point
+							if(value0 >= 0 && value0 < MAXWORD) 
 							{
 								LC = value0;
 								if(!is_last_token()) error_detected("Directive: Found Unknown Label after ORG value");
@@ -371,7 +369,8 @@ void first_pass()
 
 					case 'T':  // STRING
 						current_token = fnt();
-						// String max value has been (Arbitrarily) set to 80 characters (Punch card width), plus two for the quotation marks
+						// String max value has been (Arbitrarily) set to 80 characters 
+						// (Punch card width), plus two for the quotation marks
 						if(current_token.length() <= 82)
 						{
 							if(current_token[0] != '"') error_detected("Directive: Missing OPENING quote for STRING");
@@ -398,14 +397,15 @@ void first_pass()
 						if(!directive_error_flag)
 						{
 							// if(LC%2) LC += 1;  // NOTE: "Words should fall on even-byte boundaries"
-							if(value0 > -65536 && value0 < 65536) LC += 2;
+							if(value0 > -MINWORD && value0 < MAXWORD) LC += 2;
 							else error_detected("Directive: Value too large for WORD directive");
 						}
 						break;
 
 					default:
 						std::cout << "\t\t[Directive] DEFAULT ERROR" << std::endl; // This should literally never happen
-						getchar();  // This should never happen, getchar will stop the runtime and let the user know there is a serious flaw
+						getchar();  // This should never happen, getchar will stop the runtime
+									// and let the user know there is a serious assembler flaw
 						break;
 				}
 
@@ -436,7 +436,7 @@ void first_pass()
 						symtbl_ptr = get_symbol(src_operand);
 						if(symtbl_ptr != NULL)
 						{
-							if(symtbl_ptr->type == UNKNOWN) break; // Breaks from case, before undoing the LC increment
+							if(symtbl_ptr->type == UNKNOWN) break; // Breaks before undoing the LC increment
 							else LC -= 2; // Undo the LC increment from earlier
 						}
 						else LC -= 2; // Undo the LC increment from earlier
@@ -459,8 +459,8 @@ void first_pass()
 
 				addr_mode = parse(dst_operand, value0, value1);
 
-				// If the addressing mode is INDIRECT (4), INDIRECT_AI (5), IMMEDIATE (6), or WRONG (7), there is an error
-				// See enumerations in library.h for declaration that shows this
+				// If the addressing mode is INDIRECT (4), INDIRECT_AI (5), IMMEDIATE (6), or WRONG (7),
+				//  there is an error. See enumerations in library.h for declaration that shows this
 				if(addr_mode >= 4) error_detected("CHK_DST_OP: Invalid addressing mode or parsing for DST operand");
 				else
 				{
@@ -495,23 +495,13 @@ void first_pass()
 				jmp_operand = "";
 				break;
 			default:
-				std::cout << "\t\t[First Pass] DEFAULT ERROR" << std::endl; // This should literally never happen
-				getchar();  // This should never happen, getchar will stop the runtime and let the user know there is a serious flaw
+				std::cout << "\t\t[First Pass] DEFAULT ERROR" << std::endl;
+				getchar();  // This should never happen, getchar will stop the runtime
+							// and let the user know there is a serious assembler flaw
 				break;
 		}
 	}
 
-	// Error lines (For debugging)
-
-	int temp123897 = 0;
-
-	std::cout << "ERRORS ON THE FOLLOWING LINES" << std::endl << std::endl;
-
-	while(temp123897 < err_cnt)
-	{
-		std::cout << error_line_array[temp123897] << std::endl;
-		temp123897++;
-	}
 	line_num = 0;
 }
 
@@ -540,7 +530,5 @@ void error_detected(std::string error_msg)
 	outfile << std::dec << "\tRECORD #" << line_num << ": >>"<< current_record << "<<" <<std::endl;
 	outfile << "\t\t[ERROR MSG - FIRST PASS] " << error_msg << std::endl << std::endl;
 	
-	current_record_diagnostics.line = line_num;
-	error_line_array[err_cnt] = line_num;
 	err_cnt++;
 }

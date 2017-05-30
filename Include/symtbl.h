@@ -21,16 +21,14 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 #include "library.h"
 
-extern int err_cnt;
-extern std::string last_addition;
-
 struct symtbl_entry {
-        std::string label;
-        int value;
-        SYMTBLTYPE type;
-        int line;
-        symtbl_entry *next;
+        std::string label;  // The name given by the user
+        int value;          // Value stored in the symbol
+        SYMTBLTYPE type;    // REG, KNOWN, or UNKNOWN
+        int line;           // Line number label found on (Updated if an UNKNOWN is filled in)
+        symtbl_entry *next; // Pointer to next entry on list
 };
+
 
 void init_symtbl();
 

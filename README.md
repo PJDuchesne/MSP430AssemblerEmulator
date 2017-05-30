@@ -24,8 +24,17 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes ./main
 
+// Clang (Static Code Analysis)
+
+scan-build -o ./output g++ -std=c++11 -o main main.cpp library.cpp symtbl.cpp inst_dir.cpp parser.cpp first_pass.cpp second_pass.cpp emitter.cpp s19_maker.cpp
+
+// PRINTING (Change .cpp to .h to do headers)
+
+-name "*.cpp" | xargs enscript --color=1 -C -Ecpp -fCourier8 -o - | ps2pdf - code.pdf
+
 // General Notes:
 -> There are no error messages in parse.cpp, the error count is done in first_pass.cpp
+
 
 
 // TO DO:

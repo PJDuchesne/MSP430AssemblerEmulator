@@ -19,6 +19,12 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #ifndef LIBRARY_H
 #define LIBRARY_H
 
+// Used for lower and upper bounds during checks
+#define MINBYTE -128
+#define MAXBYTE  256
+#define MINWORD -32768
+#define MAXWORD  65536
+
 // Variables used by fft and fnt
 extern std::string current_record;
 extern std::string current_token;
