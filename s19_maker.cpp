@@ -14,6 +14,8 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 -> Date: May 26, 2017   (Created)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
+-> Note: This section in particular is quite similar to
+	the example code provided by Dr Hughes
 */
 
 #include <iostream>
@@ -26,11 +28,11 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 #include "Include/s19_maker.h"
 
-extern std::ofstream srec_file;
-
 #define SREC_MAX_DATA_SIZE 32 // 32 bytes of data, 64 hex characters
 
 unsigned short srec_buffer[SREC_MAX_DATA_SIZE];
+
+extern std::ofstream srec_file;
 
 int srec_index;
 unsigned short srec_chksum;
@@ -51,6 +53,7 @@ void init_srec(unsigned int address)
 	srec_index = 0;
 	srec_chksum = 0;
 	srec_address = address;
+	// Add the checksum first with the LSB and then with the MSB (Order doesn't matter)
 	srec_chksum += (srec_address >> 8) & 0xff;
 	srec_chksum += srec_address & 0xff;
 }
@@ -69,7 +72,7 @@ void output_srec_buffer()
 	if(srec_index != 0) // If the buffer is empty, don't print an empty S1. That would be silly.
 	{
 		unsigned short count = 0;
-		count = srec_index + 3;
+		count = srec_index + 3; // Plus 3 for the CNT (1) and ADDRESS (2)
 
 		// S1 header, Count, and Address
 		srec_file << "S1" << std::right << std::setfill('0') << std::setw(2) << std::hex << count

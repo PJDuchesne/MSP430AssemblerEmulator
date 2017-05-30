@@ -57,7 +57,7 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 	// Flag for auto increment mode
 	bool auto_flag = false;
 
-	switch (operand[0])
+	switch (operand[0])	// Checking first character of operand
 	{
 		case '&': // Absolute Mode (Or Error)
 			/*	BRIEF STATE SUMMARY:
@@ -66,6 +66,7 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 				already be on the symbol table (backwards reference) or be a
 				valid symbol and then added to the symbol table (forward reference)
 			*/
+			// Remove '&' from operand for future parsing
 			operand.erase(0, 1);
 
 			// The input '&' is an error
@@ -102,6 +103,7 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 				the plus is removed. The remaining string is searched for in the
 				symbol table and the result is checked to be a register or not.
 			*/
+			// Remove '@' from operand for future parsing
 			operand.erase(0, 1);
 
 			// "@" is an invalid operand
@@ -197,9 +199,10 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 			if(operand.find_first_of("(") != -1 && operand.find_first_of(")") != -1)
 			{
 				// Therefore the operand is indexed mode
-				if(operand.find_first_of("(") + 1 == operand.find_first_of(")")) return WRONG; // Invalid INDEXED OPERAND (Closing bracket appears before opening bracket?)
-				if(operand.find_first_of("(") > operand.find_first_of(")")) return WRONG; // Invalid INDEXED OPERAND (Closing bracket appears before opening bracket?)
+				if(operand.find_first_of("(") + 1 == operand.find_first_of(")")) return WRONG; // Invalid INDEXED OPERAND (Closing bracket appears immediately after opening bracket)
+				if(operand.find_first_of("(") > operand.find_first_of(")")) return WRONG; // Invalid INDEXED OPERAND (Closing bracket appears before opening bracket)
 
+				// Obtains x from x(Rn)
 				while(operand[0] != '(')
 				{
 					temp_indexed += operand[0]; // temp_indexed is the x in x(Rn) (the label, not the register)
@@ -244,7 +247,7 @@ ADDR_MODE parse(std::string op, int& value0, int& value1)
 			{
 				add_symbol(operand, -1, UNKNOWN);
 				value0 = -1;
-				if(value0 < -32768 || value0 > 65535) return WRONG; // Value0 cannot be larger than a word
+				if(value0 < -32768 || value0 > 65536) return WRONG; // Value0 cannot be larger than a word
 				else return RELATIVE;
 			}
 			else if(get_symbol(operand) != NULL)

@@ -264,7 +264,7 @@ void symtbl_unknown_check()
 
 	while(se_ptr->next != NULL)
 	{
-		if(se_ptr->type == 2) err_cnt++;
+		if(se_ptr->type == UNKNOWN) err_cnt++;
 		se_ptr = se_ptr->next;
 	}
 

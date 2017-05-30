@@ -72,7 +72,6 @@ void second_pass()
 	next_state = CHK_FIRST_TOKEN;
 
 	// Output the diagnostics format to diagnostics.LIS file
-
 	outfile << "\tRecord #n: >>Input Record<<" << std::endl
   	        << "\t\tMemloc INST" << std::endl
 	        << "\t\tMemloc [SRC Address] (If it exists)" << std::endl

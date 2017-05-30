@@ -36,7 +36,13 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #define CG1 2	// Constant Generator 1, used for -1, 0, 1, 2
 #define CG2 3	// Constant Generator 2, Used for 4 and 8
 
+// As values for setting As and Ad fields (First 4 Ad values equal first 4 Ad values)
+// Numbers correspond to enumeration declaration order in library.h
 int as_value[] = {0, 1, 1, 1, 2, 3, 3};
+
+// Addressing mode arrays for increasing location counter
+int addr_mode_LC_array_src[] = {0, 2, 2, 2, 0, 0, 2};
+int addr_mode_LC_array_dst[] = {0, 2, 2, 2, 0, 0, 0};
 
 /*
 	Function: emit
@@ -61,12 +67,10 @@ int as_value[] = {0, 1, 1, 1, 2, 3, 3};
 */
 void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 {
-	int addr_mode_LC_array_src[] = {0x0, 0x2, 0x2, 0x2, 0x0, 0x0, 0x2};
-	int addr_mode_LC_array_dst[] = {0x0, 0x2, 0x2, 0x2, 0x0, 0x0, 0x0};
 
 	inst_dir* id_ptr = get_inst_dir(inst, I);
 	symtbl_entry* symtbl_ptr = NULL;
-	ADDR_MODE addr_mode0 = WRONG; // Used in general
+	ADDR_MODE addr_mode0 = WRONG; // Used in general (For One operand, SRC in two operand, and jump operand)
 	ADDR_MODE addr_mode1 = WRONG; // Used for DST in double operand
 
 	std::string src_string = "";
@@ -76,14 +80,15 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 	double_overlay dbl;
 	jump_overlay jump;
 
-	int value0 = -1;
-	int value1 = -1;
+	// Used for JUMP, ONE, and the SRC of TWO operand instructions
+	int value0 = -1; // General value
+	int value1 = -1; // Used for register in indexed mode
 
-	int value0_dbl = -1;	// Used for the second operand of two operand instructions
-	int value1_dbl = -1;
+	// Used for DST of two operand instructions
+	int value0_dbl = -1; // General value
+	int value1_dbl = -1; // Used for register in indexed mode
 
-	unsigned short us_value0 = -1;
-
+	// Flag used if the constant generator is used
 	bool constant_gen_flag = false;
 
 	// Set up output settings:
@@ -91,7 +96,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 
 	switch (type)
 	{
-		case NONE: // 0  (RETI)
+		case NONE: // Just RETI
 			if(id_ptr->mnemonic == "RETI")
 			{
 				addr_mode0 = parse(operand, value0, value1);
@@ -107,8 +112,8 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 				getchar();
 			}
 			break;
-		case SINGLE: // 1
-			single.opcode = id_ptr->opcode/(128);  // Bit shift the opcode to the right 7 times
+		case SINGLE:
+			single.opcode = id_ptr->opcode/(128);  // Bit shift the opcode to the right 7 times (2^7)
 			single.bw = id_ptr->b_w;
 
 			addr_mode0 = parse(operand, value0, value1);
@@ -138,8 +143,8 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 
 				case IMMEDIATE:
 					single.reg = PC;
-					// Constant generator test
-					if(addr_mode0 == IMMEDIATE && (value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8))
+					// Constant generator functionality: Tests if the value is on the constant generator list
+					if(value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8)
 					{
 						operand.erase(0,1);
 						symtbl_ptr = get_symbol(operand);
@@ -171,25 +176,25 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 					std::cout << "This is an issue (WRONG addr_mode0 found)" << std::endl;
 					getchar();
 					break;
-
 			}
 
 			outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << std::setw(4) << single.us_single << std::endl;;
 			write_srec_word(single.us_single);	
-
+			
+			// Inrement LC for the instruction
 			LC += 2;
 
 			if(addr_mode_LC_array_src[addr_mode0] && !constant_gen_flag) // Emit SRC output if needed
 			{
 				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)value0 << std::endl;
 				write_srec_word((unsigned short)value0);	
-				LC += 2;
+				LC += 2; // Because the addr_mode_LC_array_src is used to get into this statement, the LC is always increased if successful
 			}
 
 			break;
 
 		case DOUBLE: // 2
-			dbl.opcode = id_ptr->opcode/4096; // shift to the right 12 times before inputting
+			dbl.opcode = id_ptr->opcode/4096; // shift to the right 12 times before inputting (2^12)
 
 			dbl.bw = id_ptr->b_w;
 
@@ -229,7 +234,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 				case IMMEDIATE:
 					dbl.src = PC;
 					// Constant generator test
-					if(addr_mode0 == IMMEDIATE && (value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8))
+					if(value0 == -1 || value0 == 0 || value0 == 1 || value0 == 2 || value0 == 4 || value0 == 8)
 					{
 						src_string.erase(0,1);
 						symtbl_ptr = get_symbol(src_string);
@@ -299,13 +304,14 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 			outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << dbl.us_double << std::endl;;
 			write_srec_word(dbl.us_double);	
 
+			// Increase LC for INST
 			LC += 2;
 
 			if(addr_mode_LC_array_src[addr_mode0] && !constant_gen_flag) // Emit SRC output if needed (Not if constant generator is used
 			{
 				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " <<  std::setw(4) << (unsigned short)value0 << std::endl;
 				write_srec_word((unsigned short)value0);	
-				LC += 2;
+				LC += 2; // Because the addr_mode_LC_array_src is used to get into this statement, the LC is always increased if successful
 			}
 
 
@@ -313,7 +319,7 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 			{
 				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)value0_dbl << std::endl;
 				write_srec_word((unsigned short)value0_dbl);	
-				LC += 2;
+				LC += 2; // Because the addr_mode_LC_array_dst is used to get into this statement, the LC is always increased if successful
 			}
 
 			break;
@@ -321,25 +327,27 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 		case JUMP:	// 3
 			addr_mode0 = parse(operand, value0, value1);
 
-			jump.opcode = id_ptr->opcode/1024; // Shift to the right 10 times
+			jump.opcode = id_ptr->opcode/1024; // Shift to the right 10 times (2^10)
 
-			value0 -= (unsigned)LC;
-			value0 = value0>>1;
-
-			value0 = value0 & 0x03FF;
+			// Caluclating 10 bit offset for JUMP instruction.
+			value0 -= (unsigned)LC;		// Finds address relative to LC
+			value0 = value0>>1;		// Bitshift to the right once
+			value0 = value0 & 0x03FF;	// Only take the least 10 significant bits
 
 			jump.offset = value0;
 
 			// EMIT
 			outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << std::setw(4) << (unsigned short)jump.us_jump << std::endl;;
 			write_srec_word(jump.us_jump);	
-
+		
+			// Increase LC for INST
 			LC += 2;
 
 			break;
 
 		default:
 			std::cout << "THIS SHOULD NEVER HAPPEN" << std::endl;
+			getchar();
 			break;
 	}
 	std::dec; // Resets output streams to print out decimals, not hex

@@ -78,7 +78,7 @@ void first_pass()
 	// General use pointer to a symbol table entry
 	symtbl_entry* symtbl_ptr = NULL;
 
-	// Return values for the Parse function
+	// Return values for the Parse function (defaulted to error of -1)
 	int value0 = -1;
 	int value1 = -1;
 
@@ -139,7 +139,7 @@ void first_pass()
 				}
 				else if(symtbl_ptr != NULL)
 				{
-					if(symtbl_ptr->type == 2) 							// Fill in any forward references
+					if(symtbl_ptr->type == UNKNOWN) 							// Fill in any forward references
 					{
 						symtbl_ptr->value = LC;
 						symtbl_ptr->type = KNOWN;
@@ -291,7 +291,6 @@ void first_pass()
 						addr_mode = parse(current_token, value0, value1);
 						if(addr_mode == IMMEDIATE) directive_error_flag = false;
 						else error_detected("Directive: Found Unknown Label after DIRECTIVE (Value0 parsing, #2)");
-
 						if(!is_last_token()) error_detected("Directive: Found token after DIRECTIVE");
 					}
 				}
@@ -306,15 +305,15 @@ void first_pass()
 					case 'S':  // BSS
 						if(!directive_error_flag)
 						{
-							if(value0 >= 0 && value0 < 65536) LC += value0;
-							else error_detected("Directive: Negative value for BSS");
+							if(value0 >= 0 && value0 < 65536-LC) LC += value0; // Word max value
+							else error_detected("Directive: Invalid value for BSS (Negative or too small)");
 						}
 						break;
 
 					case 'Y':  // BYTE
 						if(!directive_error_flag)
 						{
-							if(value0 >= -128 && value0 < 256) LC += 0x01;
+							if(value0 >= -128 && value0 < 256) LC += 1; // Bounds for signed byte
 							else error_detected("Directive: Value too large for BYTE directive");
 						}
 
@@ -342,14 +341,15 @@ void first_pass()
 							else if(symtbl_ptr->type == KNOWN && symtbl_ptr->line == line_num)
 							{
 								// Therefore there is a label preceding EQU
-								if(value0 >= 0 && value0 <= 65535)
+								// EQU cannot be negative, because that would allow jumping to negative values
+								if(value0 >= 0 && value0 <= 65536)
 								{
 									symtbl_ptr->value = value0;
 									symtbl_ptr->line = line_num;
 
 									if(!is_last_token()) error_detected("Directive: Found Unknown Label after EQU value");
 								}
-								else error_detected("Directive: Value too large for EQU directive");
+								else error_detected("Directive: Value negative or too large for EQU directive");
 							}
 							else error_detected("Directive: No label for EQU directive (Case 2)");
 						}
@@ -358,21 +358,22 @@ void first_pass()
 					case 'R':  // ORG
 						if(!directive_error_flag)
 						{
-							if(value0 >= 0 && value0 < 65535-LC) 
+							// LC cannot be negative or  greater than 65536 at any point
+							if(value0 >= 0 && value0 < 65536) 
 							{
 								LC = value0;
 								if(!is_last_token()) error_detected("Directive: Found Unknown Label after ORG value");
 							}
-							else error_detected("Directive: Value too large for ORG directive");
+							else error_detected("Directive: Value negative or too large for ORG directive");
 						}
 
 						break;
 
 					case 'T':  // STRING
 						current_token = fnt();
-						if(current_token.length() <= 82) // Doing max 80 (Plus two for the quotation marks), vintage punch card width
+						// String max value has been (Arbitrarily) set to 80 characters (Punch card width), plus two for the quotation marks
+						if(current_token.length() <= 82)
 						{
-							// Note: I'm not actually checking the contents, I'm unsure if there are illegal characters for this. 
 							if(current_token[0] != '"') error_detected("Directive: Missing OPENING quote for STRING");
 							else
 							{
@@ -396,8 +397,8 @@ void first_pass()
 					case 'O':  // WORD
 						if(!directive_error_flag)
 						{
-							if(LC%2) LC += 0x01;  // Align LC first
-							if(value0 > -65536 && value0 < 65535) LC += 0x02;
+							// if(LC%2) LC += 1;  // NOTE: "Words should fall on even-byte boundaries"
+							if(value0 > -65536 && value0 < 65536) LC += 2;
 							else error_detected("Directive: Value too large for WORD directive");
 						}
 						break;
@@ -458,12 +459,12 @@ void first_pass()
 
 				addr_mode = parse(dst_operand, value0, value1);
 
-				// If the addressing mode is INDIRECT, INDIRECT_AI, IMMEDIATE, or WRONG, there is an error
+				// If the addressing mode is INDIRECT (4), INDIRECT_AI (5), IMMEDIATE (6), or WRONG (7), there is an error
+				// See enumerations in library.h for declaration that shows this
 				if(addr_mode >= 4) error_detected("CHK_DST_OP: Invalid addressing mode or parsing for DST operand");
 				else
 				{
 					LC += addr_mode_LC_array[addr_mode];
-
 					// Must ensure that this is the last token in the record
 					dst_operand = fnt();
 					if(dst_operand == "") next_state = (two_op_flag) ? CHK_SRC_OP : CHK_NEXT_TOKEN;
