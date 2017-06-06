@@ -1,0 +1,7 @@
+	ORG	$100
+	mov	#STKTOP,SP
+	Push	@R7+
+	
+	ORG	$fffe
+STKTOP	
+	END
