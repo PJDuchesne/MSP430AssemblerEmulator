@@ -1,0 +1,62 @@
+; DIRECTIVE TEST CASE FOR FIRST PASS (Also "NONE" operand, RETI)
+; Made by Paul Duchesne (B00332119)
+; May 26, 2017
+
+; Things to test
+;	- All 9 directives
+;	ALIGN;		Moves the LC forward to the next even byte increment
+;	BSS:		Moves the LC forward by the value after BSS
+;	BYTE:		Increments the LC
+;	END:		Ends the file
+;	EQU:		Sets the label infront of it to the value given
+;	ORG:		Sets the LC to the given value
+;	STRING:		Increases LC by length of string
+;	WORD:		Increases LC by 2
+;
+
+; Expected Results: All records should pass before Lbl3, after which all should fail
+; 		Note: the final "END" should still work
+; Total: 9 errors (1 of which is from an unknown label)
+
+	ORG	$5000
+lbl0	Bss	$500	; LC moves to 0x5500
+	BYTE	123	; Checks Byte range
+	ALIGN		; WIll increase LC by 1 (LC is odd)
+	BYTE	256	; Checks Byte range (Upper bound)
+	BYTE    -128	; Lower bound
+	ALIGN		; Will do nothing (LC is already even)
+	WoRD	$ffff	; Upper word bound
+	wORD	-32768	; Lower word bound
+	WORD	$134	; Hex value in range
+
+lbl2	EQU	$abc	; Sets lbl2 to 500
+	String	"12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde"
+			; upper bounds (80 characters, punch card width)
+	String	""	; lower bounds (0)
+
+; All lines below this should throw an error
+
+lbl3	EQU	-325	; EQU cannot be negative
+	BSS	70000	; Too large of a BSS range (LC max is 0xffff)
+	ORG	$ffff1	; Too large ORG
+	String ""abc"	; Invalid string (too many quotes)
+	BYTE	257	; Just too large (positive)
+	BYTE	-129	; Just too small (Negative)
+	WORD	65537	; Just too large (positive)
+	WORD	-32769	; Just too small (Negative)
+	ALIGN 	lbl3	; Align does not take an operand
+	END	lbl0	; END does not take an operand
+	EQU	300	; EQU requires a label
+	RRC	&label5	; Should be an unknown (In symbol table)
+	ORG	-50	; ORG cannot be negative
+	BSS	-500	; BSS cannot be negative
+
+END			; All subsiquent lines should be ignored
+
+label5	EQU	500
+	
+fs
+sdflkjsdflkj;sfgljdsfgkjlsdfgkj;ldsfgkj;ldsfgkj;lsdfgkladsfiosafd
+sads
+ss
+	

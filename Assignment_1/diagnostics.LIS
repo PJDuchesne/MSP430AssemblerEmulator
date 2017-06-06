@@ -1,0 +1,130 @@
+FIRST PASS DIAGNOSTICS (Emitted Records are in ERROR)
+
+
+	First Pass Completed with >>0<< Errors (Not including unknowns)
+
+		No unknowns found in the symbol table
+
+	First Pass Completed with >>0<< Errors (Including unknowns)
+
+SECOND PASS DIAGNOSTICS (All Records emitted with format shown below)
+
+	Record #n: >>Input Record<<
+		Memloc INST
+		Memloc [SRC Address] (If it exists)
+		Memloc [DST Address] (If it exists)
+
+	Record #1: >> <<
+
+	Record #2: >> <<
+
+	Record #3: >> <<
+
+	Record #4: >> <<
+
+	Record #5: >> <<
+
+	Record #6: >> <<
+
+	Record #7: >> <<
+
+	Record #8: >> <<
+
+	Record #9: >> <<
+
+	Record #10: >> <<
+
+	Record #11: >> <<
+
+	Record #12: >> <<
+
+	Record #13: >> <<
+
+	Record #14: >> <<
+
+	Record #15: >> <<
+
+	Record #16: >> 	ORG $0000<<
+
+	Record #17: >> <<
+
+	Record #18: >> TEST0	JNE	TEST1		<<
+		0002 2027
+
+	Record #13: >> 	Jnz	TEST3			<<
+		0004 20a6
+
+	Record #14: >> <<
+
+	Record #15: >> 	ORG $0050<<
+
+	Record #16: >> <<
+
+	Record #17: >> TEST1	JeQ	TEST1		<<
+
+JUMP TRIED TO GO TO FAR, OUTSIDE OF BOUNDS on line: >>23<<
+
+
+SYMBOL TABLE: (Starting With Most Recently Added Entry)
+
+	Entry #00 | Label: TEST7 | Value: 1350 | Line #51 | type: KNOWN
+	Entry #01 | Label: TEST5 | Value: 0250 | Line #42 | type: KNOWN
+	Entry #02 | Label: TEST4 | Value: 1800 | Line #38 | type: KNOWN
+	Entry #03 | Label: TEST2 | Value: 0100 | Line #28 | type: KNOWN
+	Entry #04 | Label: TEST6 | Value: 0300 | Line #47 | type: KNOWN
+	Entry #05 | Label: TEST3 | Value: 0150 | Line #33 | type: KNOWN
+	Entry #06 | Label: TEST1 | Value: 0050 | Line #23 | type: KNOWN
+	Entry #07 | Label: TEST0 | Value: 0000 | Line #18 | type: KNOWN
+	Entry #08 | Label: cg2   | Value: 0003 | Line #00 | type: REGISTER
+	Entry #09 | Label: cG2   | Value: 0003 | Line #00 | type: REGISTER
+	Entry #10 | Label: Cg2   | Value: 0003 | Line #00 | type: REGISTER
+	Entry #11 | Label: CG2   | Value: 0003 | Line #00 | type: REGISTER
+	Entry #12 | Label: cg1   | Value: 0002 | Line #00 | type: REGISTER
+	Entry #13 | Label: Cg1   | Value: 0002 | Line #00 | type: REGISTER
+	Entry #14 | Label: cG1   | Value: 0002 | Line #00 | type: REGISTER
+	Entry #15 | Label: CG1   | Value: 0002 | Line #00 | type: REGISTER
+	Entry #16 | Label: sr    | Value: 0002 | Line #00 | type: REGISTER
+	Entry #17 | Label: sR    | Value: 0002 | Line #00 | type: REGISTER
+	Entry #18 | Label: Sr    | Value: 0002 | Line #00 | type: REGISTER
+	Entry #19 | Label: SR    | Value: 0002 | Line #00 | type: REGISTER
+	Entry #20 | Label: sp    | Value: 0001 | Line #00 | type: REGISTER
+	Entry #21 | Label: sP    | Value: 0001 | Line #00 | type: REGISTER
+	Entry #22 | Label: Sp    | Value: 0001 | Line #00 | type: REGISTER
+	Entry #23 | Label: SP    | Value: 0001 | Line #00 | type: REGISTER
+	Entry #24 | Label: pc    | Value: 0000 | Line #00 | type: REGISTER
+	Entry #25 | Label: pC    | Value: 0000 | Line #00 | type: REGISTER
+	Entry #26 | Label: Pc    | Value: 0000 | Line #00 | type: REGISTER
+	Entry #27 | Label: PC    | Value: 0000 | Line #00 | type: REGISTER
+	Entry #28 | Label: r15   | Value: 000f | Line #00 | type: REGISTER
+	Entry #29 | Label: r14   | Value: 000e | Line #00 | type: REGISTER
+	Entry #30 | Label: r13   | Value: 000d | Line #00 | type: REGISTER
+	Entry #31 | Label: r12   | Value: 000c | Line #00 | type: REGISTER
+	Entry #32 | Label: r11   | Value: 000b | Line #00 | type: REGISTER
+	Entry #33 | Label: r10   | Value: 000a | Line #00 | type: REGISTER
+	Entry #34 | Label: r9    | Value: 0009 | Line #00 | type: REGISTER
+	Entry #35 | Label: r8    | Value: 0008 | Line #00 | type: REGISTER
+	Entry #36 | Label: r7    | Value: 0007 | Line #00 | type: REGISTER
+	Entry #37 | Label: r6    | Value: 0006 | Line #00 | type: REGISTER
+	Entry #38 | Label: r5    | Value: 0005 | Line #00 | type: REGISTER
+	Entry #39 | Label: r4    | Value: 0004 | Line #00 | type: REGISTER
+	Entry #40 | Label: r3    | Value: 0003 | Line #00 | type: REGISTER
+	Entry #41 | Label: r2    | Value: 0002 | Line #00 | type: REGISTER
+	Entry #42 | Label: r1    | Value: 0001 | Line #00 | type: REGISTER
+	Entry #43 | Label: r0    | Value: 0000 | Line #00 | type: REGISTER
+	Entry #44 | Label: R15   | Value: 000f | Line #00 | type: REGISTER
+	Entry #45 | Label: R14   | Value: 000e | Line #00 | type: REGISTER
+	Entry #46 | Label: R13   | Value: 000d | Line #00 | type: REGISTER
+	Entry #47 | Label: R12   | Value: 000c | Line #00 | type: REGISTER
+	Entry #48 | Label: R11   | Value: 000b | Line #00 | type: REGISTER
+	Entry #49 | Label: R10   | Value: 000a | Line #00 | type: REGISTER
+	Entry #50 | Label: R9    | Value: 0009 | Line #00 | type: REGISTER
+	Entry #51 | Label: R8    | Value: 0008 | Line #00 | type: REGISTER
+	Entry #52 | Label: R7    | Value: 0007 | Line #00 | type: REGISTER
+	Entry #53 | Label: R6    | Value: 0006 | Line #00 | type: REGISTER
+	Entry #54 | Label: R5    | Value: 0005 | Line #00 | type: REGISTER
+	Entry #55 | Label: R4    | Value: 0004 | Line #00 | type: REGISTER
+	Entry #56 | Label: R3    | Value: 0003 | Line #00 | type: REGISTER
+	Entry #57 | Label: R2    | Value: 0002 | Line #00 | type: REGISTER
+	Entry #58 | Label: R1    | Value: 0001 | Line #00 | type: REGISTER
+
+END OF DIAGNOSTICS OUTFILE

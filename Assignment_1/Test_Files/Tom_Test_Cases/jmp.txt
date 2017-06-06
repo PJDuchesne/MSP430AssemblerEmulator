@@ -1,0 +1,20 @@
+; Test Case: Jump Testing
+; This test case is for the first pass of the assembler
+; The first pass should have an error for the lines specified
+; Written by Tom Smith
+
+; The following lines should NOT give an error within the first pass
+
+Label	jne	Label	;test relative addressing
+	jeq	Label2	;test forward referencing
+Label2  JGE     Label	
+;
+end
+;The following lines should give an error
+
+	jne	r1	;registers can not be jumped to
+	jmp	Label(r1)	;indexed is not allowed for jumps
+	jmp		;no operand should give an error
+	jlo	@r1	;indirect is not allowed
+	jl	@r9+	;indirect post increment also not allowed
+

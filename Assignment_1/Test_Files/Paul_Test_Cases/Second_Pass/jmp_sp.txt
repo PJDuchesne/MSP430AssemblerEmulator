@@ -1,0 +1,65 @@
+; JUMP OPERAND TEST CASE FOR SECOND PASS
+; Made by Paul Duchesne (B00332119)
+; May 27, 2017
+
+; Things to test
+;	- All jump instructions
+;	- FORWARD REFERENCES
+;	- Negative jumps
+;
+
+; Expected results: 0 failures in first pass and
+;		    SREC should match SREC provided and
+;		    diagnostics file should match opcodes
+;		    written to the right of each line
+
+	ORG $0000
+
+TEST0	JNE	TEST1		; 0000 2028
+	Jnz	TEST3			; 0002 20a7
+
+	ORG $0050
+
+TEST1	JeQ	TEST1		; 0050 2400
+	JZ	TEST6			; 0052 2557
+
+	ORG $0100
+
+TEST2	jnc	TEST2		; 0100 2800
+	JLO	TEST3			; 0102 2827
+
+	ORG $0150
+
+TEST3	JC	TEST2		; 0150 2fd8		
+	JHs	TEST4			; 0152 2c57
+
+	ORG $1800
+
+TEST4	JN	TEST6		; 0200 3080
+
+	ORG $0250
+
+TEST5	jGE	TEST5		; 0250 3400
+	JGe	TEST1			; 0252 36ff
+
+	ORG $0300
+
+TEST6	Jl	TEST2		; 0300 3b00
+
+	ORG $1350
+
+TEST7	JmP	TEST0		; 0350 3e58
+
+END
+
+; Expected S19 output (Verify through checksums)
+
+S10700002820a720e9
+S10700500024572508
+S10701000028272880
+S1070150d82f572c1d
+S1050200803048
+S10702500034ff363d
+S1050300003bbc
+S1050350583e11
+S90000

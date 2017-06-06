@@ -1,0 +1,46 @@
+; SINGLE OPERAND TEST CASE FOR FIRST PASS (Also "NONE" operand, RETI)
+; Made by Paul Duchesne (B00332119)
+; May 26, 2017
+
+; Things to test
+;	- All 7 addressing modes
+;	- All instructions
+; 	- Byte/Word INSTs
+;	- FORWARD REFERENCES
+;	- Register aliases
+;	- Also RETI (0 Operand INST)
+
+; Expected Results: All records should pass before Label3, after which all should fail
+; Total: 9 errors (1 of which is from an unknown label)
+
+		ORG	$0000
+
+Label1		RRC	R7		
+		SWPB	Label1(PC)	; Tests Register Alias (PC = R0)
+		SXT	&Label2		; Tests forward reference
+		RRA	#Label1		; Tests immediate label
+		CALL	Label1
+		PUSH	Label2(r10)	
+		Reti			; 0 operand instruction
+		RRC	#73		; Immediate addressing mode
+		caLL	@R2		; Indirect addressing mode
+		Sxt	@CG2+		; Indirect auto increment, with alias CG2 = R3
+
+Label2		ORG	$1000
+
+; All records below this line should fail
+
+		ORG	$3000
+
+Label3
+		RETI	Label2		; Operand after 0 operand instruction
+		PUSH	Label4		; Unknown label (Will be found in symbol table)
+		RRC	R1,Label1(r2)	; Two operands for single operand instruction
+		PUSH 	&r9		; Absolute must be on a valid label
+		CALL	#-$200		; Invalid negative hex number
+		Swpb	#$ffffc		; Number too large (Word max = 0xffff)
+		RRA	#-40000		; Too large negative number (Max is -32768)
+		SWPB.b  @R3		; SWPB does not have a .b and .w option, it is in word mode
+		PISH    @R3		; Invalid instruction, will be added tos ymbol table and then R3 will cause an error
+		
+		
