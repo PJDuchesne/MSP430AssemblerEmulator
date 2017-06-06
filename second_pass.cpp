@@ -165,11 +165,11 @@ void second_pass()
 						emit(id_ptr->mnemonic, fnt(), DOUBLE, LC);
 						break;
 					case JUMP:
-						emit(id_ptr->mnemonic, fnt(), JUMP, LC);
-						break;
+						if(emit(id_ptr->mnemonic, fnt(), JUMP, LC)) break; // If the jump fails, flows down to default
 					default:
 						std::cout << "[INST] THIS SHOULD NEVER TRIGGER" << std::endl;
 						getchar();
+						return;
 						break;
 				}
 

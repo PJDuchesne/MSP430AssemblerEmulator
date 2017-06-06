@@ -55,6 +55,6 @@ struct jump_overlay {
 	};
 };
 
-void emit(std::string inst, std::string operand, INST_TYPE type, int& LC);
+bool emit(std::string inst, std::string operand, INST_TYPE type, int& LC);
 
 #endif

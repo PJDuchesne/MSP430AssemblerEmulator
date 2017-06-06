@@ -65,7 +65,7 @@ int addr_mode_LC_array_dst[] = {0, 2, 2, 2, 0, 0, 0};
 			every time emit is called, but this is somewhat offset by the fact that
 			it uses a binary search to find the instruction.
 */
-void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
+bool emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 {
 
 	inst_dir* id_ptr = get_inst_dir(inst, I);
@@ -337,22 +337,30 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 			addr_mode0 = parse(operand, value0, value1);
 
 			jump.opcode = id_ptr->opcode/1024; // Shift to the right 10 times (2^10)
+		
+			// Increase LC for INST
+			LC += 2;
 
 			// Caluclating 10 bit offset for JUMP instruction.
-			value0 -= (unsigned)LC;		// Finds address relative to LC
+			value0 -= LC;		// Finds address relative to LC -> Must test that it is within -1024 and 1022
 			value0 = value0>>1;		// Bitshift to the right once
 			value0 = value0 & 0x03FF;	// Only take the least 10 significant bits
 
+			// Add error handling here, this is the only error checking in the second pass
+			if(value0 > 1022 || value0 < -1024)
+			{
+				std::cout << std::dec << "\nJUMP TRIED TO GO TO FAR, OUTSIDE OF BOUNDS on line: >>" << line_num << "<<\n" << std::endl;
+				outfile << std::dec << "\nJUMP TRIED TO GO TO FAR, OUTSIDE OF BOUNDS on line: >>" << line_num << "<<\n" << std::endl;
+				return false;
+			}
+
 			jump.offset = value0;
+
 
 			// EMIT
 			outfile << "\t\t" << std::hex << std::setw(4) << LC << " "
 						                  << std::setw(4) << (unsigned short)jump.us_jump << std::endl;;
 			write_srec_word(jump.us_jump);	
-		
-			// Increase LC for INST
-			LC += 2;
-
 			break;
 
 		default:
@@ -361,4 +369,5 @@ void emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 			break;
 	}
 	std::dec; // Resets output streams to print out decimals, not hex
+	return true;
 }
