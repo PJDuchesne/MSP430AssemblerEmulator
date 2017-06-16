@@ -91,7 +91,7 @@ void second_pass()
 				line_num++;
 				current_token = fft(fin);
 				
-				outfile << std::endl << "\tRecord #" << line_num 
+				outfile << std::dec << std::endl << "\tRecord #" << line_num 
 					    << ": >>" << current_record << "<<" << std::endl;
 
 				// If there is an empty line, move on to next line

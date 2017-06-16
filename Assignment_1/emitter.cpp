@@ -118,6 +118,9 @@ bool emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 
 			single.as = as_value[addr_mode0];
 
+			// Inrement LC for the instruction
+			LC += 2;
+
 			switch(addr_mode0) // DEAL WITH SOURCE
 			{
 				case REG_DIRECT: // All 3 of these do the same thing in single operand mode
@@ -181,9 +184,6 @@ bool emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 							  << std::setw(4) << single.us_single << std::endl;;
 			write_srec_word(single.us_single);	
 			
-			// Inrement LC for the instruction
-			LC += 2;
-
 			if(addr_mode_LC_array_src[addr_mode0] && !constant_gen_flag) // Emit SRC output if needed
 			{
 				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " 
@@ -210,6 +210,9 @@ bool emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 			dbl.as = as_value[addr_mode0];
 			dbl.ad = as_value[addr_mode1];	 // As and Ad are identical for first 4 addressing modes
 
+			// Increase LC for INST
+			LC += 2;
+
 			switch(addr_mode0) // DEAL WITH SOURCE
 			{
 				case REG_DIRECT:
@@ -225,7 +228,7 @@ bool emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 
 				case RELATIVE:
 					dbl.src = PC;
-					value0 -= LC; // LC of the INSTRUCTION, not value
+					value0 -= LC; // LC of the stored value, not the instruction
 
 					break;
 
@@ -279,6 +282,9 @@ bool emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 
 			}
 
+			// Increment LC for SRC
+			if(addr_mode_LC_array_src[addr_mode0] && !constant_gen_flag) LC += 2;
+
 			switch (addr_mode1)  // FOR DST
 			{
 				case REG_DIRECT:
@@ -291,7 +297,7 @@ bool emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 
 				case RELATIVE:
 					dbl.dst = PC;
-					value0_dbl -= LC; // LC of the INSTRUCTION, not value
+					value0_dbl -= LC; // LC of the stored value, not the instruction
 					break;
 
 				case ABSOLUTE:
@@ -308,17 +314,14 @@ bool emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 			outfile << "\t\t" << std::hex << std::setw(4) << LC << " " << dbl.us_double << std::endl;;
 			write_srec_word(dbl.us_double);	
 
-			// Increase LC for INST
-			LC += 2;
-
 			// Emit SRC output if needed (Not if constant generator is used
 			if(addr_mode_LC_array_src[addr_mode0] && !constant_gen_flag)
 			{
 				outfile << "\t\t" << std::hex << std::setw(4) << LC << " " 
 											  <<  std::setw(4) << (unsigned short)value0 << std::endl;
 				write_srec_word((unsigned short)value0);	
-				LC += 2; // Because the addr_mode_LC_array_src is used to get into this statement,
-						 // the LC is always increased if successful
+
+				// LC already incremented between the above switch statements for SRC
 			}
 
 
