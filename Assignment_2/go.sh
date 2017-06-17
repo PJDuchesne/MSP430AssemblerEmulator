@@ -2,12 +2,16 @@
 
 # Add new .cpp files here
 
-if [ -a main ]
+if [ -a executable ]
 	then
-		rm main
+		rm executable
 fi
 
-clear && g++ -std=c++11 -o main main.cpp loader.cpp
+clear && g++ -std=c++11 -o executable main.cpp library.cpp
 
-./main Test_files/two_sp.s19 
+# USED WITH DRAG'n'DROP RAPID TESTING
+# ./main Test_files/two_sp.s19
+
+# USED WITH MENU
+./executable
 
