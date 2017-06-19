@@ -7,7 +7,7 @@ if [ -a executable ]
 		rm executable
 fi
 
-clear && g++ -std=c++11 -o executable main.cpp library.cpp
+clear && g++ -std=c++11 -o executable main.cpp library.cpp emulate.cpp
 
 # USED WITH DRAG'n'DROP RAPID TESTING
 # ./main Test_files/two_sp.s19
