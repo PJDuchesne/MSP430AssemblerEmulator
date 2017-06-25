@@ -34,6 +34,8 @@ static jump_overlay jump;
 static double_overlay dbl;
 static sr_reg sr_union;
 
+static bool debug_mode;
+
 void (*single_ptr[])(/* INPUTS HERE */) = {
     rrc,
     swpb,
@@ -59,8 +61,10 @@ void (*double_ptr[])(/* INPUTS HERE */) = {
     and_
 };
 
-bool emulate(char *mem, bool debug_mode, uint16_t PC_init) {
+bool emulate(char *mem, bool debug_mode_, uint16_t PC_init) {
     init_regfile();
+
+    debug_mode = debug_mode_;
 
     // Set starting point
     regfile[PC] = PC_init;
@@ -74,7 +78,11 @@ bool emulate(char *mem, bool debug_mode, uint16_t PC_init) {
 
         // Decode & Execute
         decode_execute();
+
+	// Check for interrupt (IF GAI is set?)
     }
+    system("aafire");
+    return true;
 }
 
 // Note: Need to decide when to increment PC
@@ -197,6 +205,9 @@ uint16_t matrix_decoder(uint8_t asd, uint8_t regnum, bool bw) {
             return_val = regfile[regnum];
             break;
 
+  	// Relative is simply indexed addressing mode with the PC as the register
+  	// In relative, the regnum is set to PC (0)
+	case RELATIVE:
         case INDEXED:
             // Fetch the base address, store in mdr
             bus(regfile[PC], mdr, (bw ? READ_B : READ_W));
@@ -212,13 +223,9 @@ uint16_t matrix_decoder(uint8_t asd, uint8_t regnum, bool bw) {
             break;
 
         case INDIRECT:
-            bus(eff_address = regfile[regnum], mdr, (bw ? READ_B : READ_W));
-            return_val = mdr;
-            break;
-
         case INDIRECT_AI:
             bus(eff_address = regfile[regnum], mdr, (bw ? READ_B : READ_W));
-            regfile[regnum] += 2;
+            regfile[regnum] += (mode == INDIRECT_AI ? 2 : 0);
             return_val = mdr;
             break;
 
@@ -230,6 +237,9 @@ uint16_t matrix_decoder(uint8_t asd, uint8_t regnum, bool bw) {
             return_val = mode & 0x0f;  // Get rid of the upper nibble
             if (return_val == 0x0f) return_val = -1;
             break;
+
+    // For modes other than the default, increment the program counter accordingly
+    if (mode <= IMMEDIATE) regfile[PC] += addr_mode_PC_array[mode];
 
     return return_val;
     }
@@ -259,18 +269,23 @@ void put_operand(uint8_t asd, INST_TYPE type) {
             regfile[regnum] = result;
             break;
 
+	// All 3 of these modes simply return to the effective address
+	case RELATIVE:
         case INDEXED:
         case ABSOLUTE:
             bus(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
             break;
 
+	// These two cases must do some error checking to prevent
+	// two operand instructions from putting values to the destination
         case INDIRECT:
         case INDIRECT_AI:
             if (type == SINGLE) bus(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
             else emulation_error("(Put Operand) Invalid INDIRECT dst");
             break;
+
+        // Only the push instruction can do this
         case IMMEDIATE:
-            // Only the push inst can do this
             if (type == SINGLE && single.opcode == 0x120) bus(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
             else emulation_error("(Put Operand) Invalid Immediate dst");
             break;
@@ -315,6 +330,8 @@ void emulation_error(std::string error_msg) {
     std::cout << "[EMULATION ERROR] - " << error_msg << std::endl;
     exit(1);
 }
+
+// ============ INSTRUCTIONS ============= //
 
 // INST: One Operand
 void rrc() {
@@ -388,6 +405,10 @@ void cmp() {  // NO EMIT
 
 void dadc() {
     // ??
+
+    // Each nibble of the byte corresponds to a digit in the final answer
+    // Must convert from binary to deciaml before doing arithmatic and convert back when finished
+
     update_sr(dbl.bw, DOUBLE);
 }
 

@@ -41,6 +41,8 @@ static uint32_t eff_address = 0;
 
 static bool emit_flag = true;
 
+static uint8_t addr_mode_PC_array[] = {0, 2, 2, 2, 0, 0, 2};
+
 // TO CONVERT TO ENUM EVENTUALLY, BUT IT WORKS LIKE THIS
 // Note: 0xC# Denotes a constant
 static uint8_t src_dst_matrix[4][16] = {
@@ -51,9 +53,7 @@ static uint8_t src_dst_matrix[4][16] = {
 };
 
 // Returns how many clock cycles the inst should take
-static int8_t clock_timing[][] = {
-
-}
+// static int8_t clock_timing[][] = { }
 
 // ORDER: JUMP TYPE, ZERO, NEGATIVE, CARRY, OVERFLOW
 // 8 -> Types of jump, 2 -> Z, 2 -> N, 2 -> C, 2 -> V
@@ -221,7 +221,7 @@ static uint8_t jmp_matrix[8][2][2][2][2] = {
 };
 
 // Returns true/false to indicate error or not
-bool emulate(char *mem, bool debug_mode, uint16_t PC_init);
+bool emulate(char *mem, bool debug_mode_, uint16_t PC_init);
 
 void init_regfile();
 
