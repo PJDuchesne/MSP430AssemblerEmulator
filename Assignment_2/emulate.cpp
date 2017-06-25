@@ -74,7 +74,7 @@ bool emulate(char *mem, bool debug_mode_, uint16_t PC_init) {
         bus(regfile[PC], mdr, READ_W);
 
         // Maybe move this
-        regfile[PC] += 2;
+        //regfile[PC] += 2;
 
         // Decode & Execute
         decode_execute();
@@ -103,6 +103,8 @@ void decode_execute() {
 
                 addressing_mode_fetcher(SINGLE);
 
+                std::cout << "Found SIGNLE instruction" << std::endl;
+
                 // EXECUTE ONE OP THROUGH FUNCTION TABLE
                 single_ptr[single.opcode & 0x07];
 
@@ -120,13 +122,19 @@ void decode_execute() {
                 // CALL FUNCTION TABLE FOR JUMP
                 // EXECUTE JUMP THROUGH JUMP MATRIX
 
+                std::cout << "Found JUMP instruction: >>" << (jump.opcode & 0x07) << "<<" << std::endl;
+
                 if (jmp_matrix[jump.opcode & 0x07][sr_union.Z][sr_union.N][sr_union.C][sr_union.V]) regfile[PC] += offset;
+
+                std::cout << "\tPC Updated to: >>" <<  std::hex << regfile[PC] << "<<" << std::endl;
 
                 break;
             default:  // TWO OPERAND
                 dbl.us_double = mdr;
 
                 addressing_mode_fetcher(DOUBLE);
+
+                std::cout << "Found DOUBLE instruction" << std::endl;
 
                 // EXECUTE TWO OP THROUGH FUNCTION TABLE
                 double_ptr[dbl.opcode];

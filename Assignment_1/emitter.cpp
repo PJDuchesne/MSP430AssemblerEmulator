@@ -350,10 +350,10 @@ bool emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 			value0 = value0 & 0x03FF;	// Only take the least 10 significant bits
 
 			// Add error handling here, this is the only error checking in the second pass
-			if(value0 > 1022 || value0 < -1024)
+			if(value0 > 1023 || value0 < -1024)
 			{
-				std::cout << std::dec << "\nJUMP TRIED TO GO TO FAR, OUTSIDE OF BOUNDS on line: >>" << line_num << "<<\n" << std::endl;
-				outfile << std::dec << "\nJUMP TRIED TO GO TO FAR, OUTSIDE OF BOUNDS on line: >>" << line_num << "<<\n" << std::endl;
+				std::cout << std::dec << "\nJUMP TRIED TO GO TO FAR, OUTSIDE OF BOUNDS on line: >>" << line_num << "<< (" << value0 << ")\n" << std::endl;
+				outfile << std::dec << "\nJUMP TRIED TO GO TO FAR, OUTSIDE OF BOUNDS on line: >>" << line_num << "<<\n" << value0 << ")\n" << std::endl;
 				return false;
 			}
 

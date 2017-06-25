@@ -64,19 +64,26 @@ int main(int argc, char *argv[]) {
 
         << "\tInput: >> ";
 
-	std::getline(std::cin, menuInput);
+    std::getline(std::cin, menuInput);
 
-	std::cout << "MENU INPUT IS >>" << menuInput << "<<" << std::endl << std::endl;
+    std::cout << "MENU INPUT IS >>" << menuInput << "<<" << std::endl << std::endl;
 
         switch (menuInput[0]) {
             case 'P':   // Load from previous session
             case 'p':
-
+                // Load from mem.txt
 
                 break;
 
             case 'F':   // Load from file
             case 'f':
+                std::cout << "Please enter the filepath of the s19 record to input from" << std::endl;
+                //std::getline(std::cin, menuInput);
+
+                //fin.open(menuInput);
+                fin.open("jmp.s19");
+                PC_init = load_file();
+                fin.close();
 
                 break;
 
@@ -89,57 +96,52 @@ int main(int argc, char *argv[]) {
 
                 break;
 
-	    case 'S':	// Select start location (Maybe put parsing into separate parse function)
-	    case 's':
-		std::cout << "Please enter a 16 bit start location in hex (0xnnnn) or decimal (nnnnn)" << std::endl;
-		std::getline(std::cin, input_temp);
+            case 'S':   // Select start location (Maybe put parsing into separate parse function)
+            case 's':
+                std::cout << "Please enter a 16 bit start location in hex (0xnnnn) or decimal (nnnnn)" << std::endl;
+                std::getline(std::cin, input_temp);
 
-		temp_length = input_temp.length();
+                temp_length = input_temp.length();
 
-		std::cout << "Input of >>" << input_temp << "<< with length of >>" << temp_length << "<<" << std::endl;
+                if ((temp_length > 3)) {
+                    if (input_temp[0] == '0' && input_temp[1] == 'x') {
+                        hex_flag = true;
+                        input_temp = input_temp.erase(0,2);  // Erase the '0x' from the string
+                        temp_length -= 2;
+                    }
+                }
+                else hex_flag = false;
 
-		if ((temp_length > 3)) {
-			if (input_temp[0] == '0' && input_temp[1] == 'x') {
-				hex_flag = true;
-				input_temp = input_temp.erase(0,2);  // Erase the '0x' from the string
-				temp_length -= 2;
-				std::cout << "(Removed 0x) Input of >>" << input_temp << "<<" << std::endl;
-			}
-		}
-		else hex_flag = false;
-	
-		// Remove preceding 0s	
-		while (input_temp[0] == '0' && temp_length > 1) {
-			temp_length--;
-			input_temp.erase(0,1);
-			std::cout << "(Removed preceding 0) Input of >>" << input_temp << "<<" << std::endl;
-		}
+                // Remove preceding 0s
+                while (input_temp[0] == '0' && temp_length > 1) {
+                    temp_length--;
+                    input_temp.erase(0, 1);
+                }
 
-		// Ensure the value is within a range of uint16_t
+                // Ensure the value is within a range of uint16_t
+                if (temp_length <= (hex_flag ? 4 : 5)) {
+                    std::cout << "Number is the correct size" << std::endl;
+                    if (input_temp.find_first_not_of(hex_flag ? "0123456789abcdefABCDEF" : "0123456789") == std::string::npos) {
+                        std::cout << "Number is the correct characters" << std::endl;
+                        PC_init = std::stoi(input_temp, nullptr, hex_flag ? 16 : 10);
+                        if(hex_flag) std::cout << "PC Init updated to 0x" << std::hex << PC_init << " (Hex)" << std::endl << std::dec;
+                                else std::cout << "PC Init updated to " << PC_init << " (Dec)" << std::endl;
+                    }
+                    else std::cout << "Invalid characters found based on input type, PC init not updated" << std::endl;
+                } else std::cout << "Input string is too long for input type, PC init not updated" << std::endl;
 
-		std::cout << "TEMP LENGTH >>" << temp_length << "<<" << std::endl;
-
-		if (temp_length <= (hex_flag ? 4 : 5)) {
-			std::cout << "Number is the correct size" << std::endl;
-			if (input_temp.find_first_not_of(hex_flag ? "0123456789abcdefABCDEF" : "0123456789") == std::string::npos) {
-				std::cout << "Number is the correct characters" << std::endl;
-				PC_init = std::stoi(input_temp, nullptr, hex_flag ? 16 : 10);	
-				if(hex_flag) std::cout << "PC Init updated to 0x" << std::hex << PC_init << " (Hex)" << std::endl << std::dec;
-                		else std::cout << "PC Init updated to " << PC_init << " (Dec)" << std::endl;
-			}
-			else std::cout << "Invalid characters found based on input type, PC init not updated" << std::endl;
-		} else std::cout << "Input string is too long for input type, PC init not updated" << std::endl;
-
-		break;
+                break;
 
             case 'D':   // Debugger mode
             case 'd':
                 debug_mode = !debug_mode;
-		std::cout << "\tDebugger mode is now " << (debug_mode ? "ON" : "OFF") << std::endl;
+        std::cout << "\tDebugger mode is now " << (debug_mode ? "ON" : "OFF") << std::endl;
                 break;
 
             case 'I':   // System info (Memory, starting point, etc.)
             case 'i':
+                std::cout << "System Info:" << std::endl
+                          << "\tPC Init = " << PC_init << std::endl; // Add more entries here
 
                 break;
 
@@ -167,7 +169,6 @@ while (!end) {
 
     // For diagnostics
 
-fin.close();
     outfile.close();  // Note: srec_file is closed in the s9 function
 
     return 0;

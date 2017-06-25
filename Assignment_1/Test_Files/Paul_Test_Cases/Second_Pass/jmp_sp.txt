@@ -13,44 +13,51 @@
 ;		    diagnostics file should match opcodes
 ;		    written to the right of each line
 
-	ORG $0000
+		ORG $0010
 
 TEST0	JNE	TEST1		; 0000 2028
-	Jnz	TEST3			; 0002 20a7
+		Jnz	TEST3		; 0002 20a7
+		JMP TEST1
 
-	ORG $0050
+		ORG $0050
 
 TEST1	JeQ	TEST1		; 0050 2400
-	JZ	TEST6			; 0052 2557
+		JZ	TEST6		; 0052 2557
+		JMP TEST2
 
-	ORG $0100
+		ORG $0100
 
 TEST2	jnc	TEST2		; 0100 2800
-	JLO	TEST3			; 0102 2827
+		JLO	TEST3		; 0102 2827
+		JMP TEST3
 
-	ORG $0150
+		ORG $0150
 
 TEST3	JC	TEST2		; 0150 2fd8		
-	JHs	TEST4			; 0152 2c57
+		JHs	TEST4		; 0152 2c57
+		JMP TEST4
 
-	ORG $1800
+		ORG $1800
 
 TEST4	JN	TEST6		; 0200 3080
+		JMP TEST5
 
-	ORG $0250
+		ORG $0250
 
 TEST5	jGE	TEST5		; 0250 3400
-	JGe	TEST1			; 0252 36ff
+		JGe	TEST1		; 0252 36ff
+		JMP TEST6
 
-	ORG $0300
+		ORG $0300
 
 TEST6	Jl	TEST2		; 0300 3b00
+		JMP TEST7
 
-	ORG $1350
+		ORG $1350
 
 TEST7	JmP	TEST0		; 0350 3e58
 
-END
+END		TEST0
 
 ; Expected S19 output (Verify through checksums)
 

@@ -144,7 +144,7 @@ struct sr_reg {
     };
 };
 
-void load_file();
+uint16_t load_file();
 void load_mem();
 void dump_mem();
 
