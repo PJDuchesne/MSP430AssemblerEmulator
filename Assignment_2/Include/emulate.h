@@ -35,6 +35,8 @@ static uint16_t dst = 0;  // Used in the case of single operand
 static uint16_t offset = 0; // Used for jump commands
 static uint32_t result = 0;
 
+static int16_t signed_offset = 0;
+
 // Used to write back to a place
 static uint8_t mode = 0;
 static uint32_t eff_address = 0;

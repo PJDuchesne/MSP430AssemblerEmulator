@@ -119,10 +119,7 @@ void decode_execute() {
 
                 addressing_mode_fetcher(JUMP);
 
-                // CALL FUNCTION TABLE FOR JUMP
-                // EXECUTE JUMP THROUGH JUMP MATRIX
-
-                std::cout << "Found JUMP instruction: >>" << (jump.opcode & 0x07) << "<<" << std::endl;
+                std::cout << "Found JUMP instruction: >>" << (jump.opcode & 0x07) << "<< (At PC: " << regfile[PC]-2 << ")" << std::endl;
 
                 if (jmp_matrix[jump.opcode & 0x07][sr_union.Z][sr_union.N][sr_union.C][sr_union.V]) regfile[PC] += offset;
 
@@ -175,10 +172,16 @@ void addressing_mode_fetcher(int type) {
 
             offset = jump.offset;
 
-            offset = offset << 1;
+            offset *= 2; // Shift to the left
 
-            // IF: Then negative
-            if (offset > 0x0400) offset = 0x0400 - offset;
+            // IF Yes, the jump is negative
+            if (offset >= 0x0400) {
+		offset += 0xf800;	// Sign extend the negative
+//		offset = ~offset;	// Take the 1s compliment
+//		offset += 0x8000;	// Make negative again
+	    }
+
+	    std::cout << "\t\tOFFSET IS >>" << offset << "<<\n";
             // Else, already positive, leave as is
 
             break;

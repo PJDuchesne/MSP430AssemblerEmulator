@@ -45,6 +45,8 @@ int main(int argc, char *argv[]) {
 
     uint16_t temp_length = 0;
 
+    uint16_t stoi_temp = 0;
+
     std::string menuInput = "";
 
     // PC init position which is updated from places in menu
@@ -60,6 +62,7 @@ int main(int argc, char *argv[]) {
         << "\t(D) Toggle Debugger Mode (Currently "
                                 << (debug_mode ? "On)\n" : "Off)\n")
         << "\t(I) System Info\n"
+        << "\t(M) Memory Print Location (For diagnostics)\n"
         << "\t(Q) Quit\n\n"
 
         << "\tInput: >> ";
@@ -81,7 +84,7 @@ int main(int argc, char *argv[]) {
                 //std::getline(std::cin, menuInput);
 
                 //fin.open(menuInput);
-                fin.open("jmp.s19");
+                fin.open("jmp.s19");		// TEMPORARILY HARDCODED TO SPEED UP TESTING
                 PC_init = load_file();
                 fin.close();
 
@@ -120,9 +123,7 @@ int main(int argc, char *argv[]) {
 
                 // Ensure the value is within a range of uint16_t
                 if (temp_length <= (hex_flag ? 4 : 5)) {
-                    std::cout << "Number is the correct size" << std::endl;
                     if (input_temp.find_first_not_of(hex_flag ? "0123456789abcdefABCDEF" : "0123456789") == std::string::npos) {
-                        std::cout << "Number is the correct characters" << std::endl;
                         PC_init = std::stoi(input_temp, nullptr, hex_flag ? 16 : 10);
                         if(hex_flag) std::cout << "PC Init updated to 0x" << std::hex << PC_init << " (Hex)" << std::endl << std::dec;
                                 else std::cout << "PC Init updated to " << PC_init << " (Dec)" << std::endl;
@@ -141,9 +142,33 @@ int main(int argc, char *argv[]) {
             case 'I':   // System info (Memory, starting point, etc.)
             case 'i':
                 std::cout << "System Info:" << std::endl
-                          << "\tPC Init = " << PC_init << std::endl; // Add more entries here
+                          << "\tPC Init = 0x" << std::hex << PC_init << std::endl; // Add more entries here
 
                 break;
+
+	    case 'M':  // Test memory location for number (Used to debug)
+	    case 'm':  // Simply prints out memory location inputted
+		std::cout << "Input Memory location in hex to print out" << std::endl;
+
+		std::getline(std::cin, input_temp);
+
+
+                temp_length = input_temp.length();
+
+		// Remove preceding 0s
+                while (input_temp[0] == '0' && temp_length > 1) {
+                    temp_length--;
+                    input_temp.erase(0, 1);
+                }
+                // Ensure the value is within a range of uint16_t
+                if (temp_length <= 4) {
+                    if (input_temp.find_first_not_of("0123456789abcdefABCDEF") == std::string::npos) {
+			stoi_temp = std::stoi(input_temp, nullptr, 16);
+			std::cout << "MEM[" << std::hex << stoi_temp << "] contains >>" << static_cast<uint16_t>(mem_array[stoi_temp]) << "<<" << std::dec << std::endl;
+                    }
+                    else std::cout << "Invalid characters found, could not print memory" << std::endl;
+                } else std::cout << "Input string is too long for hex (Max is 4 characters), could not print memory" << std::endl;
+		break;
 
             case 'Q':   // Quit
             case 'q':
