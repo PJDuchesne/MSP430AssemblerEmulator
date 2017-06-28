@@ -34,7 +34,7 @@ std::ofstream outfile;
 
 uint16_t s9_addr;
 
-char mem_array[MAX_MEM_SIZE];
+uint8_t mem_array[MAX_MEM_SIZE];
 
 int main(int argc, char *argv[]) {
     bool debug_mode = false;
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
                 //std::getline(std::cin, menuInput);
 
                 //fin.open(menuInput);
-                fin.open("jmp.s19");		// TEMPORARILY HARDCODED TO SPEED UP TESTING
+                fin.open("../Assignment_1/srec_output.s19");		// TEMPORARILY HARDCODED TO SPEED UP TESTING
                 PC_init = load_file();
                 fin.close();
 

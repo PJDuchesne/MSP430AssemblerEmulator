@@ -29,7 +29,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 // Global fine types for input and output across all files
 extern std::ifstream fin;
 extern std::ofstream outfile;
-extern char mem_array[MAX_MEM_SIZE];
+extern uint8_t mem_array[MAX_MEM_SIZE];
 extern uint16_t s9_addr;
 
 enum BUS_CTRL {

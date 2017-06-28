@@ -61,7 +61,7 @@ void (*double_ptr[])(/* INPUTS HERE */) = {
     and_
 };
 
-bool emulate(char *mem, bool debug_mode_, uint16_t PC_init) {
+bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init) {
     init_regfile();
 
     debug_mode = debug_mode_;
@@ -71,15 +71,18 @@ bool emulate(char *mem, bool debug_mode_, uint16_t PC_init) {
 
     while (!HCF) {
         // Fetch
+
+        std::cout << "FETCHING INST AT PC: " << regfile[PC] << std::endl;
+
         bus(regfile[PC], mdr, READ_W);
 
         // Maybe move this
-        //regfile[PC] += 2;
+        regfile[PC] += 2;
 
         // Decode & Execute
         decode_execute();
 
-	// Check for interrupt (IF GAI is set?)
+    // Check for interrupt (IF GAI is set?)
     }
     system("aafire");
     return true;
@@ -103,7 +106,7 @@ void decode_execute() {
 
                 addressing_mode_fetcher(SINGLE);
 
-                std::cout << "Found SIGNLE instruction" << std::endl;
+                std::cout << "\tFound SINGLE instruction" << std::endl;
 
                 // EXECUTE ONE OP THROUGH FUNCTION TABLE
                 single_ptr[single.opcode & 0x07];
@@ -119,7 +122,7 @@ void decode_execute() {
 
                 addressing_mode_fetcher(JUMP);
 
-                std::cout << "Found JUMP instruction: >>" << (jump.opcode & 0x07) << "<< (At PC: " << regfile[PC]-2 << ")" << std::endl;
+                std::cout << "\tFound JUMP instruction: >>" << (jump.opcode & 0x07) << "<< (At PC: " << regfile[PC]-2 << ")" << std::endl;
 
                 if (jmp_matrix[jump.opcode & 0x07][sr_union.Z][sr_union.N][sr_union.C][sr_union.V]) regfile[PC] += offset;
 
@@ -131,7 +134,7 @@ void decode_execute() {
 
                 addressing_mode_fetcher(DOUBLE);
 
-                std::cout << "Found DOUBLE instruction" << std::endl;
+                std::cout << "\tFound DOUBLE instruction" << std::endl;
 
                 // EXECUTE TWO OP THROUGH FUNCTION TABLE
                 double_ptr[dbl.opcode];
@@ -175,13 +178,9 @@ void addressing_mode_fetcher(int type) {
             offset *= 2; // Shift to the left
 
             // IF Yes, the jump is negative
-            if (offset >= 0x0400) {
-		offset += 0xf800;	// Sign extend the negative
-//		offset = ~offset;	// Take the 1s compliment
-//		offset += 0x8000;	// Make negative again
-	    }
+            if (offset >= 0x0400) offset += 0xf800;   // Sign extend the negative
 
-	    std::cout << "\t\tOFFSET IS >>" << offset << "<<\n";
+            std::cout << "\t\tOFFSET IS >>" << offset << "<<\n";
             // Else, already positive, leave as is
 
             break;
@@ -210,15 +209,15 @@ void addressing_mode_fetcher(int type) {
 // bw --> B = 1, W = 0
 uint16_t matrix_decoder(uint8_t asd, uint8_t regnum, bool bw) {
     uint16_t return_val = 0;
-
-    switch (mode = src_dst_matrix[asd][regnum]) {
+    mode = src_dst_matrix[asd][regnum];
+    switch (mode) {
         case REG_DIRECT:
             return_val = regfile[regnum];
             break;
 
-  	// Relative is simply indexed addressing mode with the PC as the register
-  	// In relative, the regnum is set to PC (0)
-	case RELATIVE:
+        // Relative is simply indexed addressing mode with the PC as the register
+        // In relative, the regnum is set to PC (0)
+        case RELATIVE:
         case INDEXED:
             // Fetch the base address, store in mdr
             bus(regfile[PC], mdr, (bw ? READ_B : READ_W));
@@ -248,12 +247,11 @@ uint16_t matrix_decoder(uint8_t asd, uint8_t regnum, bool bw) {
             return_val = mode & 0x0f;  // Get rid of the upper nibble
             if (return_val == 0x0f) return_val = -1;
             break;
-
+    }
     // For modes other than the default, increment the program counter accordingly
     if (mode <= IMMEDIATE) regfile[PC] += addr_mode_PC_array[mode];
 
     return return_val;
-    }
 }
 
 // bw --> B = 1, W = 0
@@ -280,15 +278,15 @@ void put_operand(uint8_t asd, INST_TYPE type) {
             regfile[regnum] = result;
             break;
 
-	// All 3 of these modes simply return to the effective address
-	case RELATIVE:
+    // All 3 of these modes simply return to the effective address
+    case RELATIVE:
         case INDEXED:
         case ABSOLUTE:
             bus(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
             break;
 
-	// These two cases must do some error checking to prevent
-	// two operand instructions from putting values to the destination
+    // These two cases must do some error checking to prevent
+    // two operand instructions from putting values to the destination
         case INDIRECT:
         case INDIRECT_AI:
             if (type == SINGLE) bus(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
@@ -314,12 +312,10 @@ void bus(uint16_t mar, uint16_t &mdr, int ctrl) {
             mdr = mem_array[mar];
             mdr += mem_array[mar+1] << 8;
 
-            regfile[PC] += 2;
             break;
         case READ_B:
             mdr = mem_array[mar];
 
-            regfile[PC] += 2;
             break;
         case WRITE_W:
             mem_array[mar] = mdr & 0x0f;
@@ -377,8 +373,7 @@ void reti() {
     // Implement with stuff
 }
 
-
-// Example logic
+// Example logic (not sure what this is for as of JUNE 27)
 // ((src>>15 == dst>>15) && ((src>>15) != ((result&0xff)>>15))) ? true: false;
 
 // INST: Two Operand (USE RESULT VARIABLE)
@@ -390,21 +385,43 @@ void mov() {
 void add() {
     result = src + dst;
     update_sr(dbl.bw, DOUBLE);
+
+    // If SRC and DST have the same sign, and the result has the opposite sign. Set the overflow bit
+    // Note: Overflow bit was reset in update_sr
+    regfile[SR] += (((src < 0x8000 && dst < 0x8000)&&(result >= 0x8000))||((src >= 0x8000 && dst >= 0x8000)&&(result < 0x8000))) ? 0x10 : 0;
+
+    /* More visual method, but strictly slower
+    sr_union.us_sr_reg = regfile[SR];
+    sr_union.V = ((src < 0x8000 && dst < 0x8000)&&(result >= 0x8000))||((src >= 0x8000 && dst >= 0x8000)&&(result < 0x8000));
+    regfile[SR] = sr_union.us_sr_reg;
+    */
 }
 
 void addc() {
     result = src + dst + sr_union.C;
     update_sr(dbl.bw, DOUBLE);
+
+    // If SRC and DST have the same sign, and the result has the opposite sign. Set the overflow bit
+    // Note: Overflow bit was reset in update_sr
+    regfile[SR] += (((src < 0x8000 && dst < 0x8000)&&(result >= 0x8000))||((src >= 0x8000 && dst >= 0x8000)&&(result < 0x8000))) ? 0x10 : 0;
 }
 
 void subc() {
     result = dst - src - sr_union.C;
     update_sr(dbl.bw, DOUBLE);
+
+    // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
+    // Note: Overflow bit was reset in update_sr
+    regfile[SR] += (((src < 0x8000 && dst >= 0x8000)&&(result >= 0x8000))||((src >= 0x8000 && dst < 0x8000)&&(result < 0x8000))) ? 0x10 : 0;
 }
 
 void sub() {
     result = dst - src;
     update_sr(dbl.bw, DOUBLE);
+
+    // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
+    // Note: Overflow bit was reset in update_sr
+    regfile[SR] += (((src < 0x8000 && dst >= 0x8000)&&(result >= 0x8000))||((src >= 0x8000 && dst < 0x8000)&&(result < 0x8000))) ? 0x10 : 0;
 }
 
 void cmp() {  // NO EMIT
@@ -412,6 +429,10 @@ void cmp() {  // NO EMIT
 
     emit_flag = false;
     update_sr(dbl.bw, DOUBLE);
+
+    // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
+    // Note: Overflow bit was reset in update_sr
+    regfile[SR] += (((src < 0x8000 && dst >= 0x8000)&&(result >= 0x8000))||((src >= 0x8000 && dst < 0x8000)&&(result < 0x8000))) ? 0x10 : 0;
 }
 
 void dadc() {

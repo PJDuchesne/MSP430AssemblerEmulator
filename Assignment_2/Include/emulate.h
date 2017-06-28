@@ -223,7 +223,7 @@ static uint8_t jmp_matrix[8][2][2][2][2] = {
 };
 
 // Returns true/false to indicate error or not
-bool emulate(char *mem, bool debug_mode_, uint16_t PC_init);
+bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init);
 
 void init_regfile();
 
