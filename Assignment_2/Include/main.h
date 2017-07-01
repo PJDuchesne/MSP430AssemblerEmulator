@@ -19,6 +19,4 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #ifndef MAIN_H
 #define MAIN_H
 
-// DELETE THIS IF IT ISN'T USED
-
 #endif

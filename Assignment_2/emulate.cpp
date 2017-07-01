@@ -53,7 +53,7 @@ void (*double_ptr[])(/* INPUTS HERE */) = {
     subc,
     sub,
     cmp,
-    dadc,
+    dadd,
     bit,
     bic,
     bis,
@@ -72,15 +72,25 @@ bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init) {
     while (!HCF) {
         // Fetch
 
-        std::cout << "FETCHING INST AT PC: " << regfile[PC] << std::endl;
+        std::cout << "\nFETCHING INST AT PC: " << regfile[PC] << std::endl;
 
         bus(regfile[PC], mdr, READ_W);
+
+	std::cout << "\tInst: >>" << std::hex << mdr << "<<" << std::dec << std::endl;
 
         // Maybe move this
         regfile[PC] += 2;
 
         // Decode & Execute
         decode_execute();
+
+	// TEMP
+	dump_mem();
+
+	outfile << "\n\n\n\n\n";
+
+   	for (int i = 0; i < 16; i++) outfile << "Regfile [" << std::dec << i << "] " << std::hex << regfile[i] << std::endl;
+
 
     // Check for interrupt (IF GAI is set?)
     }
@@ -104,12 +114,12 @@ void decode_execute() {
                     exit(1);
                 }
 
+                std::cout << "\t\tFound SINGLE instruction: SINGLE.OPCODE >>" << (single.opcode & 0x07) << "<<" << std::endl;
+
                 addressing_mode_fetcher(SINGLE);
 
-                std::cout << "\tFound SINGLE instruction" << std::endl;
-
                 // EXECUTE ONE OP THROUGH FUNCTION TABLE
-                single_ptr[single.opcode & 0x07];
+                single_ptr[single.opcode & 0x07]();
 
                 // Update status register
                 update_sr(single.bw, SINGLE);
@@ -120,9 +130,9 @@ void decode_execute() {
             case JUMP:   // JUMP enumerated as 1
                 jump.us_jump = mdr;
 
-                addressing_mode_fetcher(JUMP);
+                std::cout << "\t\tFound DOUBLE instruction: JUMP.OPCODE >>" << (jump.opcode & 0x07) << "<<" << std::endl;
 
-                std::cout << "\tFound JUMP instruction: >>" << (jump.opcode & 0x07) << "<< (At PC: " << regfile[PC]-2 << ")" << std::endl;
+                addressing_mode_fetcher(JUMP);
 
                 if (jmp_matrix[jump.opcode & 0x07][sr_union.Z][sr_union.N][sr_union.C][sr_union.V]) regfile[PC] += offset;
 
@@ -132,12 +142,13 @@ void decode_execute() {
             default:  // TWO OPERAND
                 dbl.us_double = mdr;
 
+                std::cout << "\t\tFound DOUBLE instruction: DBL.OPCODE >>" << dbl.opcode << "<<" << std::endl;
+
                 addressing_mode_fetcher(DOUBLE);
 
-                std::cout << "\tFound DOUBLE instruction" << std::endl;
-
                 // EXECUTE TWO OP THROUGH FUNCTION TABLE
-                double_ptr[dbl.opcode];
+
+                double_ptr[dbl.opcode-4]();
 
                 // Some two operand commands dont emit, they just update SR
                 if (emit_flag) put_operand(dbl.ad, DOUBLE);
@@ -187,13 +198,11 @@ void addressing_mode_fetcher(int type) {
 
         case DOUBLE:
             emit_flag = true;
+
             src = matrix_decoder(dbl.as, dbl.src, dbl.bw);
-            // The MOV command does not need to read the destination
-            // > just get the effective address
-            if (dbl.opcode != 0x4) dst = matrix_decoder(dbl.ad, dbl.dst, dbl.bw);
-            else {
-                // Calculate eff_address some other way? 
-            }
+            dst = matrix_decoder(dbl.ad, dbl.dst, dbl.bw);
+
+	    std::cout << "SRC: " << src << " | DST: " << dst << "\n";
 
             break;
                 
@@ -207,9 +216,14 @@ void addressing_mode_fetcher(int type) {
 // (bw ? READ_B : READ_W)
 
 // bw --> B = 1, W = 0
-uint16_t matrix_decoder(uint8_t asd, uint8_t regnum, bool bw) {
+
+// These are uint16_t to make it work.... (TODO: FIX)
+uint16_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
     uint16_t return_val = 0;
     mode = src_dst_matrix[asd][regnum];
+
+    std::cout << "\t\t\t(Matrix Decoder) ASD >>" << asd << "<< | REGNUM >>" << regnum << "<< | BW >>" << bw << "<< | MODE >>" << mode << "<<\n"; 
+
     switch (mode) {
         case REG_DIRECT:
             return_val = regfile[regnum];
@@ -223,24 +237,30 @@ uint16_t matrix_decoder(uint8_t asd, uint8_t regnum, bool bw) {
             bus(regfile[PC], mdr, (bw ? READ_B : READ_W));
 
             // Fetch the actual value, store in mdr
-            bus(eff_address = (mdr + regfile[regnum]), mdr, (bw ? READ_B : READ_W));
+	    eff_address = mdr + regfile[regnum];
+            bus(eff_address, mdr, (bw ? READ_B : READ_W));
             return_val = mdr;
             break;
 
         case ABSOLUTE:
-            bus(eff_address = regfile[PC], mdr, (bw ? READ_B : READ_W));
+	    eff_address = regfile[PC];
+            bus(eff_address, mdr, (bw ? READ_B : READ_W));
             return_val = mdr;
             break;
 
         case INDIRECT:
         case INDIRECT_AI:
-            bus(eff_address = regfile[regnum], mdr, (bw ? READ_B : READ_W));
+	    eff_address = regfile[regnum];
+            bus(eff_address, mdr, (bw ? READ_B : READ_W));
             regfile[regnum] += (mode == INDIRECT_AI ? 2 : 0);
             return_val = mdr;
             break;
 
         case IMMEDIATE:
             bus(regfile[PC], mdr, (bw ? READ_B : READ_W));
+
+	    return_val = mdr;
+
             break;
 
         default:  // Constant generator, denoted by 0xC#
@@ -251,6 +271,8 @@ uint16_t matrix_decoder(uint8_t asd, uint8_t regnum, bool bw) {
     // For modes other than the default, increment the program counter accordingly
     if (mode <= IMMEDIATE) regfile[PC] += addr_mode_PC_array[mode];
 
+    std::cout << "\t\t\t(Matrix Decoder) READ: >>" << std::hex << mdr << std::dec << "<<\n";
+
     return return_val;
 }
 
@@ -260,26 +282,31 @@ void update_sr(bool bw, INST_TYPE type) {
     sr_union.us_sr_reg = regfile[SR];
 
     sr_union.Z = (!result) ? true : false;
-    sr_union.N = result&0xff>>(bw ? 7 : 15);
+    sr_union.N = bw ? ((result&0xff)>>7) : (result >> 15);
     sr_union.C = (result>>(bw ? 8 : 16)) ? true : false;
     sr_union.V = 0;  // Logic performed in ADD, ADDC, SUB, SUBC, and CMP
 
     regfile[SR] = sr_union.us_sr_reg;
 }
 
-void put_operand(uint8_t asd, INST_TYPE type) {
-    uint8_t regnum = (type == SINGLE) ? single.reg : dbl.dst;
-    bool bw = (type == SINGLE) ? single.bw : dbl.bw;
+void put_operand(uint16_t asd, INST_TYPE type) {
+    uint16_t regnum = (type == SINGLE) ? single.reg : dbl.dst;
+    uint16_t bw = (type == SINGLE) ? single.bw : dbl.bw;
 
     mdr = result;
 
-    switch (mode = src_dst_matrix[asd][regnum]) {
+    std::cout << "\t\t\t\tOPERATION RESULT IS: >>" << mdr << "<< (REGNUM: " << regnum << " || REGNUM: " << regnum << ")\n";
+
+    // Mode should be set already (DST was called last in both SINGLE and DOUBLE)
+    mode = src_dst_matrix[asd][regnum];
+
+    switch (mode) {
         case REG_DIRECT:
             regfile[regnum] = result;
             break;
 
     // All 3 of these modes simply return to the effective address
-    case RELATIVE:
+    	case RELATIVE:
         case INDEXED:
         case ABSOLUTE:
             bus(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
@@ -303,6 +330,8 @@ void put_operand(uint8_t asd, INST_TYPE type) {
             emulation_error("(Put Operand) Invalid Constant Generator dst");
             break;
     }
+
+    std::cout << "\t\t\t\t\t(Put Operand) ASD: " << asd << " | REGNUM: " << regnum << " | MODE: " << mode << std::endl;
 }
 
 // Note: Memory is little-endian (LSB goes in first memory location)
@@ -343,43 +372,84 @@ void emulation_error(std::string error_msg) {
 // INST: One Operand
 void rrc() {
     result = (dst >> 1) + (sr_union.C << (single.bw ? 7 : 15));
+
+    update_sr(single.as, SINGLE);
+
+    // Set carry bit to the LSB of the rotated value
+    regfile[SR] += dst&0x01;
+
+    std::cout << "\t\t\t\tEXECUTING RRC (DST >>" << dst << "<<)\n";
 }
 
 void swpb() {
     if (!single.bw) result = (dst >> 8) + (dst << 8);
     else emulation_error("(swpb) Byte attempted on Word only instruction");
 
-    put_operand(single.as, SINGLE);
+    std::cout << "\t\t\t\tEXECUTING SWPB (DST >>" << dst << "<<)\n";
 }
 
 void rra() {
     result = (dst >> 1) + (dst << (single.bw ? 7 : 15));
+
+    std::cout << "\t\t\t\tEXECUTING RRA (DST >>" << dst << "<<)\n";
+
+    update_sr(single.as, SINGLE);
+
+    // Set carry bit to the LSB of the rotated value
+    regfile[SR] += dst&0x01;
 }
 
 void sxt() {
-    if (!single.bw) result = (dst & 0xff) + (((dst & 0xff) >> 7) ? 0xff00 : 0);
-    else emulation_error("(sxt) Byte attempted on Word only instruction");
+    result = (dst & 0xff) + (((dst & 0xff) >> 7) ? 0xff00 : 0);
+
+    std::cout << "\t\t\t\tEXECUTING SXT (DST >>" << dst << "<<)\n";
+
+    update_sr(dbl.bw, DOUBLE);
+
+    // Set carry bit to the opposite of the negative bit
+    regfile[SR] += (regfile[SR] & 0x02) ? 0 : 0x02;
 }
 
-void push() {
-    // Stack?!
+void push() {  // NO SR
+    // If byte instruction, sign extend
+    if (single.bw) result = (dst & 0xff) + (((dst & 0xff) >> 7) ? 0xff00 : 0);
+
+    std::cout << "\t\t\t\tEXECUTING PUSH (DST >>" << dst << "<<)\n";
+
+    // Call bus directly due to special case
+    result = mdr;
+    bus(regfile[SP], mdr, WRITE_W);
+    regfile[SP] -= 2;
 }
 
 void call() {
+    // Call bus directly due to special case
+
+    std::cout << "\t\t\t\tEXECUTING CALL (DST >>" << dst << "<<)\n";
+
+    mdr = regfile[PC];
+
+    bus(regfile[SP], mdr, WRITE_W);
+    regfile[SP] -= 2;
+
+    // Store Source to Program counter
+    regfile[PC] = dst;
     // Implement with interrupts
 }
 
 void reti() {
     // Implement with stuff
+    std::cout << "\t\t\t\tEXECUTING RETI (DST >>" << dst << "<<)\n";
 }
 
 // Example logic (not sure what this is for as of JUNE 27)
 // ((src>>15 == dst>>15) && ((src>>15) != ((result&0xff)>>15))) ? true: false;
 
 // INST: Two Operand (USE RESULT VARIABLE)
-void mov() {
+void mov() {		// Does not update SR (See manual)
     result = src;
-    update_sr(dbl.bw, DOUBLE);
+
+    std::cout << "\t\t\t\tEXECUTING MOV (SRC >>" << src << "<< || DST: >>" << dst << "<<)\n";
 }
 
 void add() {
@@ -389,6 +459,7 @@ void add() {
     // If SRC and DST have the same sign, and the result has the opposite sign. Set the overflow bit
     // Note: Overflow bit was reset in update_sr
     regfile[SR] += (((src < 0x8000 && dst < 0x8000)&&(result >= 0x8000))||((src >= 0x8000 && dst >= 0x8000)&&(result < 0x8000))) ? 0x10 : 0;
+    std::cout << "\t\t\t\tEXECUTING ADD (SRC >>" << src << "<< || DST: >>" << dst << "<<)\n";
 
     /* More visual method, but strictly slower
     sr_union.us_sr_reg = regfile[SR];
@@ -400,6 +471,7 @@ void add() {
 void addc() {
     result = src + dst + sr_union.C;
     update_sr(dbl.bw, DOUBLE);
+    std::cout << "\t\t\t\tEXECUTING ADDC (SRC >>" << src << "<< || DST: >>" << dst << "<<)\n";
 
     // If SRC and DST have the same sign, and the result has the opposite sign. Set the overflow bit
     // Note: Overflow bit was reset in update_sr
@@ -409,6 +481,7 @@ void addc() {
 void subc() {
     result = dst - src - sr_union.C;
     update_sr(dbl.bw, DOUBLE);
+    std::cout << "\t\t\t\tEXECUTING SUBC (SRC >>" << src << "<< || DST: >>" << dst << "<<)\n";
 
     // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
     // Note: Overflow bit was reset in update_sr
@@ -418,6 +491,7 @@ void subc() {
 void sub() {
     result = dst - src;
     update_sr(dbl.bw, DOUBLE);
+    std::cout << "\t\t\t\tEXECUTING SUB (SRC >>" << src << "<< || DST: >>" << dst << "<<)\n";
 
     // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
     // Note: Overflow bit was reset in update_sr
@@ -429,19 +503,26 @@ void cmp() {  // NO EMIT
 
     emit_flag = false;
     update_sr(dbl.bw, DOUBLE);
+    std::cout << "\t\t\t\tEXECUTING CMP (SRC >>" << src << "<< || DST: >>" << dst << "<<)\n";
 
     // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
     // Note: Overflow bit was reset in update_sr
     regfile[SR] += (((src < 0x8000 && dst >= 0x8000)&&(result >= 0x8000))||((src >= 0x8000 && dst < 0x8000)&&(result < 0x8000))) ? 0x10 : 0;
 }
 
-void dadc() {
+void dadd() {
     // ??
+
+    uint16_t dec_src = (src>>4)*10 + (src&0x0f);
+    uint16_t dec_dst = (dst>>4)*10 + (dst&0x0f);
+    std::cout << "\t\t\t\tEXECUTING DADD (SRC >>" << src << "<< || DST: >>" << dst << "<<)\n";
 
     // Each nibble of the byte corresponds to a digit in the final answer
     // Must convert from binary to deciaml before doing arithmatic and convert back when finished
 
     update_sr(dbl.bw, DOUBLE);
+
+    // Set carry flag if the result is greater than 9999 (W) or 99 (B)
 }
 
 void bit() {  // NO EMIT
@@ -449,24 +530,40 @@ void bit() {  // NO EMIT
 
     emit_flag = false;
     update_sr(dbl.bw, DOUBLE);
+    std::cout << "\t\t\t\tEXECUTING BIT (SRC >>" << src << "<< || DST: >>" << dst << "<<)\n";
+
+    // Set carry bit to the opposite of the negative bit
+    regfile[SR] += (regfile[SR] & 0x02) ? 0 : 0x02;
 }
 
 void bic() {
     result = dst & ~src;
-    update_sr(dbl.bw, DOUBLE);
+    std::cout << "\t\t\t\tEXECUTING BIC (SRC >>" << src << "<< || DST: >>" << dst << "<<)\n";
 }
 
 void bis() {
     result = dst | src;
-    update_sr(dbl.bw, DOUBLE);
+    std::cout << "\t\t\t\tEXECUTING BIS (SRC >>" << src << "<< || DST: >>" << dst << "<<)\n";
 }
 
 void xor_() {
     result = src ^ dst;
     update_sr(dbl.bw, DOUBLE);
+
+    // Set carry bit to the opposite of the negative bit
+    regfile[SR] += (regfile[SR] & 0x02) ? 0 : 0x02;
+
+    // If SRC and DST are negative, set overflow bit
+    regfile[SR] += (src >= (dbl.bw ? 0x0080 : 0x8000) && dst >= (dbl.bw ? 0x0080 : 0x8000)) ? 0x10 : 0;;
+
+    std::cout << "\t\t\t\tEXECUTING XOR_ (SRC >>" << src << "<< || DST: >>" << dst << "<<)\n";
 }
 
 void and_() {
     result = src & dst;
     update_sr(dbl.bw, DOUBLE);
+
+    // Set carry bit to the opposite of the negative bit
+    regfile[SR] += (regfile[SR] & 0x02) ? 0 : 0x02;
+    std::cout << "\t\t\t\tEXECUTING AND_ (SRC >>" << src << "<< || DST: >>" << dst << "<<)\n";
 }

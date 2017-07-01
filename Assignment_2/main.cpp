@@ -23,6 +23,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <cstring>
 #include <fstream>
 #include <cstdlib>
+#include <iomanip>
 
 #include "Include/main.h"
 #include "Include/library.h"
@@ -52,6 +53,7 @@ int main(int argc, char *argv[]) {
     // PC init position which is updated from places in menu
     uint16_t PC_init = 0;
 
+    outfile.open("mem.txt");
 
     while (1) {
         std::cout << "\nMAIN MENU: Please enter command from below\n"
@@ -178,24 +180,5 @@ int main(int argc, char *argv[]) {
     }
 }
 
-load_file();
-
-outfile.open("mem.txt");
-
-dump_mem();
-
-bool end = true;
-
-while (!end) {
-    // Fetch
-    // Decode
-    // Execute
-}
-
-    // For diagnostics
-
-    outfile.close();  // Note: srec_file is closed in the s9 function
-
-    return 0;
 }
 

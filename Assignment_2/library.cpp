@@ -93,6 +93,5 @@ void dump_mem() {
     // Output to file
     for (int i = 0; i < MAX_MEM_SIZE; i++) outfile << std::setw(4) << i << "\t"
                         << std::setw(2) << (uint16_t)mem_array[i] << std::endl;
+
 }
-
-

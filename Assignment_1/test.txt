@@ -1,0 +1,20 @@
+; Made by Paul Duchesne (B00332119)
+; JUNE 27, 2017
+
+; To test basic single and double operand instructions
+; As well as status register stuff
+
+ORG	$1000
+
+MAIN
+
+MOV	#$100,R10	; R10 will have 0x0100
+MOV	#$200,R11	; Temp
+ADD	R10,R11		; R11 will have 0x0300
+MOV	#$500,R12	; Temp
+SUB	R10,R12		; R12 will have 0x0400
+
+MOV	R10,R14		; Should move 0x0100 to R14
+SWPB	R14		; R14 will have 0x0001
+
+END	MAIN

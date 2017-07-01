@@ -38,16 +38,16 @@ static uint32_t result = 0;
 static int16_t signed_offset = 0;
 
 // Used to write back to a place
-static uint8_t mode = 0;
+static uint16_t mode = 0;
 static uint32_t eff_address = 0;
 
 static bool emit_flag = true;
 
-static uint8_t addr_mode_PC_array[] = {0, 2, 2, 2, 0, 0, 2};
+static uint16_t addr_mode_PC_array[] = {0, 2, 2, 2, 0, 0, 2};
 
 // TO CONVERT TO ENUM EVENTUALLY, BUT IT WORKS LIKE THIS
 // Note: 0xC# Denotes a constant
-static uint8_t src_dst_matrix[4][16] = {
+static uint16_t src_dst_matrix[4][16] = {
     {0, 0, 0, 0xC0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {2, 1, 3, 0xC1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {4, 4, 0xC4, 0xC2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
@@ -59,8 +59,8 @@ static uint8_t src_dst_matrix[4][16] = {
 
 // ORDER: JUMP TYPE, ZERO, NEGATIVE, CARRY, OVERFLOW
 // 8 -> Types of jump, 2 -> Z, 2 -> N, 2 -> C, 2 -> V
-static uint8_t jmp_matrix[8][2][2][2][2] = {
-
+// See report for details of how this is mapped
+static bool jmp_matrix[8][2][2][2][2] = {
     // JNE/JNZ -> Jump if Z = 0
     {  // 8 of these (1/5)
         {  // 2 of these (2/5)
@@ -231,11 +231,12 @@ void decode_execute();
 
 void addressing_mode_fetcher(int type);
 
-uint16_t matrix_decoder(uint8_t asd, uint8_t regnum, bool bw);
+// uint16_t matrix_decoder(uint8_t asd, uint8_t regnum, bool bw);
+uint16_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw);
 
 void update_sr(bool bw, INST_TYPE type);
 
-void put_operand(uint8_t asd, INST_TYPE type);
+void put_operand(uint16_t asd, INST_TYPE type);
 
 void bus(uint16_t mar, uint16_t &mdr, int ctrl);
 
@@ -257,7 +258,7 @@ void addc();
 void subc();
 void sub();
 void cmp();
-void dadc();
+void dadd();
 void bit();
 void bic();
 void bis();

@@ -146,6 +146,7 @@ struct sr_reg {
 
 uint16_t load_file();
 void load_mem();
+// Dumps contents of memory into the output memory for diagnostics
 void dump_mem();
 
 #endif
