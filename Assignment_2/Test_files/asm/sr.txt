@@ -1,0 +1,48 @@
+; Made by Paul Duchesne (B00332119)
+; JUNE 27, 2017
+
+; TEST Status Registers
+
+ORG	$1000
+
+MAIN
+
+MOV		SR,R4			; R4 = 0x0000 (Status register starts empty)
+MOV		#$1000,R11		; R11 = 0x1000
+CMP		#$1000,R11		; Compare: Should set ZERO
+MOV		SR,R5			; R5 = 0x0002 (Set zero bit)
+CMP     #$2000,R11		; Should be -1000, which is: 0xFC18
+MOV		SR,R6			; R6 = 0x0005 (Negative and Carry)
+MOV		#-5000,R12		; R12 = 0xEC78 (-5000)
+MOV		#31000,R13		; R13 = 0x7918 (31000)
+CMP     R12,R13			; Should be (36000)
+MOV		SR,R7			; R7 = 0x0100
+CMP     R13,R12			; Should be (-36000)
+MOV		SR,R8			; R8 = 0x0104
+MOV		#45000,R14		; R14 = 0xAFC8 (45000)
+ADD		R13,R14			; R14 = 28E0 (10464)
+MOV 	SR,R9			; R9 = 0x0001
+MOV		R13,R15			; Temp
+ADD		R13,R15			; R15 = 0xF230
+MOV		SR,R10			; R10 = 0x0104
+
+END	MAIN
+
+; OUTPUT:
+
+; Regfile [0] 1032		; PC
+; Regfile [1] 0
+; Regfile [2] 104		; SR
+; Regfile [3] 0
+; Regfile [4] 0
+; Regfile [5] 2
+; Regfile [6] 5
+; Regfile [7] 105
+; Regfile [8] 100
+; Regfile [9] 1
+; Regfile [10] 104
+; Regfile [11] 1000
+; Regfile [12] ec78
+; Regfile [13] 7918
+; Regfile [14] 28e0
+; Regfile [15] f230; 

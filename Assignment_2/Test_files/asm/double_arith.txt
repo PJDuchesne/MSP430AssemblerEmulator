@@ -1,0 +1,37 @@
+; Made by Paul Duchesne (B00332119)
+; JUNE 27, 2017
+
+; TEST Two Arithmatic Operands
+
+ORG $1000
+
+MAIN    
+
+MOV     #$FF00,SP       ; Set stack pointer
+
+MOV     #$FF12,R4       ; R4 = 0xFF12
+MOV     #$0023,R5       ; Temp
+ADD     R4,R5           ; R5 = 0xFF35
+MOV     #$0111,R6
+ADD     R4,R6           ; R6 = 0x0023 (CARRY BIT SET)
+MOV     #$003D,R7
+ADDC    R4,R7           ; R7 = 0xFF50
+MOV     #$003D,R8
+ADD     R4,R8           ; R8 = 0xFF4f
+
+MOV     #$1234,R15
+
+MOV     #$1234,R9
+SUB     R15,R9          ; R9 = 0x0000
+MOV     #$1000,R10      
+SUB     R15,R10         ; R10 = 0xFDCC (CARRY BIT SET)
+MOV     #$1500,R11
+SUBC    R15,R11         ; R11 = 0x02CD
+MOV     #$1500,R12
+SUBC    R15,R12         ; R12 = 0x02CC (Same subtraction without carry)
+
+; CMP is tested in the SR test
+
+; TODO: DADD test
+
+END MAIN

@@ -1,0 +1,58 @@
+; Made by Paul Duchesne (B00332119)
+; JUNE 27, 2017
+
+; TEST Addressing Modes and CLOCK
+; Using all instructions
+
+            ORG   $1000
+
+TEST0       WORD  $1234
+
+            ORG   $2000
+
+Start       MOV   #$1000,R15        ; R15 = 0x1000
+
+            MOV   TEST0,R5          ; R5 = 0x1234
+            MOV   &TEST0,R6         ; R6 = 0x1234
+            MOV   TEST0(R7),R7      ; R7 = 0x1234
+            MOV   #TEST0,R8         ; R8 = 0x1000
+            MOV   @R15,R9           ; R9 = 0x1234
+            MOV   @R15+,R10         ; R10 = 0x1234
+            MOV   #$2000,R11        ; R11 = 0x2000
+
+            ADD   R6,R5
+            ADD   R7,R5
+            ADD   R8,R5
+            ADD   R9,R5
+            ADD   R10,R5
+            ADD   R11,R5            ; R5 = 0x8B04 (35588d)
+
+            MOV   #0,R6
+            MOV   #0,R7
+            MOV   #0,R8
+            MOV   #0,R9
+            MOV   #0,R10
+            MOV   #0,R11
+
+            MOV   #$1000,R15        ; R15 = 0x1000
+
+            MOV   TEST0,R9          ; R9 = 0x1234
+
+            ADD   @R15,TEST0        ; R15 = 0x1000
+            MOV   TEST0,R10         ; R10 = 0x2468
+
+            ADD   @R15+,TEST0       ; R15 = 0x1000, will be incremented to 0x1002
+            MOV   TEST0,R11         ; R11 = 0x48D0
+
+            ADD   #$1000,TEST0
+            MOV   TEST0,R12         ; R12 = 0x58D0
+
+            ADD   #$1000,&TEST0
+            MOV   TEST0,R13         ; R13 = 0x68D0
+
+            ADD   #$1000,TEST0(R14) ; R14 = 0
+            MOV   TEST0,R14         ; R14 = 0x78D0
+
+END         Start
+
+; CLOCK should  end at 82!

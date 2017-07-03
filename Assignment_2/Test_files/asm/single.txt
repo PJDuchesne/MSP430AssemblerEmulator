@@ -1,0 +1,30 @@
+; Made by Paul Duchesne (B00332119)
+; JUNE 27, 2017
+
+; TEST One Operands
+
+ORG $1000
+
+MAIN    
+
+MOV     #$FFFE,SP       ; Set stack pointer
+
+MOV     #$00FF,R4       ; Temp
+MOV     #$F00F,R5       ; Temp
+MOV     #$0FF0,R6       ; Temp
+MOV     #$00CF,R7       ; Temp
+MOV     #$00CF,R8       ; R8 = 0x00CF
+MOV     #$1234,R9       ; R9 = 0x1234
+
+RRA     R4              ; R4 = 0x007F // Also sets CARRY BIT
+SWPB    R5              ; R5 = 0x0FF0 // No SR changes
+RRC     R6              ; R6 = 0x87F8
+SXT     R7              ; R7 = 0xFFCF
+PUSH    R8
+PUSH    R9
+
+MOV     #$FFFC,R15      ; Temp
+MOV     @R15+,R11       ; R10 = 0x1234
+MOV     @R15,R10        ; R11 = 0x00CF
+
+END MAIN

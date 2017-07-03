@@ -38,7 +38,14 @@ uint16_t s9_addr;
 uint8_t mem_array[MAX_MEM_SIZE];
 
 int main(int argc, char *argv[]) {
-    bool debug_mode = false;
+    
+    /* TESTING PLACE */
+
+
+
+    /* TESTING ENDS HERE */
+
+    bool debug_mode = true;
 
     bool hex_flag = false;
 
@@ -69,9 +76,9 @@ int main(int argc, char *argv[]) {
 
         << "\tInput: >> ";
 
-    std::getline(std::cin, menuInput);
+        std::getline(std::cin, menuInput);
 
-    std::cout << "MENU INPUT IS >>" << menuInput << "<<" << std::endl << std::endl;
+        std::cout << "MENU INPUT IS >>" << menuInput << "<<" << std::endl << std::endl;
 
         switch (menuInput[0]) {
             case 'P':   // Load from previous session
@@ -86,7 +93,7 @@ int main(int argc, char *argv[]) {
                 //std::getline(std::cin, menuInput);
 
                 //fin.open(menuInput);
-                fin.open("../Assignment_1/srec_output.s19");		// TEMPORARILY HARDCODED TO SPEED UP TESTING
+                fin.open("../Assignment_1/srec_output.s19");        // TEMPORARILY HARDCODED TO SPEED UP TESTING
                 PC_init = load_file();
                 fin.close();
 
@@ -148,16 +155,16 @@ int main(int argc, char *argv[]) {
 
                 break;
 
-	    case 'M':  // Test memory location for number (Used to debug)
-	    case 'm':  // Simply prints out memory location inputted
-		std::cout << "Input Memory location in hex to print out" << std::endl;
+        case 'M':  // Test memory location for number (Used to debug)
+        case 'm':  // Simply prints out memory location inputted
+        std::cout << "Input Memory location in hex to print out" << std::endl;
 
-		std::getline(std::cin, input_temp);
+        std::getline(std::cin, input_temp);
 
 
                 temp_length = input_temp.length();
 
-		// Remove preceding 0s
+        // Remove preceding 0s
                 while (input_temp[0] == '0' && temp_length > 1) {
                     temp_length--;
                     input_temp.erase(0, 1);
@@ -165,12 +172,12 @@ int main(int argc, char *argv[]) {
                 // Ensure the value is within a range of uint16_t
                 if (temp_length <= 4) {
                     if (input_temp.find_first_not_of("0123456789abcdefABCDEF") == std::string::npos) {
-			stoi_temp = std::stoi(input_temp, nullptr, 16);
-			std::cout << "MEM[" << std::hex << stoi_temp << "] contains >>" << static_cast<uint16_t>(mem_array[stoi_temp]) << "<<" << std::dec << std::endl;
+            stoi_temp = std::stoi(input_temp, nullptr, 16);
+            std::cout << "MEM[" << std::hex << stoi_temp << "] contains >>" << static_cast<uint16_t>(mem_array[stoi_temp]) << "<<" << std::dec << std::endl;
                     }
                     else std::cout << "Invalid characters found, could not print memory" << std::endl;
                 } else std::cout << "Input string is too long for hex (Max is 4 characters), could not print memory" << std::endl;
-		break;
+        break;
 
             case 'Q':   // Quit
             case 'q':

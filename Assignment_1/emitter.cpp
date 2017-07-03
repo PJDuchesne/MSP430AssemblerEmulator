@@ -151,8 +151,8 @@ bool emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 						symtbl_ptr = get_symbol(operand);
 						if(symtbl_ptr != NULL) if(symtbl_ptr->line > line_num) break; 
 
-						single.as = (value0 > 4) ? CG1 : CG2; // CG2 deals with -1, 0, 1, and 2
-															  // CG1 deals with 4 and 8
+						single.as = (value0 >= 4) ? CG1 : CG2; // CG2 deals with -1, 0, 1, and 2
+															   // CG1 deals with 4 and 8
 						constant_gen_flag = true;
 						// Then overwrite As for the specific value
 						switch (value0)
@@ -344,13 +344,17 @@ bool emit(std::string inst, std::string operand, INST_TYPE type, int& LC)
 			// Increase LC for INST
 			LC += 2;
 
+			std::cout << "#1 JUMP RELATIVE VALUE IS:" << std::dec << value0 << " || LC: " << LC << std::dec << std::endl;
+
 			// Caluclating 10 bit offset for JUMP instruction.
 			value0 -= LC;		// Finds address relative to LC -> Must test that it is within -1024 and 1022
 			value0 = value0>>1;		// Bitshift to the right once
 			value0 = value0 & 0x03FF;	// Only take the least 10 significant bits
 
+			std::cout << "#1 JUMP RELATIVE VALUE IS:" << std::dec << value0 << std::dec << std::endl;
+
 			// Add error handling here, this is the only error checking in the second pass
-			if(value0 > 1023 || value0 < -1024)
+			if(value0 > 1024 || value0 < 0) // Values in WORDS (See page 59 of family guide for details)
 			{
 				std::cout << std::dec << "\nJUMP TRIED TO GO TO FAR, OUTSIDE OF BOUNDS on line: >>" << line_num << "<< (" << value0 << ")\n" << std::endl;
 				outfile << std::dec << "\nJUMP TRIED TO GO TO FAR, OUTSIDE OF BOUNDS on line: >>" << line_num << "<<\n" << value0 << ")\n" << std::endl;

@@ -25,14 +25,14 @@ static bool HCF = false;
 static uint16_t mar  = 0;
 static uint16_t mdr  = 0;
 
-static uint32_t cpu_clock = 0;
+static uint16_t cpu_clock = 0;
 
 // 0-15 are visible registers, 16-X are invisible
 static uint16_t regfile[22] = {};  // All initialized to 0
 
-static uint16_t src = 0;  // Not used in the case of single operand
-static uint16_t dst = 0;  // Used in the case of single operand
-static uint16_t offset = 0; // Used for jump commands
+static uint32_t src = 0;  // Not used in the case of single operand
+static uint32_t dst = 0;  // Used in the case of single operand
+static uint16_t offset = 0;  // Used for jump commands
 static uint32_t result = 0;
 
 static int16_t signed_offset = 0;
@@ -42,6 +42,9 @@ static uint16_t mode = 0;
 static uint32_t eff_address = 0;
 
 static bool emit_flag = true;
+
+static bool debug_mode;
+static bool debug_signal = false;
 
 static uint16_t addr_mode_PC_array[] = {0, 2, 2, 2, 0, 0, 2};
 
@@ -54,8 +57,31 @@ static uint16_t src_dst_matrix[4][16] = {
     {6, 5, 0xC8, 0xCF, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5}
 };
 
-// Returns how many clock cycles the inst should take
-// static int8_t clock_timing[][] = { }
+// Returns how many clock cycles a single operand INST should take
+// Takes: [INST CODE (0 through 6)][MODE]
+// From Table 3-15: Page 60 (Family Guide)
+static uint16_t single_op_clock[7][7] = {
+    {1, 4, 4, 4, 3, 3, 0},
+    {1, 4, 4, 4, 3, 3, 0},
+    {1, 4, 4, 4, 3, 3, 0},
+    {1, 4, 4, 4, 3, 3, 0},
+    {3, 5, 5, 5, 4, 5, 4},
+    {4, 5, 5, 5, 4, 5, 5},
+    {5, 5, 5, 5, 5, 5, 5}
+};
+
+// Returns how many clock cycles a double operand INST should take
+// Takes: [SRC MODE][DST MODE]
+// From Table 3-16: Page 61 (Family Guide)
+static uint16_t double_op_clock[7][4] = {
+    {1, 4, 4, 4},
+    {3, 6, 6, 6},
+    {3, 6, 6, 6},
+    {3, 6, 6, 6},
+    {2, 5, 5, 5},
+    {2, 5, 5, 5},
+    {2, 5, 5, 5}
+};
 
 // ORDER: JUMP TYPE, ZERO, NEGATIVE, CARRY, OVERFLOW
 // 8 -> Types of jump, 2 -> Z, 2 -> N, 2 -> C, 2 -> V
@@ -222,6 +248,8 @@ static bool jmp_matrix[8][2][2][2][2] = {
     }
 };
 
+void signalHandler(int signum);
+
 // Returns true/false to indicate error or not
 bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init);
 
@@ -232,13 +260,15 @@ void decode_execute();
 void addressing_mode_fetcher(int type);
 
 // uint16_t matrix_decoder(uint8_t asd, uint8_t regnum, bool bw);
-uint16_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw);
+uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw);
 
-void update_sr(bool bw, INST_TYPE type);
+void update_sr(bool bw);
 
 void put_operand(uint16_t asd, INST_TYPE type);
 
 void bus(uint16_t mar, uint16_t &mdr, int ctrl);
+
+void debugger();
 
 void emulation_error(std::string error_msg);
 

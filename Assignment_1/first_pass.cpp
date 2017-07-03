@@ -319,6 +319,7 @@ void first_pass()
 						break;
 
 					case 'N':  // END
+
 						end_flag = true;
 						current_token = fnt();				// Find next token
 						symtbl_ptr = get_symbol(current_token);		// Check symtbl for that token
@@ -511,7 +512,7 @@ void first_pass()
 				// JUMP instructions must have the relative addressing mode1
 				if(addr_mode == RELATIVE) 
 				{
-					LC += addr_mode_LC_array[addr_mode];
+					//LC += addr_mode_LC_array[addr_mode];
 					if(!is_last_token()) error_detected("Directive: Found Unknown Label after JMP operand");
 				}
 				else error_detected("CHK_JMP_OP: Invalid addressing mode or parsing for JMP operand");

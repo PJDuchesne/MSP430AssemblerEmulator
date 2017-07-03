@@ -1,0 +1,17 @@
+; Made by Paul Duchesne (B00332119)
+; JULY 1, 2017
+
+; TEST MOV
+
+ORG	$1000
+
+MAIN
+
+MOV		#$100,R10		; R10 = 0x0100
+MOV		#$200,R11		; R11 = 0x0200
+MOV 	#-1,R12			; R12 = 0xffff
+MOV 	R10,R13			; R13 = 0x0100
+MOV 	#1234,R14		; R14 = 0x04d2
+MOV		#-50,R15		; R15 = 0xffce
+
+END	MAIN
