@@ -30,11 +30,30 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 #include "Include/emulate.h"
 #include "Include/library.h"
+#include "Include/single_inst.h"
+#include "Include/double_inst.h"
 
-static single_overlay single;
-static jump_overlay jump;
-static double_overlay dbl;
-static sr_reg sr_union;
+uint16_t mdr  = 0;
+
+uint16_t cpu_clock = 0;
+
+// 0-15 are visible registers, 16-X are invisible
+uint16_t regfile[16] = {};  // All initialized to 0
+
+uint32_t src = 0;  // Not used in the case of single operand
+uint32_t dst = 0;  // Used in the case of single operand
+uint16_t offset = 0;  // Used for jump commands
+uint32_t result = 0;
+
+bool emit_flag = true;
+
+uint16_t mode = 0;
+uint32_t eff_address = 0;
+
+single_overlay single;
+jump_overlay jump;
+double_overlay dbl;
+sr_reg sr_union;
 
 void (*single_ptr[])(/* INPUTS HERE */) = {
     rrc,
@@ -69,6 +88,10 @@ void signalHandler(int signum) {
 bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init) {
     init_regfile();
 
+    uint16_t next_interrupt = 0;
+
+    // Load devices into memory (Call function)
+
     debug_mode = debug_mode_;
 
     // Set starting point
@@ -91,15 +114,23 @@ bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init) {
         // Decode & Execute
         decode_execute();
 
-    // TEMP
-    dump_mem();
+        // TEMP
+        dump_mem();
+        outfile << "\n\n\n";
+/*
+        sr_union.us_sr_reg = regfile[SR];  // Check if this is strictly necessary
+        sr_union.GIE = 1;
 
-    outfile << "\n\n\n\n\n";
-
-    for (int i = 0; i < 16; i++) outfile << "Regfile [" << std::dec << i << "] " << std::hex << regfile[i] << std::endl;
-
-
-    // Check for interrupt (IF GAI is set?)
+        if (sr_union.GIE && (interrupts[next_interrupt].time <= cpu_clock)) {
+            std::cout << "\t\tLAYER 1\n";
+            if ((mem_array[(2*interrupts[next_interrupt].dev)]&1)) {
+                execute_interrupt(next_interrupt);
+                next_interrupt++;
+            }
+        }
+*/
+        // Dump Registers for debugging
+        for (int i = 0; i < 16; i++) outfile << "Regfile [" << std::dec << i << "] " << std::hex << regfile[i] << std::endl;
     }
     system("aafire");
 
@@ -141,7 +172,7 @@ void decode_execute() {
             case JUMP:   // JUMP enumerated as 1
                 jump.us_jump = mdr;
 
-                std::cout << "\t\tFound DOUBLE instruction: JUMP.OPCODE >>" << (jump.opcode & 0x07) << "<<" << std::endl;
+                std::cout << "\t\tFound JUMP instruction: JUMP.OPCODE >>" << (jump.opcode & 0x07) << "<<" << std::endl;
 
                 addressing_mode_fetcher(JUMP);
 
@@ -158,7 +189,6 @@ void decode_execute() {
                 addressing_mode_fetcher(DOUBLE);
 
                 // EXECUTE TWO OP THROUGH FUNCTION TABLE
-
                 double_ptr[dbl.opcode-4]();
 
                 // Some two operand commands dont emit, they just update SR
@@ -169,14 +199,9 @@ void decode_execute() {
     }
 }
 
+// TODO: THIS IS USELESS
 void init_regfile() {
-    // regfile[SP] = 0xffff  // Init SP?
-    regfile[16] = -1;
-    regfile[17] =  0;
-    regfile[18] =  1;
-    regfile[19] =  2;
-    regfile[20] =  4;
-    regfile[21] =  8;
+
 }
 
 void addressing_mode_fetcher(int type) {
@@ -306,6 +331,7 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
             break;
 
         default:  // Constant generator, denoted by 0xC#
+
             return_val = mode & 0x0f;  // Get rid of the upper nibble
 
             if (return_val == 0x0f) return_val = -1;
@@ -314,7 +340,7 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
     // For modes other than the default, increment the program counter accordingly
     if (mode <= IMMEDIATE) regfile[PC] += addr_mode_PC_array[mode];
 
-    std::cout << "\t\t\t(Matrix Decoder) READ: >>" << std::hex << return_val << std::dec << "<<\n";
+    std::cout << "\t\t\t(Matrix Decoder) READ VALUE: >>" << std::hex << return_val << std::dec << "<<\n";
 
     return return_val;
 }
@@ -322,7 +348,6 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
 // bw --> B = 1, W = 0
 void update_sr(bool bw) {
     // Global 'result' from last two operand
-
     std::cout << "\t\t\t\tUPDATING SR WITH RESULT: >>" << std::hex << result << "<<\n";
 
     sr_union.us_sr_reg = regfile[SR];
@@ -332,7 +357,7 @@ void update_sr(bool bw) {
     sr_union.C = 0;
     sr_union.V = 0;
 
-    if (!result) sr_union.Z = 1;
+    if (!(result&(bw ? 0xff : 0xffff))) sr_union.Z = 1;
     if (bw ? ((result & 0xff)>>7 ) : ((result & 0xffff)>>15 )) sr_union.N = 1;
     if (bw ? ((result & 0x1ff)>>8) : ((result & 0x1ffff)>>16)) sr_union.C = 1;
     // sr_union.V (Overflow) logic performed in ADD, ADDC, SUB, SUBC, and CMP
@@ -415,371 +440,17 @@ void bus(uint16_t mar, uint16_t &mdr, int ctrl) {
     }
 }
 
-void debugger() {
-    std::string input;
-    std::string input_temp;
-    uint16_t str_len = 0;
-    uint16_t hex_loc = 0;
-    uint16_t hex_data = 0;
-    uint16_t dec_loc = 0;  // In decimal
-
-    std::cout << "\n\tDEBUG MODE ENTERED\n";
-
-    /* Functionality Required:
-        1) Inspect memory location (MRnnnn)
-        2) Change Memory location (MWnnnn)
-        3) Inspect Register (RRnn)
-        4) Change Register (RWnn nnnn)
-        5) Continue
-        6) EXIT (Normal ctrl-C signal)
-    */
-
-    // TODO: DO PROPER STOI ERROR CHECKING
-
-    while (1) {
-        std::cout << "\n\tDEBUGGER MENU: Please enter command from below\n"
-            << "\t\t(Mnnnn)    Read memory location     (Enter location in HEX)\n"
-            << "\t\t(Ennnn nn) Emit to memory location  (Enter location and value in HEX)\n"
-            << "\t\t(Rnn nnnn) Write CPU Register       (Enter register number in DECIMAL and value in HEX)\n"
-            << "\t\t(D)        Dump CPU Registers\n"
-            << "\t\t(C)        Continue program by exiting debugging mode\n"
-            << "\t\t(Exit)     Exit(2)                  (Normal ctrl-C call, terminates program)\n\n"
-            << "\t\t\tNOTE #1: Include all trailing 0s, that just makes the parsing easier\n"
-            << "\t\t\tNOTE #2: Memory locations store things LITTLE ENDIAN\n"
-            << "\t\t\tNOTE #3: Update PC by reading and changing R00\n\n"
-            << "\t\tInput: >> ";
-
-        std::getline(std::cin, input);
-
-        str_len = input.length();
-
-        std::transform(input.begin(), input.end(),input.begin(), ::toupper);
-
-        if (input == "EXIT") exit(2);
-
-        if (input.find_first_not_of("0123456789abcdefABCDEF MERWC") != std::string::npos) {
-            std::cout << "\n\tPlease enter a valid input\n";
-            continue;
-        }
-
-        if (str_len >= 1) {
-            switch (input[0]) {
-                case 'M':
-                    if (str_len != 5) {
-                        std::cout << "\n\tPlease enter a valid input (Wrong length on M)\n";
-                        continue;
-                    }
-
-                    // Parse location to read
-                    input_temp = input.substr(1, 4);
-                    hex_loc = std::stoi(input_temp, nullptr, 16);
-
-                    std::cout << std::hex << "\n\tMemory Location: >>" << hex_loc << "<< contains >>" << (uint16_t)mem_array[hex_loc] << std::dec << "<<\n";
-
-                    break;
-                case 'E':
-                    if (str_len != 8) {
-                        std::cout << "\n\tPlease enter a valid input (Wrong length on E)\n";
-                        continue;
-                    }
-
-                    // Parse location to read
-                    input_temp = input.substr(1, 4);
-                    hex_loc = std::stoi(input_temp, nullptr, 16);
-
-                    // Parse the data to store
-                    input_temp = input.substr(6, 2);
-                    hex_data = std::stoi(input_temp, nullptr, 16);
-
-                    mem_array[hex_loc] = hex_data;
-
-                    std::cout << std::hex << "\n\tMemory Location: >>" << hex_loc << "<< updated to >>" << (uint16_t)mem_array[hex_loc] << std::dec << "<<\n";
-                    break;
-                case 'R':
-                    if (str_len != 8) {
-                        std::cout << "\n\tPlease enter a valid input (Wrong length on R)\n";
-                        continue;
-                    }
-
-                    // Parse location to read
-                    input_temp = input.substr(1, 2);
-                    dec_loc = std::stoi(input_temp, nullptr, 10);
-
-                    // Parse the data to store
-                    input_temp = input.substr(4, 4);
-                    hex_data = std::stoi(input_temp, nullptr, 16);
-
-                    regfile[dec_loc] = hex_data;
-
-                    std::cout << "\n\tRegister Number: " << std::dec << dec_loc << " updated to >>" << std::hex << (uint16_t)regfile[dec_loc] << std::dec << "<<\n";
-
-                    break;
-                case 'D':
-                    std::cout << std::endl;
-                    for (int i = 0; i < 16; i++) {
-                        std::cout << "Regfile [" << std::dec << i << "]\t" << std::hex << regfile[i] << std::endl;
-                    }
-
-                    break;
-                case 'C':
-                    return;
-                    break;
-                default:
-                    std::cout << "\n\tPlease enter a valid input\n";
-                    break;
-            }
-        }
-        else std::cout << "\n\tPlease enter a valid input\n";
-    }
-}
-
 void emulation_error(std::string error_msg) {
     std::cout << "[EMULATION ERROR] - " << error_msg << std::endl;
     exit(1);
 }
 
-// ============ INSTRUCTIONS ============= //
-
-// INST: One Operand
-void rrc() {
-    uint32_t even_dst = ((dst%2) ? dst - 1 : dst);
-
-    std::cout << "RRC SR: >>" << std::hex << regfile[SR] << "<< || shift: >>" << even_dst << " | " << (even_dst >> 1) << "<<" << std::dec << "<<\n";
-
-    result = (even_dst >> 1) + ((regfile[SR]&0x1)<<(single.bw ? 7 : 15));
-
-    update_sr(single.bw);
-
-    // Set carry bit to LSB of dst
-    sr_union.C = (dst&0x0001) ? 1 : 0;
-    regfile[SR] = sr_union.us_sr_reg;
-
-    std::cout << "\t\t\t\tEXECUTING RRC (DST >>" << std::hex << dst << std::dec << "<<)\n";
-}
-
-void swpb() {
-    if (!single.bw) result = (dst >> 8) + (dst << 8);
-    else emulation_error("(swpb) Byte attempted on Word only instruction");
-
-    std::cout << "\t\t\t\tEXECUTING SWPB (DST >>" << std::hex << dst << std::dec << "<<)\n";
-}
-
-void rra() {
-    // RRA sets the MSB to itself after shifting (TODO: FIX)
-    uint32_t even_dst = ((dst%2) ? dst - 1 : dst);
-    result = (even_dst >> 1) + (even_dst << (single.bw ? 7 : 15))&0xff;
-
-    std::cout << "\t\t\t\tEXECUTING RRA (DST >>" << std::hex << dst << std::dec << "<<)\n";
-
-    update_sr(single.bw);
-
-    // Set carry bit to the LSB of the unrotated value
-
-    std::cout << "RRA CARRY SET TO: >>" << std::hex << regfile[SR] << std::dec << "<<\n";
-
-    // Set carry bit to LSB of dst
-    sr_union.C = (dst&0x0001) ? 1 : 0;
-    regfile[SR] = sr_union.us_sr_reg;
-
-    std::cout << "RRA SR: >>" << std::hex << regfile[SR] << std::dec << "<<\n";
-}
-
-void sxt() {
-    result = (dst & 0xff) + (((dst & 0xff) >> 7) ? 0xff00 : 0);
-
-    std::cout << "\t\t\t\tEXECUTING SXT (DST >>" << std::hex << dst << std::dec << "<<)\n";
-
-    update_sr(single.bw);
-
-    // Set carry bit to the opposite of the negative bit
-    sr_union.C = (sr_union.N ? 0 : 1);
-    regfile[SR] = sr_union.us_sr_reg;
-}
-
-void push() {  // NO SR
-    // If byte instruction, sign extend
-    result = dst;
-    if (single.bw) result = (dst & 0xff) + (((dst & 0xff) >> 7) ? 0xff00 : 0);
-
-    // Call bus directly due to special case
-    mdr = result;
-
-    std::cout << "\t\t\t\tEXECUTING PUSH (MDR >>" << std::hex << mdr << std::dec << "<<)\n";
-
-    bus(regfile[SP], mdr, WRITE_W);
-
-    regfile[SP] -= 2;
-
-    emit_flag = false;
-}
-
-void call() {
-    // Call bus directly due to special case
-
-    std::cout << "\t\t\t\tEXECUTING CALL (DST >>" << std::hex << dst << std::dec << "<<)\n";
-
-    mdr = regfile[PC];
-
-    bus(regfile[SP], mdr, WRITE_W);
-    regfile[SP] -= 2;
-
-    // Store Source to Program counter
-    regfile[PC] = dst;
-
-    emit_flag = false;
-}
-
-void reti() {
-    // Implement with stuff
-    std::cout << "\t\t\t\tEXECUTING RETI (DST >>" << std::hex << dst << std::dec << "<<)\n";
-    emit_flag = false;
-}
-
-// Example logic (not sure what this is for as of JUNE 27)
-// ((src>>15 == dst>>15) && ((src>>15) != ((result&0xff)>>15))) ? true: false;
-
-// INST: Two Operand (USE RESULT VARIABLE)
-void mov() {        // Does not update SR (See manual)
-    result = src;
-
-    std::cout << "\t\t\t\tEXECUTING MOV (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
-}
-
-void add() {
-    result = src + dst;
-    update_sr(dbl.bw);
-
-    std::cout << "\t\t\t\tEXECUTING ADD (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
-
-    // If SRC and DST have the same sign, and the result has the opposite sign. Set the overflow bit
-    // Note: Overflow bit was reset in update_sr (No need to reset it again)
-    if (((src < 0x8000 && dst < 0x8000)&&(result >= 0x8000))||((src >= 0x8000 && dst >= 0x8000)&&(result < 0x8000))) {
-        sr_union.V = 1;
-        regfile[SR] = sr_union.us_sr_reg;
-    }
-}
-
-void addc() {
-    result = src + dst + sr_union.C;
-    update_sr(dbl.bw);
-    std::cout << "\t\t\t\tEXECUTING ADDC (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
-
-    // If SRC and DST have the same sign, and the result has the opposite sign. Set the overflow bit
-    // Note: Overflow bit was reset in update_sr (No need to reset it again)
-    if (((src < 0x8000 && dst < 0x8000)&&(result >= 0x8000))||((src >= 0x8000 && dst >= 0x8000)&&(result < 0x8000))) {
-        sr_union.V = 1;
-        regfile[SR] = sr_union.us_sr_reg;
-    }
-}
-
-void subc() {
-    // result = dst + ~src + 1 + sr_union.C; TODO: WHY is that ONE not there?
-
-    std::cout << "SR UNION IS: " << std::hex << sr_union.C << std::dec << "\n";
-
-    result = dst + ~src + 1 + sr_union.C;
-    update_sr(dbl.bw);
-    std::cout << "\t\t\t\tEXECUTING SUBC (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
-
-    // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
-    // Note: Overflow bit was reset in update_sr (No need to reset it again)
-    if (((src < 0x8000 && dst >= 0x8000)&&(result < 0x8000))||((src >= 0x8000 && dst < 0x8000)&&(result >= 0x8000))) {
-        sr_union.V = 1;
-        regfile[SR] = sr_union.us_sr_reg;
-    }
-}
-
-void sub() {
-    result = dst + ~src + 1;
-    update_sr(dbl.bw);
-    std::cout << "\t\t\t\tEXECUTING SUB (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
-
-    // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
-    // Note: Overflow bit was reset in update_sr (No need to reset it again)
-    if (((src < 0x8000 && dst >= 0x8000)&&(result < 0x8000))||((src >= 0x8000 && dst < 0x8000)&&(result >= 0x8000))) {
-        sr_union.V = 1;
-        regfile[SR] = sr_union.us_sr_reg;
-    }
-}
-
-void cmp() {  // NO EMIT
-    result = dst + ~src + 1;
-
-    emit_flag = false;
-    update_sr(dbl.bw);
-    std::cout << "\t\t\t\tEXECUTING CMP (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
-
-    // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
-    // Note: Overflow bit was reset in update_sr (No need to reset it again)
-    if (((src < 0x8000 && dst >= 0x8000)&&(result < 0x8000))||((src >= 0x8000 && dst < 0x8000)&&(result >= 0x8000))) {
-        sr_union.V = 1;
-        regfile[SR] = sr_union.us_sr_reg;
-    }
-
-    std::cout << "\t\t\t\tOPERATION RESULT IS: >>" << std::hex << result << std::dec << "<<\n";
-}
-
-void dadd() {
-    // ??
-
-    uint16_t dec_src = (src>>4)*10 + (src&0x0f);
-    uint16_t dec_dst = (dst>>4)*10 + (dst&0x0f);
-    std::cout << "\t\t\t\tEXECUTING DADD (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
-
-    // Each nibble of the byte corresponds to a digit in the final answer
-    // Must convert from binary to deciaml before doing arithmatic and convert back when finished
-
-    update_sr(dbl.bw);
-
-    // Set carry flag if the result is greater than 9999 (W) or 99 (B)
-}
-
-void bit() {  // NO EMIT
-    result = dst & src;
-
-    emit_flag = false;
-    update_sr(dbl.bw);
-    std::cout << "\t\t\t\tEXECUTING BIT (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
-
-    // Set carry bit to the opposite of the negative bit
-    sr_union.C = (sr_union.N ? 0 : 1);
-    regfile[SR] = sr_union.us_sr_reg;
-
-    std::cout << "\t\t\t\tOPERATION RESULT IS: >>" << std::hex << result << std::dec << "<<\n";
-}
-
-void bic() {
-    result = dst & ~src;
-    std::cout << "\t\t\t\tEXECUTING BIC (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
-}
-
-void bis() {
-    result = dst | src;
-    std::cout << "\t\t\t\tEXECUTING BIS (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
-}
-
-void xor_() {
-    result = src ^ dst;
-    update_sr(dbl.bw);
-
-    // Set carry bit to the opposite of the negative bit
-    sr_union.C = (sr_union.N ? 0 : 1);
-
-    // If SRC and DST are negative, set overflow bit
-    sr_union.V = (src >= (dbl.bw ? 0x0080 : 0x8000) && dst >= (dbl.bw ? 0x0080 : 0x8000)) ? 1 : 0;
-
-    regfile[SR] = sr_union.us_sr_reg;
-
-    std::cout << "\t\t\t\tEXECUTING XOR_ (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
-}
-
-void and_() {
-    result = src & dst;
-    update_sr(dbl.bw);
-
-    // Set carry bit to the opposite of the negative bit
-    sr_union.C = (sr_union.N ? 0 : 1);
-    regfile[SR] = sr_union.us_sr_reg;
-
-    std::cout << "\t\t\t\tEXECUTING AND_ (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+// TEMPORARY
+void execute_interrupt(uint16_t next_interrupt) {
+    std::cout << "\n\n\n\tDOING INTERRUPT #" << next_interrupt
+                    << "\n\tTIME " << interrupts[next_interrupt].time
+                    << "\n\tDEV  " << interrupts[next_interrupt].dev
+                    << "\n\tDATA " << interrupts[next_interrupt].data
+                    << "\n\n\n";
+    while(1);
 }

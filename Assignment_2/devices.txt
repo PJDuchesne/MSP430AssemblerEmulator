@@ -1,0 +1,27 @@
+1		0
+0		100
+0		250
+
+INTERRUPTS
+
+10		3		3
+15		4		2
+37		2		C
+40		1		4
+75		0		6
+77		3		Z
+100		1		H
+
+END
+
+
+
+
+Notes:
+
+-> Organized into two sections
+1) Devices:
+	>>Input (1) or Output (0)<<   >>Processing Time<<
+
+2) Interrupts:
+	>>Interrupt Time<<		>>Device #<<		>>Input Data<<

@@ -30,7 +30,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 // Returns true if a S9 is found with a start address, false if no S9 is found
 
 // Loads the file currently stored in fin (a global variable)
-uint16_t load_file() {
+uint16_t load_s19() {
     std::string current_record = "";
     bool end = false;
 
@@ -84,6 +84,8 @@ uint16_t load_file() {
             return 0;
         }  // Else checksum is correct
     }
+
+    fin.close();
 }
 
 // Dumps contents of memory into the output memory for diagnostics

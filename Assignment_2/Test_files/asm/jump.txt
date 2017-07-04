@@ -28,7 +28,7 @@ TEST_C      MOV #$3333,R6
 
 TEST_D      MOV #$4444,R7
             BIC #$0107,SR   ; Clear status bits in SR     
-            BIS #$1004,SR   ; Set N = 1                     // TODO: FIX CG for #4 and #8 (CURRENTLY BROKEN)
+            BIS #$0004,SR   ; Set N = 1
             JMP TEST4
 
 TEST_E      MOV #$5555,R8
@@ -92,3 +92,5 @@ TEST7        BIC #$0107,SR   ; Clear status bits in SR
     
 ENDSPOT
 END         TEST_START
+
+; Clock at 94

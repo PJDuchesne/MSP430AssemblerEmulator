@@ -26,11 +26,24 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #define MAX_WORD  65536
 #define MAX_MEM_SIZE  65536
 
-// Global fine types for input and output across all files
+// Global fin types for input and output across all files
 extern std::ifstream fin;
+extern std::ifstream dev_fin;
 extern std::ofstream outfile;
 extern uint8_t mem_array[MAX_MEM_SIZE];
 extern uint16_t s9_addr;
+
+extern uint16_t mdr;
+extern uint16_t cpu_clock;
+extern uint16_t regfile[16];
+extern uint32_t src;
+extern uint32_t dst;
+extern uint16_t offset;
+extern uint32_t result;
+extern bool emit_flag;
+extern uint16_t mode;
+extern uint32_t eff_address;
+
 
 enum BUS_CTRL {
     READ_W,
@@ -144,8 +157,36 @@ struct sr_reg {
     };
 };
 
-uint16_t load_file();
-void load_mem();
+// (Hypothetically)
+// Set with "scr_reg scr = (scr_reg *)&mem_array[LOCATION_OF_WHATEVER]"
+struct scr_reg {
+    uint8_t IE:1;
+    uint8_t IO:1;
+    uint8_t DBC:1;
+    uint8_t OF:1;
+    uint8_t RESERVED:4;
+};
+
+struct interrupt {
+    uint16_t time = 0;
+    uint16_t dev = 0;
+    uint8_t data = 0;  // Char
+};
+
+struct device {
+    uint16_t IO = 0;
+    uint16_t process_time = 0;
+};
+
+extern device devices[16];          // Supports a maximum of 16 devices
+extern interrupt interrupts[500];   // Supports a maximum of 500 simulated interrupts
+extern single_overlay single;
+extern jump_overlay jump;
+extern double_overlay dbl;
+extern sr_reg sr_union;
+
+uint16_t load_s19();
+
 // Dumps contents of memory into the output memory for diagnostics
 void dump_mem();
 

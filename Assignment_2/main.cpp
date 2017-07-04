@@ -28,17 +28,25 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/main.h"
 #include "Include/library.h"
 #include "Include/emulate.h"
+#include "Include/devices.h"
+
+#define DEVICE_MAX 16
+#define SIMULATED_INTERRUPT_MAX 500
 
 // Globals
 std::ifstream fin;
+std::ifstream dev_fin;
 std::ofstream outfile;
 
 uint16_t s9_addr;
 
 uint8_t mem_array[MAX_MEM_SIZE];
 
+device devices[DEVICE_MAX];
+interrupt interrupts[SIMULATED_INTERRUPT_MAX];
+
 int main(int argc, char *argv[]) {
-    
+
     /* TESTING PLACE */
 
 
@@ -94,13 +102,16 @@ int main(int argc, char *argv[]) {
 
                 //fin.open(menuInput);
                 fin.open("../Assignment_1/srec_output.s19");        // TEMPORARILY HARDCODED TO SPEED UP TESTING
-                PC_init = load_file();
-                fin.close();
+                PC_init = load_s19();
 
                 break;
 
             case 'E':   // Emulate program given current starting location
             case 'e':
+                dev_fin.open("devices.txt");
+
+                load_devices();
+
                 if (!emulate(mem_array, debug_mode, PC_init)) {
                     std::cout << "EMULATION ERROR" << std::endl;
                 }

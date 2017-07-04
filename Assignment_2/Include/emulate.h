@@ -22,26 +22,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #define EMULATE_H_
 
 static bool HCF = false;
-static uint16_t mar  = 0;
-static uint16_t mdr  = 0;
-
-static uint16_t cpu_clock = 0;
-
-// 0-15 are visible registers, 16-X are invisible
-static uint16_t regfile[22] = {};  // All initialized to 0
-
-static uint32_t src = 0;  // Not used in the case of single operand
-static uint32_t dst = 0;  // Used in the case of single operand
-static uint16_t offset = 0;  // Used for jump commands
-static uint32_t result = 0;
-
-static int16_t signed_offset = 0;
-
-// Used to write back to a place
-static uint16_t mode = 0;
-static uint32_t eff_address = 0;
-
-static bool emit_flag = true;
 
 static bool debug_mode;
 static bool debug_signal = false;
@@ -187,7 +167,7 @@ static bool jmp_matrix[8][2][2][2][2] = {
         }
     },
 
-    // JGE --> Jump if (N XOR V) = 0
+    // JGE --> Jump if (N XOR V) = 0 (They are the same, both 0 or 1)
     {
         {
             {
@@ -207,7 +187,7 @@ static bool jmp_matrix[8][2][2][2][2] = {
         }
     },
 
-    // JL --> Jump if (N XOR V) = 1
+    // JL --> Jump if (N XOR V) = 1 (They are different)
     {
         {  // Z = 0
             {  // N = 0
@@ -268,31 +248,9 @@ void put_operand(uint16_t asd, INST_TYPE type);
 
 void bus(uint16_t mar, uint16_t &mdr, int ctrl);
 
-void debugger();
-
 void emulation_error(std::string error_msg);
 
-// INST: One Operand
-void rrc();
-void swpb();
-void rra();
-void sxt();
-void push();
-void call();
-void reti();
-
-// INST: Two Operand
-void mov();
-void add();
-void addc();
-void subc();
-void sub();
-void cmp();
-void dadd();
-void bit();
-void bic();
-void bis();
-void xor_();  // 'xor' is a reserved C++ keyword
-void and_();  // 'and' is a reserved C++ keyword
+// TEMPORARY
+void execute_interrupt(uint16_t next_interrupt);
 
 #endif
