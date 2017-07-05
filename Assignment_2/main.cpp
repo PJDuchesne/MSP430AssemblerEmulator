@@ -68,8 +68,6 @@ int main(int argc, char *argv[]) {
     // PC init position which is updated from places in menu
     uint16_t PC_init = 0;
 
-    outfile.open("mem.txt");
-
     while (1) {
         std::cout << "\nMAIN MENU: Please enter command from below\n"
         << "\t(P) Load from previous session\n"

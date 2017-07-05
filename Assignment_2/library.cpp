@@ -90,10 +90,18 @@ uint16_t load_s19() {
 
 // Dumps contents of memory into the output memory for diagnostics
 void dump_mem() {
+    // Delete current file
+    outfile.open("mem.txt", std::ios::out | std::ios::trunc);
+
     // Set options for output stream
     outfile << std::right << std::setfill('0') << std::hex;
     // Output to file
     for (int i = 0; i < MAX_MEM_SIZE; i++) outfile << std::setw(4) << i << "\t"
                         << std::setw(2) << (uint16_t)mem_array[i] << std::endl;
 
+    outfile << "\n\n\n";
+
+    for (int i = 0; i < 16; i++) outfile << "Regfile [" << std::dec << i << "] " << std::hex << regfile[i] << std::endl;
+
+    outfile.close();
 }

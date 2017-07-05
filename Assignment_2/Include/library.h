@@ -170,7 +170,7 @@ struct scr_reg {
 struct interrupt {
     uint16_t time = 0;
     uint16_t dev = 0;
-    uint8_t data = 0;  // Char
+    uint8_t data = 0;  // Char of input/output data
 };
 
 struct device {

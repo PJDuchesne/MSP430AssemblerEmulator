@@ -26,18 +26,19 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <fstream>
 #include <cstdlib>
 #include <csignal>
-#include <algorithm>  // Used for ::toupper
 
 #include "Include/emulate.h"
 #include "Include/library.h"
 #include "Include/single_inst.h"
 #include "Include/double_inst.h"
+#include "Include/debugger.h"
+
+// Globals: Delcared extern in library.h
 
 uint16_t mdr  = 0;
 
 uint16_t cpu_clock = 0;
 
-// 0-15 are visible registers, 16-X are invisible
 uint16_t regfile[16] = {};  // All initialized to 0
 
 uint32_t src = 0;  // Not used in the case of single operand
@@ -86,8 +87,6 @@ void signalHandler(int signum) {
 }
 
 bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init) {
-    init_regfile();
-
     uint16_t next_interrupt = 0;
 
     // Load devices into memory (Call function)
@@ -116,10 +115,8 @@ bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init) {
 
         // TEMP
         dump_mem();
-        outfile << "\n\n\n";
-/*
         sr_union.us_sr_reg = regfile[SR];  // Check if this is strictly necessary
-        sr_union.GIE = 1;
+//         sr_union.GIE = 1;
 
         if (sr_union.GIE && (interrupts[next_interrupt].time <= cpu_clock)) {
             std::cout << "\t\tLAYER 1\n";
@@ -128,9 +125,6 @@ bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init) {
                 next_interrupt++;
             }
         }
-*/
-        // Dump Registers for debugging
-        for (int i = 0; i < 16; i++) outfile << "Regfile [" << std::dec << i << "] " << std::hex << regfile[i] << std::endl;
     }
     system("aafire");
 
@@ -197,11 +191,6 @@ void decode_execute() {
                 break;
         }
     }
-}
-
-// TODO: THIS IS USELESS
-void init_regfile() {
-
 }
 
 void addressing_mode_fetcher(int type) {
@@ -371,12 +360,13 @@ void put_operand(uint16_t asd, INST_TYPE type) {
     uint16_t regnum = (type == SINGLE) ? single.reg : dbl.dst;
     uint16_t bw = (type == SINGLE) ? single.bw : dbl.bw;
 
+    // Mode should be set already (DST was called last in both SINGLE and DOUBLE)
+    // Maybe remove this
+    mode = src_dst_matrix[asd][regnum];
+
     mdr = static_cast<uint16_t>(result);
 
     std::cout << "\t\t\t\tOPERATION RESULT IS: >>" << std::hex << mdr << std::dec << "<< (REGNUM: " << regnum << " || REGNUM: " << regnum << ")\n";
-
-    // Mode should be set already (DST was called last in both SINGLE and DOUBLE)
-    mode = src_dst_matrix[asd][regnum];
 
     switch (mode) {
         case REG_DIRECT:
@@ -388,6 +378,7 @@ void put_operand(uint16_t asd, INST_TYPE type) {
         case INDEXED:
         case ABSOLUTE:
             bus(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
+
             break;
 
     // These two cases must do some error checking to prevent
@@ -414,43 +405,49 @@ void put_operand(uint16_t asd, INST_TYPE type) {
 
 // Note: Memory is little-endian (LSB goes in first memory location)
 void bus(uint16_t mar, uint16_t &mdr, int ctrl) {
-    switch (ctrl) {
-        case READ_W:
-            mdr = mem_array[mar];
-            mdr += (mem_array[mar+1] << 8);
+    if (mar <= 32) {
+	// DO DEVICE STUFF
 
-            break;
-        case READ_B:
-            mdr = mem_array[mar];
+    }
+    else {
+	    switch (ctrl) {
+		    case READ_W:
+			    mdr = mem_array[mar];
+			    mdr += (mem_array[mar+1] << 8);
+			    break;
+		    case READ_B:
+			    mdr = mem_array[mar];
 
-            break;
-        case WRITE_W:
-            mem_array[mar] = (mdr & 0xff);
-            mem_array[mar+1] = ((mdr >> 8) & 0xff);
+			    break;
+		    case WRITE_W:
+			    mem_array[mar] = (mdr & 0xff);
+			    mem_array[mar+1] = ((mdr >> 8) & 0xff);
 
-            break;
-        case WRITE_B:
-            mem_array[mar] = (mdr & 0xff);
+			    break;
+		    case WRITE_B:
+			    mem_array[mar] = (mdr & 0xff);
 
-            break;
-        default:
-            std::cout << "[BUS] INVALID BUS INPUT - ENDING" << std::endl;
-            exit(1);
-            break;
+			    break;
+		    default:
+			    std::cout << "[BUS] INVALID BUS INPUT - ENDING" << std::endl;
+			    exit(1);
+			    break;
+	    }
+
     }
 }
 
 void emulation_error(std::string error_msg) {
-    std::cout << "[EMULATION ERROR] - " << error_msg << std::endl;
-    exit(1);
+	std::cout << "[EMULATION ERROR] - " << error_msg << std::endl;
+	exit(1);
 }
 
 // TEMPORARY
 void execute_interrupt(uint16_t next_interrupt) {
-    std::cout << "\n\n\n\tDOING INTERRUPT #" << next_interrupt
-                    << "\n\tTIME " << interrupts[next_interrupt].time
-                    << "\n\tDEV  " << interrupts[next_interrupt].dev
-                    << "\n\tDATA " << interrupts[next_interrupt].data
-                    << "\n\n\n";
-    while(1);
+	std::cout << "\n\n\n\tDOING INTERRUPT #" << next_interrupt
+		<< "\n\tTIME " << interrupts[next_interrupt].time
+		<< "\n\tDEV  " << interrupts[next_interrupt].dev
+		<< "\n\tDATA " << interrupts[next_interrupt].data
+		<< "\n\n\n";
+	while(1);
 }

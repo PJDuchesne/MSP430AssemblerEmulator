@@ -233,8 +233,6 @@ void signalHandler(int signum);
 // Returns true/false to indicate error or not
 bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init);
 
-void init_regfile();
-
 void decode_execute();
 
 void addressing_mode_fetcher(int type);

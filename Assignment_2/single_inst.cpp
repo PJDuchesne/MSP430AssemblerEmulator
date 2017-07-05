@@ -111,9 +111,9 @@ void call() {
 
     mdr = regfile[PC];
 
-    bus(regfile[SP], mdr, WRITE_W);
+    // Push PC to stack
     regfile[SP] -= 2;
-
+    bus(regfile[SP], mdr, WRITE_W);
     // Store Source to Program counter
     regfile[PC] = dst;
 
