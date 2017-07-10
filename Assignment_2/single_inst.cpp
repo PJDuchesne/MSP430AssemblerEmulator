@@ -37,8 +37,7 @@ void rrc() {
     update_sr(single.bw);
 
     // Set carry bit to LSB of dst
-    sr_union.C = (dst&0x0001) ? 1 : 0;
-    regfile[SR] = sr_union.us_sr_reg;
+    sr_union->C = (dst&0x0001) ? 1 : 0;
 
     std::cout << "\t\t\t\tEXECUTING RRC (DST >>" << std::hex << dst << std::dec << "<<)\n";
 }
@@ -67,8 +66,7 @@ void rra() {
     std::cout << "RRA CARRY SET TO: >>" << std::hex << regfile[SR] << std::dec << "<<\n";
 
     // Set carry bit to LSB of dst
-    sr_union.C = (dst&0x0001) ? 1 : 0;
-    regfile[SR] = sr_union.us_sr_reg;
+    sr_union->C = (dst&0x0001) ? 1 : 0;
 
     std::cout << "RRA SR: >>" << std::hex << regfile[SR] << std::dec << "<<\n";
 
@@ -83,8 +81,7 @@ void sxt() {
     update_sr(single.bw);
 
     // Set carry bit to the opposite of the negative bit
-    sr_union.C = (sr_union.N ? 0 : 1);
-    regfile[SR] = sr_union.us_sr_reg;
+    sr_union->C = (sr_union->N ? 0 : 1);
 }
 
 void push() {  // NO SR
@@ -122,17 +119,20 @@ void call() {
 
 void reti() {
     // Implement with stuff
-    std::cout << "\t\t\t\tEXECUTING RETI (DST >>" << std::hex << dst << std::dec << "<<)\n";
+    std::cout << "\t\t\t\tEXECUTING RETI (NO DST)\n";
 
     // Pop SR
     bus(regfile[SP], mdr, READ_W);
-    regfile[SP] += 2;
+    regfile[SP] += 2;   // Move SP to point to next position on stack
     regfile[SR] = mdr;
+    std::cout << "\t\t\t\tPOPPED SR AS: " << std::hex <<  regfile[SR] << std::dec << std::endl;
 
     // Pop PC
     bus(regfile[SP], mdr, READ_W);
-    regfile[SP] += 2;
+    regfile[SP] += 2;   // Move SP to point to next position on stack
     regfile[PC] = mdr;
+    std::cout << "\t\t\t\tPOPPED PC AS: " << std::hex <<  regfile[PC] << std::dec << std::endl;
 
+    temp_GIE_disable = true;
     emit_flag = false;
 }

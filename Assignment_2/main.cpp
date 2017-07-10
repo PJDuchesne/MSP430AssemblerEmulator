@@ -37,6 +37,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 std::ifstream fin;
 std::ifstream dev_fin;
 std::ofstream outfile;
+std::ofstream dev_outfile;
 
 uint16_t s9_addr;
 
@@ -46,6 +47,11 @@ device devices[DEVICE_MAX];
 interrupt interrupts[SIMULATED_INTERRUPT_MAX];
 
 int main(int argc, char *argv[]) {
+
+    // MOVE THIS LATER
+    
+    dev_outfile.open("dev_out.txt");
+    // dev_outfile.open("dev_out.txt", std::ios::out | std::ios::trunc);
 
     /* TESTING PLACE */
 
@@ -67,6 +73,8 @@ int main(int argc, char *argv[]) {
 
     // PC init position which is updated from places in menu
     uint16_t PC_init = 0;
+
+    
 
     while (1) {
         std::cout << "\nMAIN MENU: Please enter command from below\n"

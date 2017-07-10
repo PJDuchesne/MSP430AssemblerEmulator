@@ -1,96 +1,93 @@
-; Made by Paul Duchesne (B00332119)
-; July 2, 2017
+; PRIORITY WRITE OUTPUT
 
-; TEST Jump INSTs
+; Labels for Devices 0-3 SR and Buffer
+dev0reg  EQU $0000   ; Device 0s control register.
+dev0data EQU $0001   ; Data buffer for device 0 is at address 1.
+dev1reg  EQU $0002   ; Device 1s control register.
+dev1data EQU $0003   ; Data buffer for device 1 is at address 3.
+dev2reg  EQU $0004   ; Device 2s control register.
+dev2data EQU $0005   ; Data buffer for device 2 is at address 5.
+dev3reg  EQU $0006   ; Device 3s control register.
+dev3data EQU $0007   ; Data buffer for device 3 is at address 7.
 
-            ; STATUS BIT SETTING STAGE
+; NOT USED
+COFF     EQU $10     ; Bit to turn the CPU off could use this to replace the forever waiting loop.
 
-            ORG $0F00
-TEST_START  BIC #$0107,SR   ; Clear status bits in SR
-                            ; Set Z = 0
+; DATA ARRAYS
+org $4000
+DeviceDataArray0 string "ABCDEFGH" ; 8 bytes, 4000 -> 4008
+org $4020
+DeviceDataArray1 string "abcdefgh" ; 8 bytes, 4020 -> 4028
+org $4040
+DeviceDataArray2 string "12345678" ; 8 bytes, 4040 -> 4048
+org $4060
+DeviceDataArray3 string "ZYWVUTSR" ; 8 bytes, 4060 -> 4068
 
-            JMP TEST0
+; MAIN
+ORG $1000
+START 
 
-TEST_A      MOV #$1111,R4
-            BIC #$0107,SR   ; Clear status bits in SR
-            BIS #$0002,SR   ; Set Z = 1
-            JMP TEST1
+; Enable interrupts on all devices
+BIS #1,dev0reg;
+BIS #1,dev1reg;
+BIS #1,dev2reg;
+BIS #1,dev3reg;
 
-TEST_B      MOV #$2222,R5
-            BIC #$0107,SR   ; Clear status bits in SR
-                            ; Set C = 0
-            JMP TEST2
+mov #$FFC0,SP            ; Set up stack pointer
+BIS  #8,SR               ; set GIE to enabled SR: xxxx xxxx xxxx 1xxx
 
-TEST_C      MOV #$3333,R6
-            BIC #$0107,SR   ; Clear status bits in SR
-            BIS #$0001,SR   ; Set C = 1
-            JMP TEST3
+; Set up R10 through R13 with the locations of the data arrays
+mov #DeviceDataArray0,R10
+mov #DeviceDataArray1,R11
+mov #DeviceDataArray2,R12
+mov #DeviceDataArray3,R13
 
-TEST_D      MOV #$4444,R7
-            BIC #$0107,SR   ; Clear status bits in SR     
-            BIS #$0004,SR   ; Set N = 1
-            JMP TEST4
+mov.b @R10+,dev0data    ; Send first piece of data for RA
+mov.b @R11+,dev1data    ; Send first piece of data for RA
+mov.b @R12+,dev2data    ; Send first piece of data for RA
+mov.b @R13+,dev3data    ; Send first piece of data for RA
 
-TEST_E      MOV #$5555,R8
-            BIC #$0107,SR   ; Clear status bits in SR
-            BIS #$0104,SR   ; Sets V = 1 and N = 1
-            JMP TEST5
+done jmp done           ; loop doing nothing forever (USE COFF EVENTUALLY)
 
-TEST_F      MOV #$6666,R9
-            BIC #$0107,SR   ; Clear status bits in SR
-            BIS #$0100,SR   ; Sets V = 1 and N = 0
-            JMP TEST6
+; DEVICE INTERRUPTS HERE
+org $3000
+ISRdev0
+mov.b dev0reg,R15       ; Acknowlege interrupt
+cmp #$4008,R10          ; End of string
+jeq ISRdev0_end
+mov.b @R10+,dev0data    ; Set next char emitting
+ISRdev0_end RETI
 
-            ; JUMP STAGE
+org $3100
+ISRdev1
+mov.b dev1reg,R15       ; Acknowlege interrupt
+cmp #$4028,R11          ; End of string?
+jeq ISRdev1_end
+mov.b @R11+,dev1data    ; Set new data going
+ISRdev1_end RETI
 
-            ORG $1000
-TEST0       JNE TEST_A       ; Requires Z = 0
-            JMP ENDSPOT
-    
-            ORG $1050
-TEST1       JeQ TEST_B       ; Requires Z = 1
-            JMP ENDSPOT
-    
-            ORG $1100
-TEST2       jnc TEST_C       ; Requires C = 0
-            JMP ENDSPOT
-    
-            ORG $1150
-TEST3       JC  TEST_D       ; Requires C = 1
-            JMP ENDSPOT
-    
-            ORG $1200 
-TEST4       JN  TEST_E       ; Requires N = 1
-            JMP ENDSPOT
-    
-            ORG $1250
-TEST5       jGE TEST_F       ; Requires (N XOR V) = 0 --> N == V (Both 0 or 1)
-            JMP ENDSPOT
-    
-            ORG $1300 
-TEST6       Jl  TEST7        ; Requires (N XOR V) = 1 --> N != V
-            JMP ENDSPOT
+org $3200
+ISRdev2
+mov.b dev2reg,R15       ; Acknowlege interrupt
+cmp #$4048,R12          ; End of string?
+jeq ISRdev2_end
+mov.b @R12+,dev2data    ; Set new data going
+ISRdev2_end RETI
 
-            ; "DO NOT JUMP" STAGE
+org $3300
+ISRdev3
+mov.b dev3reg,R15       ; Acknowlege interrupt
+cmp #$4068,R13          ; End of string?
+jeq ISRdev3_end
+mov.b @R13+,dev3data    ; Set new data going
+ISRdev3_end RETI
 
-TEST7        BIC #$0107,SR   ; Clear status bits in SR
-            JEQ ENDSPOT
-            MOV #$7777,R10
-            JHS ENDSPOT
-            MOV #$8888,R11
-            JL ENDSPOT
-            MOV #$9999,R12
-            BIS #$0007,SR    ; Set SR for all except overflow
-            JNZ ENDSPOT
-            MOV #$AAAA,R13
-            JLO ENDSPOT
-            MOV #$BBBB,R14
-            JGE ENDSPOT
-            MOV #$CCCC,R15
+; insert ISR Vector address
+org $FFC0       ; Vector address for device 0.
+WORD ISRdev0    ; Address of my ISR
+WORD ISRdev1    ; Address of my ISR
+WORD ISRdev2    ; Address of my ISR
+WORD ISRdev3    ; Address of my ISR
 
-            JMP ENDSPOT
-    
-ENDSPOT
-END         TEST_START
+END START       ;For start address.
 
-; Clock at 94

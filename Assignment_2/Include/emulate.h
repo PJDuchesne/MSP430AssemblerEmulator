@@ -248,7 +248,4 @@ void bus(uint16_t mar, uint16_t &mdr, int ctrl);
 
 void emulation_error(std::string error_msg);
 
-// TEMPORARY
-void execute_interrupt(uint16_t next_interrupt);
-
 #endif

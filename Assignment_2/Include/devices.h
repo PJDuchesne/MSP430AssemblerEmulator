@@ -25,8 +25,10 @@ bool load_devices();
 
 void trigger_interrupt(uint16_t dev_num);
 
-void check_interrupts();
+void update_device_statuses();
 
-void special_memory_access_thingy_that_is_called_from_bus_when_memory_locations_0_through_32_are_called();
+void check_for_interrupts();
+
+void device_bus(uint16_t mar, uint16_t &mdr, int ctrl);
 
 #endif

@@ -71,7 +71,7 @@ void debugger() {
 
         std::transform(input.begin(), input.end(),input.begin(), ::toupper);
 
-        if (input == "EXIT") exit(2);
+        if (input == "EXIT") { dev_outfile.close(); exit(2); }
 
         if (input.find_first_not_of("0123456789abcdefABCDEF MERWC") != std::string::npos) {
             std::cout << "\n\tPlease enter a valid input\n";

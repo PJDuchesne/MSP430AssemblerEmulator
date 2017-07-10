@@ -42,38 +42,35 @@ void add() {
     // If SRC and DST have the same sign, and the result has the opposite sign. Set the overflow bit
     // Note: Overflow bit was reset in update_sr (No need to reset it again)
     if (((src < 0x8000 && dst < 0x8000)&&(result >= 0x8000))||((src >= 0x8000 && dst >= 0x8000)&&(result < 0x8000))) {
-        sr_union.V = 1;
-        regfile[SR] = sr_union.us_sr_reg;
+        sr_union->V = 1;
     }
 }
 
 void addc() {
-    result = src + dst + sr_union.C;
+    result = src + dst + sr_union->C;
     update_sr(dbl.bw);
     std::cout << "\t\t\t\tEXECUTING ADDC (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 
     // If SRC and DST have the same sign, and the result has the opposite sign. Set the overflow bit
     // Note: Overflow bit was reset in update_sr (No need to reset it again)
     if (((src < 0x8000 && dst < 0x8000)&&(result >= 0x8000))||((src >= 0x8000 && dst >= 0x8000)&&(result < 0x8000))) {
-        sr_union.V = 1;
-        regfile[SR] = sr_union.us_sr_reg;
+        sr_union->V = 1;
     }
 }
 
 void subc() {
-    // result = dst + ~src + 1 + sr_union.C; TODO: WHY is that ONE not there?
+    // result = dst + ~src + 1 + sr_union->C; TODO: WHY is that ONE not there?
 
-    std::cout << "SR UNION IS: " << std::hex << sr_union.C << std::dec << "\n";
+    std::cout << "SR UNION IS: " << std::hex << sr_union->C << std::dec << "\n";
 
-    result = dst + ~src + 1 + sr_union.C;
+    result = dst + ~src + 1 + sr_union->C;
     update_sr(dbl.bw);
     std::cout << "\t\t\t\tEXECUTING SUBC (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 
     // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
     // Note: Overflow bit was reset in update_sr (No need to reset it again)
     if (((src < 0x8000 && dst >= 0x8000)&&(result < 0x8000))||((src >= 0x8000 && dst < 0x8000)&&(result >= 0x8000))) {
-        sr_union.V = 1;
-        regfile[SR] = sr_union.us_sr_reg;
+        sr_union->V = 1;
     }
 }
 
@@ -85,8 +82,7 @@ void sub() {
     // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
     // Note: Overflow bit was reset in update_sr (No need to reset it again)
     if (((src < 0x8000 && dst >= 0x8000)&&(result < 0x8000))||((src >= 0x8000 && dst < 0x8000)&&(result >= 0x8000))) {
-        sr_union.V = 1;
-        regfile[SR] = sr_union.us_sr_reg;
+        sr_union->V = 1;
     }
 }
 
@@ -100,8 +96,7 @@ void cmp() {  // NO EMIT
     // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
     // Note: Overflow bit was reset in update_sr (No need to reset it again)
     if (((src < 0x8000 && dst >= 0x8000)&&(result < 0x8000))||((src >= 0x8000 && dst < 0x8000)&&(result >= 0x8000))) {
-        sr_union.V = 1;
-        regfile[SR] = sr_union.us_sr_reg;
+        sr_union->V = 1;
     }
 
     std::cout << "\t\t\t\tOPERATION RESULT IS: >>" << std::hex << result << std::dec << "<<\n";
@@ -130,8 +125,7 @@ void bit() {  // NO EMIT
     std::cout << "\t\t\t\tEXECUTING BIT (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 
     // Set carry bit to the opposite of the negative bit
-    sr_union.C = (sr_union.N ? 0 : 1);
-    regfile[SR] = sr_union.us_sr_reg;
+    sr_union->C = (sr_union->N ? 0 : 1);
 
     std::cout << "\t\t\t\tOPERATION RESULT IS: >>" << std::hex << result << std::dec << "<<\n";
 }
@@ -151,12 +145,11 @@ void xor_() {
     update_sr(dbl.bw);
 
     // Set carry bit to the opposite of the negative bit
-    sr_union.C = (sr_union.N ? 0 : 1);
+    sr_union->C = (sr_union->N ? 0 : 1);
 
     // If SRC and DST are negative, set overflow bit
-    sr_union.V = (src >= (dbl.bw ? 0x0080 : 0x8000) && dst >= (dbl.bw ? 0x0080 : 0x8000)) ? 1 : 0;
+    sr_union->V = (src >= (dbl.bw ? 0x0080 : 0x8000) && dst >= (dbl.bw ? 0x0080 : 0x8000)) ? 1 : 0;
 
-    regfile[SR] = sr_union.us_sr_reg;
 
     std::cout << "\t\t\t\tEXECUTING XOR_ (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 }
@@ -166,8 +159,7 @@ void and_() {
     update_sr(dbl.bw);
 
     // Set carry bit to the opposite of the negative bit
-    sr_union.C = (sr_union.N ? 0 : 1);
-    regfile[SR] = sr_union.us_sr_reg;
+    sr_union->C = (sr_union->N ? 0 : 1);
 
     std::cout << "\t\t\t\tEXECUTING AND_ (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 }

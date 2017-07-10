@@ -30,20 +30,22 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 extern std::ifstream fin;
 extern std::ifstream dev_fin;
 extern std::ofstream outfile;
+extern std::ofstream dev_outfile;
 extern uint8_t mem_array[MAX_MEM_SIZE];
 extern uint16_t s9_addr;
 
 extern uint16_t mdr;
-extern uint16_t cpu_clock;
+extern uint32_t cpu_clock;
 extern uint16_t regfile[16];
 extern uint32_t src;
 extern uint32_t dst;
 extern uint16_t offset;
 extern uint32_t result;
 extern bool emit_flag;
+extern bool temp_GIE_disable;
 extern uint16_t mode;
 extern uint32_t eff_address;
-
+extern uint16_t next_interrupt;
 
 enum BUS_CTRL {
     READ_W,
@@ -58,12 +60,6 @@ enum NAMED_REGISTERS {
     SR,
     CG1 = 2,
     CG2,
-    NEG_ONE = 16,  // Constant Generator Numbers
-    ZERO,
-    ONE,
-    TWO,
-    FOUR,
-    EIGHT
 };
 
 enum ADDR_MODE {
@@ -139,6 +135,7 @@ struct jump_overlay {
     };
 };
 
+// TO DO: Overlay this permanently
 struct sr_reg {
     union {
         struct {
@@ -162,7 +159,7 @@ struct sr_reg {
 struct scr_reg {
     uint8_t IE:1;
     uint8_t IO:1;
-    uint8_t DBC:1;
+    uint8_t DBA:1;
     uint8_t OF:1;
     uint8_t RESERVED:4;
 };
@@ -175,7 +172,12 @@ struct interrupt {
 
 struct device {
     uint16_t IO = 0;
+    uint16_t IO_data = 0;
+    // Following checks are only for OUTPUT devices only
     uint16_t process_time = 0;
+    uint16_t end_time = 0;;
+    bool output_active = false;
+    bool output_interrupt_pending = false;
 };
 
 extern device devices[16];          // Supports a maximum of 16 devices
@@ -183,7 +185,7 @@ extern interrupt interrupts[500];   // Supports a maximum of 500 simulated inter
 extern single_overlay single;
 extern jump_overlay jump;
 extern double_overlay dbl;
-extern sr_reg sr_union;
+extern sr_reg *sr_union;
 
 uint16_t load_s19();
 

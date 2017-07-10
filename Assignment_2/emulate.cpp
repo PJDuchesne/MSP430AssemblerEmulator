@@ -16,8 +16,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 -> Contact: pl332718@dal.ca
 */
 
-// TO DO: Move instructions to their own separate files
-
 #include <stdio.h>
 #include <inttypes.h>
 #include <iostream>
@@ -32,12 +30,13 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/single_inst.h"
 #include "Include/double_inst.h"
 #include "Include/debugger.h"
+#include "Include/devices.h"
 
 // Globals: Delcared extern in library.h
 
 uint16_t mdr  = 0;
 
-uint16_t cpu_clock = 0;
+uint32_t cpu_clock = 0;
 
 uint16_t regfile[16] = {};  // All initialized to 0
 
@@ -46,7 +45,10 @@ uint32_t dst = 0;  // Used in the case of single operand
 uint16_t offset = 0;  // Used for jump commands
 uint32_t result = 0;
 
+uint16_t next_interrupt = 0;
+
 bool emit_flag = true;
+bool temp_GIE_disable = false;
 
 uint16_t mode = 0;
 uint32_t eff_address = 0;
@@ -54,7 +56,7 @@ uint32_t eff_address = 0;
 single_overlay single;
 jump_overlay jump;
 double_overlay dbl;
-sr_reg sr_union;
+sr_reg *sr_union;
 
 void (*single_ptr[])(/* INPUTS HERE */) = {
     rrc,
@@ -87,44 +89,40 @@ void signalHandler(int signum) {
 }
 
 bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init) {
-    uint16_t next_interrupt = 0;
-
-    // Load devices into memory (Call function)
+    // Set up SR_REG (Maybe move this)
+    sr_union = (sr_reg *)&regfile[SR];
 
     debug_mode = debug_mode_;
 
     // Set starting point
     regfile[PC] = PC_init;
 
+    // Set up signal handler for the debugger
     std::signal(SIGINT, signalHandler); 
 
     while (!HCF) {
-        // Fetch
 
+        // Fetch
         std::cout << "\nFETCHING INST AT PC: " << std::hex << regfile[PC] << std::dec << " (Clock at " << cpu_clock << ")" << std::endl;
 
         bus(regfile[PC], mdr, READ_W);
 
         std::cout << "\tInst: >>" << std::hex << mdr << "<<" << std::dec << std::endl;
 
-        // Maybe move this
+        // Increment PC for the INST
         regfile[PC] += 2;
 
         // Decode & Execute
         decode_execute();
 
-        // TEMP
-        dump_mem();
-        sr_union.us_sr_reg = regfile[SR];  // Check if this is strictly necessary
-//         sr_union.GIE = 1;
+        // TEMP (Slows things down and dumps memory for debugging)
+       //  dump_mem();
+        //  sr_union->GIE = 1;
 
-        if (sr_union.GIE && (interrupts[next_interrupt].time <= cpu_clock)) {
-            std::cout << "\t\tLAYER 1\n";
-            if ((mem_array[(2*interrupts[next_interrupt].dev)]&1)) {
-                execute_interrupt(next_interrupt);
-                next_interrupt++;
-            }
-        }
+        update_device_statuses();
+
+        if (!temp_GIE_disable) check_for_interrupts();
+        else temp_GIE_disable = false;
     }
     system("aafire");
 
@@ -139,9 +137,6 @@ void decode_execute() {
     if (mdr == 0) HCF = true;
     else {
 
-        // Update SR_Union to have the currently contents of the SR
-        sr_union.us_sr_reg = regfile[SR];
-
         // Switch case on the 3 MSB of the opcode
         switch (mdr >> 13) {
             case SINGLE:   // SINGLE enumerated as 0
@@ -149,7 +144,7 @@ void decode_execute() {
 
                 // Double check extra characers
                 if ((single.opcode>>3) != 0b100) {
-                    std::cout << "[Emulate] INVALID ONE OPERAND COMMAND\n";
+                    std::cout << "[Emulate] INVALID ONE OPERAND COMMAND (>>" << std::hex << single.opcode << std::dec << "<<)\n";
                     exit(1);
                 }
 
@@ -170,7 +165,7 @@ void decode_execute() {
 
                 addressing_mode_fetcher(JUMP);
 
-                if (jmp_matrix[jump.opcode & 0x07][sr_union.Z][sr_union.N][sr_union.C][sr_union.V]) regfile[PC] += offset;
+                if (jmp_matrix[jump.opcode & 0x07][sr_union->Z][sr_union->N][sr_union->C][sr_union->V]) regfile[PC] += offset;
 
                 std::cout << "\tPC Updated to: >>" <<  std::hex << regfile[PC] << "<<" << std::endl;
 
@@ -282,17 +277,23 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
         case RELATIVE:
         case INDEXED:
             // Fetch the base address, store in mdr
-            bus(regfile[PC], mdr, (bw ? READ_B : READ_W));
+            // Relative address is a full word
+            bus(regfile[PC], mdr, READ_W);
+
+            // Set effective address to the location of the PC plus 
+            std::cout << "\t\t\tMDR (RELATIVE OFFSET): >>" << std::hex << mdr << std::dec << "<<" << std::endl;
+            eff_address = mdr + regfile[regnum];
 
             // Fetch the actual value, store in mdr
-            eff_address = mdr + regfile[regnum];
             bus(eff_address, mdr, (bw ? READ_B : READ_W));
+
             return_val = mdr;
             break;
 
         case ABSOLUTE:
             // Fetch the absolute address, store in mdr
-            bus(regfile[PC], mdr, (bw ? READ_B : READ_W));
+            // Absolute address is a full word
+            bus(regfile[PC], mdr, READ_W);
 
             eff_address = mdr;
 
@@ -305,9 +306,10 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
         case INDIRECT:
         case INDIRECT_AI:
             eff_address = regfile[regnum];
-            bus(eff_address, mdr, (bw ? READ_B : READ_W));
 
-            regfile[regnum] += (mode == INDIRECT_AI ? 2 : 0);
+            bus(eff_address, mdr, READ_W);
+
+            regfile[regnum] += (mode == INDIRECT_AI ? (bw ? 1 : 2) : 0);
             return_val = mdr;
 
             break;
@@ -339,19 +341,15 @@ void update_sr(bool bw) {
     // Global 'result' from last two operand
     std::cout << "\t\t\t\tUPDATING SR WITH RESULT: >>" << std::hex << result << "<<\n";
 
-    sr_union.us_sr_reg = regfile[SR];
+    sr_union->Z = 0;
+    sr_union->N = 0;
+    sr_union->C = 0;
+    sr_union->V = 0;
 
-    sr_union.Z = 0;
-    sr_union.N = 0;
-    sr_union.C = 0;
-    sr_union.V = 0;
-
-    if (!(result&(bw ? 0xff : 0xffff))) sr_union.Z = 1;
-    if (bw ? ((result & 0xff)>>7 ) : ((result & 0xffff)>>15 )) sr_union.N = 1;
-    if (bw ? ((result & 0x1ff)>>8) : ((result & 0x1ffff)>>16)) sr_union.C = 1;
-    // sr_union.V (Overflow) logic performed in ADD, ADDC, SUB, SUBC, and CMP
-
-    regfile[SR] = sr_union.us_sr_reg;
+    if (!(result&(bw ? 0xff : 0xffff))) sr_union->Z = 1;
+    if (bw ? ((result & 0xff)>>7 ) : ((result & 0xffff)>>15 )) sr_union->N = 1;
+    if (bw ? ((result & 0x1ff)>>8) : ((result & 0x1ffff)>>16)) sr_union->C = 1;
+    // sr_union->V (Overflow) logic performed in ADD, ADDC, SUB, SUBC, and CMP
 
     std::cout << "\t\t\t\tUPDATING SR TO: >>" << regfile[SR] << "<<\n" << std::dec;
 }
@@ -400,14 +398,17 @@ void put_operand(uint16_t asd, INST_TYPE type) {
             break;
     }
 
-    std::cout << "\t\t\t\t\t(Put Operand) ASD: " << asd << " | REGNUM: " << regnum << " | MODE: " << mode << std::endl;
+    std::cout << "\t\t\t\t\t(Put Operand) ASD: " << asd << " | REGNUM: " << regnum << " | MODE: " << mode << " | EFF_ADDRESS: 0x" << std::hex << eff_address << std::endl << std::dec;
 }
 
 // Note: Memory is little-endian (LSB goes in first memory location)
 void bus(uint16_t mar, uint16_t &mdr, int ctrl) {
+    // If the user attempts to access memory below 32,
+    // initiate the device memory access function
     if (mar <= 32) {
-	// DO DEVICE STUFF
-
+        // UNTESTED
+        std::cout << "\t\t\t\tDEVICE BUS BEING CALLED: " << mar << "\n";
+        device_bus(mar, mdr, ctrl);
     }
     else {
 	    switch (ctrl) {
@@ -442,12 +443,3 @@ void emulation_error(std::string error_msg) {
 	exit(1);
 }
 
-// TEMPORARY
-void execute_interrupt(uint16_t next_interrupt) {
-	std::cout << "\n\n\n\tDOING INTERRUPT #" << next_interrupt
-		<< "\n\tTIME " << interrupts[next_interrupt].time
-		<< "\n\tDEV  " << interrupts[next_interrupt].dev
-		<< "\n\tDATA " << interrupts[next_interrupt].data
-		<< "\n\n\n";
-	while(1);
-}
