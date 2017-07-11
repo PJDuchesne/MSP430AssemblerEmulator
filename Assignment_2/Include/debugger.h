@@ -22,5 +22,3 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 void debugger();
 
 #endif
-
-// TODO: If this is useless, delete it

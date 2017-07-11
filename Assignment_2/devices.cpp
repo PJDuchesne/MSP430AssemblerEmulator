@@ -9,9 +9,9 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
        _\/\\\__________\//\\\\\\\\\______\/\\\\\\\\\\\\/___
         _\///____________\/////////_______\////////////_____
 
--> Name:  emulate.cpp
--> Brief: Implementation for the emulate.cpp code that performs fetch, decode, and execute
--> Date: June 16, 2017    (Created)
+-> Name:  devices.cpp
+-> Brief: Implementation fdevices.cpp code that performs fetch, decode, and execute
+-> Date: July 3, 2017    (Created)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
@@ -28,14 +28,17 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/library.h"
 #include "Include/emulate.h"
 
-#define ASCII_ZERO 48
-#define ASCII_ONE 49
-#define MAX_DEVICES 16
-
-#define VECTOR_BASE 0xFFC0
-
 uint16_t interrupt_num = -1;
 
+/*
+    Function: load_devices
+    Brief: This function loads in the devices and sets their IO and DBA
+        bits accordingly in the SRD register. Certain device characteristics
+        are stored in the device structures within the devices[] array. Afterwards,
+        the interrupts are loaded into the interrupt structures within the
+        interrupts[] array. Both of these functionalities have basic error checking
+        to prevent STOI from crashing, as well as giving an invalid devices.txt file
+*/
 bool load_devices()
 {
     std::cout << "LOADING DEVICES (START)\n";
@@ -54,7 +57,7 @@ bool load_devices()
 
     bool dev = true;  // TRUE = Devices section, FALSE = Interrupts section
 
-    char* temp_crecord = new char[80];  // Max input length of 80 characters for a line, punch card width
+    char* temp_crecord = new char[PUNCH_CARD_WIDTH];  // Max input length of 80 characters for a line, punch card width
 
     while(!dev_fin.eof() && !end_flag) {
         std::getline(dev_fin, current_record);
@@ -183,7 +186,7 @@ bool load_devices()
     // STORE THE DEVICES IN MEMORY
     scr_reg *scr;
     for (int i = 0; i < MAX_DEVICES; i++) {
-        scr = (scr_reg *)&mem_array[i*2];    
+        scr = (scr_reg *)&mem_array[i*WORD];    
         scr->IO = devices[i].IO;
         scr->DBA = (scr->IO ? 0 : 1);  // Initialize DBA to opposite of IO bit
     }
@@ -191,7 +194,7 @@ bool load_devices()
     // SHOULD END HERE: REST IS DIAGNOSTICS
 
     // SET IE for ALL DEVICES BY DEFAULT (ASM SHOULD DO THIS)
-    for (int i = 0; i < MAX_DEVICES; i++) mem_array[i*2] += 1;
+    for (int i = 0; i < MAX_DEVICES; i++) mem_array[i*WORD] += 1;
 
     for (int i = 0; i < MAX_DEVICES; i++) {
         std::cout << "DEVICE #" << i << "\n"
@@ -211,19 +214,28 @@ bool load_devices()
     return true;
 }
 
+/*
+    Function: trigger_interrupt
+    Input:  dev_num: The number of the device to trigger an interrupt for 
+    Brief: This function triggers an interrupt on the given device by first
+        pushing the current program counter, then pushing the status register
+        to the stack. The status register is then cleared (Mainly to clear GIE)
+        before the program counter is updated to the ISR vector location for that
+        interrupt.
+*/
 void trigger_interrupt(uint16_t dev_num) {
     // DEBUG
     std::cout << "TRIGGER_INTERRUPT #" << dev_num << std::endl;
 
     // Push PC to stack
     std::cout << "PUSHING PC AS: " << std::hex << regfile[PC] << std::dec << std::endl;
-    regfile[SP] -= 2;
+    regfile[SP] -= WORD;
     mdr = regfile[PC];
     bus(regfile[SP], mdr, WRITE_W);
 
     // Push SR to stack
     std::cout << "PUSHING SR AS: " << std::hex << regfile[SR] << std::dec << std::endl;
-    regfile[SP] -= 2;
+    regfile[SP] -= WORD;
     mdr = regfile[SR];
     bus(regfile[SP], mdr, WRITE_W);
 
@@ -232,14 +244,27 @@ void trigger_interrupt(uint16_t dev_num) {
 
     // Put PC to location pointed to by vector table
 
-    bus((VECTOR_BASE + dev_num*2), mdr, READ_W);
+    bus((VECTOR_BASE + dev_num*WORD), mdr, READ_W);
 
     regfile[PC] = mdr;
     std::cout << "PC Updated to ISR at: " << std::hex << mdr << std::dec << std::endl;
 
-    cpu_clock += 6;
+    cpu_clock += INTERRUPT_CLOCK_INC;
 }
 
+/*
+    Function: update_device_statuses
+    Brief: This function first runs through all input interrupts to see if
+            any new interrupts have arrived since the last check. This check
+            goes until the next interrupt has not arrived yet, or there isn't
+            another interrupt. The DB and OF bits are set appropriately when
+            an interrupt arrives. Afterwards, the output devices are checked
+            to see if any have finished writing their output. If they are,
+            flags are set appropriately and actually outs the data to the
+            output file
+                -> NOTE: This function does NOT trigger or call interrupts,
+                    it simply updates statuses
+*/
 void update_device_statuses() {
     // Check if the next interrupt should have triggered
 
@@ -251,7 +276,7 @@ void update_device_statuses() {
         if (next_interrupt > interrupt_num) break;
 
         // Get the status register of that device
-        scr = (scr_reg *)&mem_array[(interrupts[next_interrupt].dev)*2];
+        scr = (scr_reg *)&mem_array[(interrupts[next_interrupt].dev)*WORD];
     
         // If DBA is already high, an overflow has occurred
         if (scr->DBA) scr->OF = 1;
@@ -261,19 +286,19 @@ void update_device_statuses() {
         scr->DBA = 1;
 
         // Set the data register with the interrupt data
-        mem_array[(interrupts[next_interrupt].dev)*2 + 1] = interrupts[next_interrupt].data;
+        mem_array[(interrupts[next_interrupt].dev)*WORD + 1] = interrupts[next_interrupt].data;
 
         // Iterate to the next interrupt
         next_interrupt++;
     }
     
     // DEAL WITH WITH PENDING WRITES
-    for (device_num = 0; device_num < 16; device_num++) {
+    for (device_num = 0; device_num < MAX_DEVICES; device_num++) {
         // std::cout << "CHECKING PENDING WRITES\n";
         // Output_active is only ever set on output devices, so no need to check if this device is input or output
         if (devices[device_num].output_active && cpu_clock >= devices[device_num].end_time) {
             // Get the status register of that device
-            scr = (scr_reg *)&mem_array[device_num*2];
+            scr = (scr_reg *)&mem_array[device_num*WORD];
 
             if (scr->IE) devices[device_num].output_interrupt_pending = true;
 
@@ -295,16 +320,22 @@ void update_device_statuses() {
     }
 }
 
-// Check for interrupts in a priority order
-
-// This is only done if GIE is set (MAYBE? TODO:)
+/*
+    Function: check_for_interrupts
+    Brief: This function checks all devices for their current interrupt
+            status. For Input devices, that means checking DBA and IE.
+            For output devices, the flag must be checked on the devices[]
+            structure. When an interrupt is found, it is immediately triggered
+            because the interrupts are searched in order of priority, from
+            0 to 15.
+*/
 void check_for_interrupts() {
     scr_reg *scr;
     
     if (!temp_GIE_disable) {
         if (sr_union->GIE) {
             for (int i = 0; i < MAX_DEVICES; i++) {
-                scr = (scr_reg *)&mem_array[i*2];
+                scr = (scr_reg *)&mem_array[i*WORD];
                 // First bracket:  If an input  device with DBA and IE set
                 // Second bracket: If an output device with an output interrupt pending
                 if (((scr->DBA && scr->IE && devices[i].IO))||(devices[i].output_interrupt_pending && scr->IE)) {
@@ -319,10 +350,20 @@ void check_for_interrupts() {
     else temp_GIE_disable = false;
 }
 
+/*
+    Function: device_bus
+    Brief: This function is similar to the normal bus() function, but
+            is called when the CPU is trying to access memory locations
+            that are memory mapped to devices, which are 0 to 31 in the
+            MSP-430. By using the MAR, the accessed device is found and
+            the scr_reg overlay is set up. Then all possible cases are
+            found through if statements and switch cases. See the comments
+            for explanations.
+*/
 void device_bus(uint16_t mar, uint16_t &mdr, int ctrl) {
 
-    uint16_t device_num = mar/2;  // Will round down on odd bits and still find the correct device
-    uint16_t scr_addr = device_num*2;
+    uint16_t device_num = mar/WORD;  // Will round down on odd bits and still find the correct device
+    uint16_t scr_addr = device_num*WORD;
     scr_reg *scr = (scr_reg *)&mem_array[scr_addr];
 
     std::cout << "DEVICE BUS: dev: " << device_num << " || mar: " << mar << " || scr_addr: " << scr_addr << "\n";
@@ -337,7 +378,7 @@ void device_bus(uint16_t mar, uint16_t &mdr, int ctrl) {
             case WRITE_W:
                 std::cout << "\t\t\t\tTHIS IS A WRITE_W\n";
                 // Write to SCR, but only IE bit is RW enabled. So only update that
-                scr->IE = (mdr&0x01);
+                scr->IE = (mdr&1);
                 break;
             default:  // READ_B and WRITE_B should not be called on devices
                 std::cout << "ERROR: READ_B and WRITE_B should not be called on device memory\n";
@@ -365,7 +406,7 @@ void device_bus(uint16_t mar, uint16_t &mdr, int ctrl) {
                 }
                 else scr->OF = 0;
                 
-                scr->DBA = 0;  // LOW indicates the device is actively outputting         CHECKED
+                scr->DBA = 0;  // LOW indicates the device is actively outputting
 
                 mem_array[mar] = mdr;
                 

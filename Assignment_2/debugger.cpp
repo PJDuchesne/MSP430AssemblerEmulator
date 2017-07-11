@@ -11,12 +11,10 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 -> Name:  debugger.cpp
 -> Brief: Implementation for the debugger.cpp code that performs fetch, decode, and execute
--> Date: June 16, 2017    (Created)
+-> Date: July 3, 2017    (Created)
 -> Author: Paul Duchesne (B00332119)
 -> Contact: pl332718@dal.ca
 */
-
-// TO DO: Move instructions to their own separate files
 
 #include <stdio.h>
 #include <inttypes.h>
@@ -31,17 +29,23 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/debugger.h"
 #include "Include/library.h"
 
+/*
+    Function: debugger
+    Brief: The debugger is used to make changes to the program at runtime. While the
+                debugger is active, the program will not continue running. The debugger
+                will remain active until the user chooses to end it. In total, the
+                debugger has 6 different options, which are explained in detail below
+                in the COUT code.
+*/
 void debugger() {
     std::string input;
     std::string input_temp;
     uint16_t str_len = 0;
     uint16_t hex_loc = 0;
     uint16_t hex_data = 0;
-    uint16_t dec_loc = 0;  // In decimal
+    uint16_t dec_loc = 0;
 
     std::cout << "\n\tDEBUG MODE ENTERED\n";
-
-    // TODO: DO PROPER STOI ERROR CHECKING
 
     while (1) {
         std::cout << "\n\tDEBUGGER MENU: Please enter command from below\n"
@@ -79,7 +83,7 @@ void debugger() {
 
                     // Parse location to read
                     input_temp = input.substr(1, 4);
-                    hex_loc = std::stoi(input_temp, nullptr, 16);
+                    hex_loc = std::stoi(input_temp, nullptr, HEX_BASE);
 
                     std::cout << std::hex << "\n\tMemory Location: >>" << hex_loc << "<< contains >>" << (uint16_t)mem_array[hex_loc] << std::dec << "<<\n";
 
@@ -92,17 +96,18 @@ void debugger() {
 
                     // Parse location to read
                     input_temp = input.substr(1, 4);
-                    hex_loc = std::stoi(input_temp, nullptr, 16);
+                    hex_loc = std::stoi(input_temp, nullptr, HEX_BASE);
 
                     // Parse the data to store
                     input_temp = input.substr(6, 2);
-                    hex_data = std::stoi(input_temp, nullptr, 16);
+                    hex_data = std::stoi(input_temp, nullptr, HEX_BASE);
 
                     mem_array[hex_loc] = hex_data;
 
                     std::cout << std::hex << "\n\tMemory Location: >>" << hex_loc << "<< updated to >>" << (uint16_t)mem_array[hex_loc] << std::dec << "<<\n";
                     break;
-                case 'R':
+                case 'R':  // Format: 'Rnn nnnn', total of 8 characters
+                    // Check if the right number of characters are entered
                     if (str_len != 8) {
                         std::cout << "\n\tPlease enter a valid input (Wrong length on R)\n";
                         continue;
@@ -110,12 +115,13 @@ void debugger() {
 
                     // Parse location to read
                     input_temp = input.substr(1, 2);
-                    dec_loc = std::stoi(input_temp, nullptr, 10);
+                    dec_loc = std::stoi(input_temp, nullptr, DEC_BASE);
 
                     // Parse the data to store
                     input_temp = input.substr(4, 4);
-                    hex_data = std::stoi(input_temp, nullptr, 16);
+                    hex_data = std::stoi(input_temp, nullptr, HEX_BASE);
 
+                    // Store data to location
                     regfile[dec_loc] = hex_data;
 
                     std::cout << "\n\tRegister Number: " << std::dec << dec_loc << " updated to >>" << std::hex << (uint16_t)regfile[dec_loc] << std::dec << "<<\n";
@@ -129,7 +135,7 @@ void debugger() {
 
                     break;
                 case 'C':
-                    return;
+                    return;  // Returns from debugger, returning control to the code
                     break;
                 default:
                     std::cout << "\n\tPlease enter a valid input\n";

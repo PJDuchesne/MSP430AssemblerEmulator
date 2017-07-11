@@ -27,54 +27,81 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/library.h"
 #include "Include/single_inst.h"
 
+/*
+    Function: rrc
+    Input: DST (Globally): Source and Destination Data
+    Output: Results: Results of the computation
+            SR_REG : Any Status Register updates that the operation caused
+    Brief: RRC rotates the input data 1 place to the right through carry. The
+            status bits are updated normally
+*/
 void rrc() {
     uint32_t even_dst = ((dst%2) ? dst - 1 : dst);
 
     std::cout << "RRC SR: >>" << std::hex << regfile[SR] << "<< || shift: >>" << even_dst << " | " << (even_dst >> 1) << "<<" << std::dec << "<<\n";
 
-    result = (even_dst >> 1) + ((regfile[SR]&0x1)<<(single.bw ? 7 : 15));
+    result = (even_dst >> 1) + ((regfile[SR]&1)<<(single.bw ? BYTE_N_REVEAL : WORD_N_REVEAL));
 
     update_sr(single.bw);
 
     // Set carry bit to LSB of dst
-    sr_union->C = (dst&0x0001) ? 1 : 0;
+    sr_union->C = (dst&1) ? 1 : 0;
 
     std::cout << "\t\t\t\tEXECUTING RRC (DST >>" << std::hex << dst << std::dec << "<<)\n";
 }
 
+/*
+    Function: swpb
+    Input: DST (Globally): Source and Destination Data
+    Output: Results: Results of the computation
+    Brief: SWPB swaps the bytes of the input, the status bits are not affected
+*/
 void swpb() {
-    if (!single.bw) result = (dst >> 8) + (dst << 8);
+    if (!single.bw) result = (dst >> BYTE_C_REVEAL) + (dst << BYTE_C_REVEAL);
     else emulation_error("(swpb) Byte attempted on Word only instruction");
 
     std::cout << "\t\t\t\tEXECUTING SWPB (DST >>" << std::hex << dst << std::dec << "<<)\n";
 }
 
+/*
+    Function: rra
+    Input: DST (Globally): Source and Destination Data
+    Output: Results: Results of the computation
+            SR_REG : Any Status Register updates that the operation caused
+    Brief: RRA rotates the input data 1 place to the right through carry. The
+            sign bit is also extended into itself instead of being rotated right.
+            The status bits are updated normally.
+*/
 void rra() {
-    // RRA sets the MSB to itself after shifting (TODO: FIX)
-    // uint32_t even_dst = ((dst%2) ? dst - 1 : dst);
-    result = (dst >> 1) + ((dst&(single.bw ? 0x0080 : 0x8000)));
+    result = (dst >> 1) + ((dst&(single.bw ? BT_N_CHECK : WD_N_CHECK)));
 
     std::cout << "\t\t\t\tRRA SHITED ONCE >>" << std::hex << (dst >> 1) << std::dec << "<<" << std::endl;
-    std::cout << "\t\t\t\tRRA MSB SET TO  >>" << std::hex << ((dst<<(single.bw ? 7 : 15))&0xff) << std::dec << "<<" << std::endl;
+    std::cout << "\t\t\t\tRRA MSB SET TO  >>" << std::hex << ((dst<<(single.bw ? BYTE_N_REVEAL : WORD_N_REVEAL))&BYTE_MAX) << std::dec << "<<" << std::endl;
 
     std::cout << "\t\t\t\tEXECUTING RRA (DST >>" << std::hex << dst << std::dec << "<<)\n";
 
     update_sr(single.bw);
 
-    // Set carry bit to the LSB of the unrotated value
-
     std::cout << "RRA CARRY SET TO: >>" << std::hex << regfile[SR] << std::dec << "<<\n";
 
-    // Set carry bit to LSB of dst
-    sr_union->C = (dst&0x0001) ? 1 : 0;
+    // Set carry bit to the LSB of the unrotated value
+    sr_union->C = (dst&1) ? 1 : 0;
 
     std::cout << "RRA SR: >>" << std::hex << regfile[SR] << std::dec << "<<\n";
 
     std::cout << "RRA RESULT IS >>" << std::hex << result << "<<" << std::dec << std::endl;
 }
 
+/*
+    Function: sxt
+    Input: DST (Globally): Source and Destination Data
+    Output: Results: Results of the computation
+            SR_REG : Any Status Register updates that the operation caused
+    Brief: SXT extends the sign of the input data by taking the 7th bit and storing
+            it in the 8-15th bit locations. The status bits are updated normally.
+*/
 void sxt() {
-    result = (dst & 0xff) + (((dst & 0xff) >> 7) ? 0xff00 : 0);
+    result = (dst & BYTE_MAX) + (((dst & BYTE_MAX) >> BYTE_N_REVEAL) ? BYTE_SIGN_EXTEND : 0);
 
     std::cout << "\t\t\t\tEXECUTING SXT (DST >>" << std::hex << dst << std::dec << "<<)\n";
 
@@ -84,23 +111,38 @@ void sxt() {
     sr_union->C = (sr_union->N ? 0 : 1);
 }
 
+/*
+    Function: push
+    Input: DST (Globally): Source and Destination Data
+    Output: Results: Results of the computation
+    Brief: PUSH takes the data value and pushes it to the stack. If it is a byte
+            instruction, it first sign extends it because the stack is 1 word wide.
+            The status registers are not affected.
+*/
 void push() {  // NO SR
     // If byte instruction, sign extend
     result = dst;
-    if (single.bw) result = (dst & 0xff) + (((dst & 0xff) >> 7) ? 0xff00 : 0);
+    if (single.bw) result = (dst & BYTE_MAX) + (((dst & BYTE_MAX) >> BYTE_N_REVEAL) ? BYTE_SIGN_EXTEND : 0);
 
     // Call bus directly due to special case
     mdr = result;
 
     std::cout << "\t\t\t\tEXECUTING PUSH (MDR >>" << std::hex << mdr << std::dec << "<<)\n";
 
-    regfile[SP] -= 2;
+    regfile[SP] -= WORD;
 
     bus(regfile[SP], mdr, WRITE_W);
 
     emit_flag = false;
 }
 
+/*
+    Function: call
+    Input: DST (Globally): Source and Destination Data
+    Output: Results: Results of the computation
+    Brief: CALL takes the data value and calls a function at that location.
+            The status registers are not affected.
+*/
 void call() {
     // Call bus directly due to special case
 
@@ -117,8 +159,18 @@ void call() {
     emit_flag = false;
 }
 
+/*
+    Function: reti
+    Input: DST (Globally): Source and Destination Data
+    Output: Results: Results of the computation
+    Brief: RETI returns from interrupt by popping the SR from the stack
+            and then popping the PC from the stack. It also temporarily
+            disables GIE for 1 fetch-decode-execute cycle in order to force
+            control of the code back to the machine for at least 1 command.
+            This is a design choice that prevents interrupt storms from being
+            a complete disaster.
+*/
 void reti() {
-    // Implement with stuff
     std::cout << "\t\t\t\tEXECUTING RETI (NO DST)\n";
 
     // Pop SR

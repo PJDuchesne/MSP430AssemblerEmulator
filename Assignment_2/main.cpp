@@ -30,16 +30,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/emulate.h"
 #include "Include/devices.h"
 
-#define DEVICE_MAX 16
-#define SIMULATED_INTERRUPT_MAX 500
-#define DEC_STOI_RANGE 5
-#define HEX_STOI_RANGE 4
-#define DEC_BASE 10
-#define HEX_BASE 16
-#define BYTE 1
-#define WORD 2
-
-
 // Globals
 std::ifstream fin;
 std::ifstream dev_fin;
@@ -48,20 +38,37 @@ std::ofstream dev_outfile;
 
 uint8_t mem_array[MAX_MEM_SIZE];
 
-device devices[DEVICE_MAX];
+// Variable used to keep track of debug mode
+bool debug_mode = true;
+
+device devices[MAX_DEVICES];
 interrupt interrupts[SIMULATED_INTERRUPT_MAX];
 
 // Local variable
 // PC init position, updated within the menu
 static uint16_t PC_init = 0;
 
+/*
+    Function: NAME
+    Input:  A: 
+            B: 
+            C: 
+    Output: X: 
+            Y: 
+            Z: 
+    Brief: <DESCRIPTION>
+*/
+
+/*
+    Function: Main
+    Input:  argc and *argc[]: Command line input number and associated array
+    Brief: Contains initilization setup for the emulator, as well as the
+            menu for the start the emulator with
+*/
 int main(int argc, char *argv[]) {
     
     dev_outfile.open("dev_out.txt");
     // dev_outfile.open("dev_out.txt", std::ios::out | std::ios::trunc);
-
-    // Variable used to keep track of debug mode
-    bool debug_mode = true;
 
     // Variables used for input parsing
     bool hex_flag = false;
@@ -100,11 +107,9 @@ int main(int argc, char *argv[]) {
 
                 if (!load_devices()) break;
 
-                if (!emulate(mem_array, debug_mode, PC_init)) {
+                if (!emulate(mem_array, PC_init)) {
                     std::cout << "EMULATION ERROR" << std::endl;
                 }
-
-
                 break;
 
             case 'S':   // Select start location 
@@ -130,7 +135,13 @@ int main(int argc, char *argv[]) {
     }
 }
 
-
+/*
+    Function: update_PC 
+    Input: input_temp: The user's inputted value to be processed
+    Output: PC_init (Globally): The inputted value converted from characters to hex
+    Brief: Converts the given input string using cstring, stoi, and some error checking.
+            The output is stored to the global PC_init value for later use
+*/
 void update_PC() {
     // Temporary variables used to parse the input
     std::string input_temp = "";

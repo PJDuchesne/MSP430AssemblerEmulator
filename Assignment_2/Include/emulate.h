@@ -23,7 +23,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 static bool HCF = false;
 
-static bool debug_mode;
 static bool debug_signal = false;
 
 static uint16_t addr_mode_PC_array[] = {0, 2, 2, 2, 0, 0, 2};
@@ -230,21 +229,19 @@ static bool jmp_matrix[8][2][2][2][2] = {
 
 void signalHandler(int signum);
 
-// Returns true/false to indicate error or not
-bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init);
+bool emulate(uint8_t *mem, uint16_t PC_init);
 
 void decode_execute();
 
-void addressing_mode_fetcher(int type);
+void addressing_mode_fetcher(INST_TYPE type);
 
-// uint16_t matrix_decoder(uint8_t asd, uint8_t regnum, bool bw);
 uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw);
 
 void update_sr(bool bw);
 
 void put_operand(uint16_t asd, INST_TYPE type);
 
-void bus(uint16_t mar, uint16_t &mdr, int ctrl);
+void bus(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl);
 
 void emulation_error(std::string error_msg);
 
