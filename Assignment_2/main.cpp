@@ -49,17 +49,6 @@ interrupt interrupts[SIMULATED_INTERRUPT_MAX];
 static uint16_t PC_init = 0;
 
 /*
-    Function: NAME
-    Input:  A: 
-            B: 
-            C: 
-    Output: X: 
-            Y: 
-            Z: 
-    Brief: <DESCRIPTION>
-*/
-
-/*
     Function: Main
     Input:  argc and *argc[]: Command line input number and associated array
     Brief: Contains initilization setup for the emulator, as well as the
@@ -107,7 +96,7 @@ int main(int argc, char *argv[]) {
 
                 if (!load_devices()) break;
 
-                if (!emulate(mem_array, PC_init)) {
+                if (!emulate(PC_init)) {
                     std::cout << "EMULATION ERROR" << std::endl;
                 }
                 break;

@@ -102,7 +102,7 @@ void signalHandler(int signum) {
         ends by deteching HCF. A number of errors or unique situations may
         also cause the program to cease.
 */
-bool emulate(uint8_t *mem, uint16_t PC_init) {
+bool emulate(uint16_t PC_init) {
 
     // Set up SR_REG union to be used throughout code
     sr_union = (sr_reg *)&regfile[SR];

@@ -229,7 +229,7 @@ static bool jmp_matrix[8][2][2][2][2] = {
 
 void signalHandler(int signum);
 
-bool emulate(uint8_t *mem, uint16_t PC_init);
+bool emulate(uint16_t PC_init);
 
 void decode_execute();
 
