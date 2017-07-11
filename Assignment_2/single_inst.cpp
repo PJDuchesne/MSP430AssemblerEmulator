@@ -38,7 +38,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 void rrc() {
     uint32_t even_dst = ((dst%2) ? dst - 1 : dst);
 
-    std::cout << "RRC SR: >>" << std::hex << regfile[SR] << "<< || shift: >>" << even_dst << " | " << (even_dst >> 1) << "<<" << std::dec << "<<\n";
+    if (debug_mode) std::cout << "RRC SR: >>" << std::hex << regfile[SR] << "<< || shift: >>" << even_dst << " | " << (even_dst >> 1) << "<<" << std::dec << "<<\n";
 
     result = (even_dst >> 1) + ((regfile[SR]&1)<<(single.bw ? BYTE_N_REVEAL : WORD_N_REVEAL));
 
@@ -47,7 +47,7 @@ void rrc() {
     // Set carry bit to LSB of dst
     sr_union->C = (dst&1) ? 1 : 0;
 
-    std::cout << "\t\t\t\tEXECUTING RRC (DST >>" << std::hex << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING RRC (DST >>" << std::hex << dst << std::dec << "<<)\n";
 }
 
 /*
@@ -60,7 +60,7 @@ void swpb() {
     if (!single.bw) result = (dst >> BYTE_C_REVEAL) + (dst << BYTE_C_REVEAL);
     else emulation_error("(swpb) Byte attempted on Word only instruction");
 
-    std::cout << "\t\t\t\tEXECUTING SWPB (DST >>" << std::hex << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING SWPB (DST >>" << std::hex << dst << std::dec << "<<)\n";
 }
 
 /*
@@ -75,21 +75,14 @@ void swpb() {
 void rra() {
     result = (dst >> 1) + ((dst&(single.bw ? BT_N_CHECK : WD_N_CHECK)));
 
-    std::cout << "\t\t\t\tRRA SHITED ONCE >>" << std::hex << (dst >> 1) << std::dec << "<<" << std::endl;
-    std::cout << "\t\t\t\tRRA MSB SET TO  >>" << std::hex << ((dst<<(single.bw ? BYTE_N_REVEAL : WORD_N_REVEAL))&BYTE_MAX) << std::dec << "<<" << std::endl;
-
-    std::cout << "\t\t\t\tEXECUTING RRA (DST >>" << std::hex << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING RRA (DST >>" << std::hex << dst << std::dec << "<<)\n";
 
     update_sr(single.bw);
-
-    std::cout << "RRA CARRY SET TO: >>" << std::hex << regfile[SR] << std::dec << "<<\n";
 
     // Set carry bit to the LSB of the unrotated value
     sr_union->C = (dst&1) ? 1 : 0;
 
-    std::cout << "RRA SR: >>" << std::hex << regfile[SR] << std::dec << "<<\n";
-
-    std::cout << "RRA RESULT IS >>" << std::hex << result << "<<" << std::dec << std::endl;
+    if (debug_mode) std::cout << "RRA RESULT IS >>" << std::hex << result << "<<" << std::dec << std::endl;
 }
 
 /*
@@ -103,7 +96,7 @@ void rra() {
 void sxt() {
     result = (dst & BYTE_MAX) + (((dst & BYTE_MAX) >> BYTE_N_REVEAL) ? BYTE_SIGN_EXTEND : 0);
 
-    std::cout << "\t\t\t\tEXECUTING SXT (DST >>" << std::hex << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING SXT (DST >>" << std::hex << dst << std::dec << "<<)\n";
 
     update_sr(single.bw);
 
@@ -127,7 +120,7 @@ void push() {  // NO SR
     // Call bus directly due to special case
     mdr = result;
 
-    std::cout << "\t\t\t\tEXECUTING PUSH (MDR >>" << std::hex << mdr << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING PUSH (MDR >>" << std::hex << mdr << std::dec << "<<)\n";
 
     regfile[SP] -= WORD;
 
@@ -146,7 +139,7 @@ void push() {  // NO SR
 void call() {
     // Call bus directly due to special case
 
-    std::cout << "\t\t\t\tEXECUTING CALL (DST >>" << std::hex << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING CALL (DST >>" << std::hex << dst << std::dec << "<<)\n";
 
     mdr = regfile[PC];
 
@@ -171,19 +164,19 @@ void call() {
             a complete disaster.
 */
 void reti() {
-    std::cout << "\t\t\t\tEXECUTING RETI (NO DST)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING RETI (NO DST)\n";
 
     // Pop SR
     bus(regfile[SP], mdr, READ_W);
     regfile[SP] += 2;   // Move SP to point to next position on stack
     regfile[SR] = mdr;
-    std::cout << "\t\t\t\tPOPPED SR AS: " << std::hex <<  regfile[SR] << std::dec << std::endl;
+    if (debug_mode) std::cout << "\t\t\t\tPOPPED SR AS: " << std::hex <<  regfile[SR] << std::dec << std::endl;
 
     // Pop PC
     bus(regfile[SP], mdr, READ_W);
     regfile[SP] += 2;   // Move SP to point to next position on stack
     regfile[PC] = mdr;
-    std::cout << "\t\t\t\tPOPPED PC AS: " << std::hex <<  regfile[PC] << std::dec << std::endl;
+    if (debug_mode) std::cout << "\t\t\t\tPOPPED PC AS: " << std::hex <<  regfile[PC] << std::dec << std::endl;
 
     temp_GIE_disable = true;
     emit_flag = false;

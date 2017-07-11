@@ -1,13 +1,11 @@
-; Made by Paul Duchesne (B00332119)
-; JUNE 27, 2017
-
-; TEST Two Arithmatic Operands
+; Author: Paul Duchesne (B00332119)
+; Date: JUNE 27, 2017
+; Name: Two Operand Arithmatic Commands
+; Purpose: Tests all two operand arithmatic operations
 
 ORG $1000
 
 MAIN    
-
-MOV     #$FF00,SP       ; Set stack pointer
 
 MOV     #$FF12,R4       ; R4 = 0xFF12
 MOV     #$0023,R5       ; Temp
@@ -28,13 +26,33 @@ SUB     R15,R10         ; R10 = 0xFDCC (CARRY BIT SET)
 MOV     #$1500,R11
 SUBC    R15,R11         ; R11 = 0x02CD
 MOV     #$1500,R12
-SUBC    R15,R12         ; R12 = 0x02CC (Same subtraction without carry)
+SUBC    R15,R12         ; R12 = 0x02CC (Same subtraction without carry bit set)
 MOV     #$5812,R13
 MOV     #$1344,R14
-DADC.b    R13,R14       ; R14 = 0x7156
+MOV     #$1344,R15
+DADC.b  R13,R14         ; R14 = 0x1356
+DADC.W  R13,R15         ; R15 = 0x7156
 
 ; CMP is tested in the SR test
 
-; TODO: DADD test
-
 END MAIN
+
+; TEST OUTPUT: (Blank Registers are irrelevant to the test)
+;  --> CPU Registers (Final values)
+;       R0:
+;       R1: 0
+;       R2: 0
+;       R3: 0
+;       R4: 0xFF12
+;       R5: 0xFF35
+;       R6: 0x0023
+;       R7: 0xFF50
+;       R8: 0xFF4f
+;       R9: 0x0000
+;      R10: 0xFDCC
+;      R11: 0x02CD
+;      R12: 0x02CC
+;      R13: 
+;      R14: 0x1356
+;      R15: 0x7156
+

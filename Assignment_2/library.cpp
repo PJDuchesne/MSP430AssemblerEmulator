@@ -62,8 +62,8 @@ uint16_t load_s19() {
         s1_pos = 0;
 
         calc_chksum  = cnt;                                 // This also resets calc_chksum
-        calc_chksum += address & LOWER_NIBBLE_MASK;        // Least significant 8 bits
-        calc_chksum += (address & UPPER_NIBBLE_MASK)>>BYTE_WIDTH;   // Most significant 8 bits
+        calc_chksum += address & LOWER_BYTE_MASK;        // Least significant 8 bits
+        calc_chksum += (address & UPPER_BYTE_MASK)>>BYTE_WIDTH;   // Most significant 8 bits
 
         while (s1_pos < cnt-3) {  // Count includes the address and count itself
             // Grab data at this point
@@ -84,7 +84,6 @@ uint16_t load_s19() {
             std::cout << "ERROR ON CHECKSUM >>" << std::hex
                     << (uint16_t)calc_chksum << "<< (< CALC) VS (GIVEN >) >>"
                     << (uint16_t)s1_chksum << "<<" << std::endl;
-            getchar();
             return 0;
         }  // Else checksum is correct
     }

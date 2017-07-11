@@ -58,8 +58,8 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 // single_inst.cpp and double_inst.cpp (Ish)
 #define BYTE_SIGN_EXTEND 0xff00
-#define UPPER_NIBBLE_MASK 0xff00
-#define LOWER_NIBBLE_MASK 0x00ff
+#define UPPER_BYTE_MASK 0xff00
+#define LOWER_BYTE_MASK 0x00ff
 #define WD_N_CHECK 0x8000
 #define BT_N_CHECK 0x0080
 #define DADD_NIBBLES 4
@@ -95,6 +95,7 @@ extern bool temp_GIE_disable;
 extern uint16_t mode;
 extern uint32_t eff_address;
 extern uint16_t next_interrupt;
+extern uint16_t interrupt_num;  // Max interrupt
 
 /* 
     BRIEF: These are used with the BUS to differentiate
@@ -198,7 +199,8 @@ struct jump_overlay {
 /* 
     BRIEF: This is used to permanently overlay the memory location of
         regfile[SR] in order to quickly access the specific bits within.
-        This greatly reduces code usage and aids in readability
+        This greatly reduces code usage and aids in readability.
+        --> Note: Some of these bitfields are not used in this assignment
 */
 struct sr_reg {
     union {
@@ -208,11 +210,11 @@ struct sr_reg {
             uint16_t N:1;
             uint16_t GIE:1;
             uint16_t C_OFF:1;
-            uint16_t O_OFF:1;
-            uint16_t SCG0:1;
-            uint16_t SCG1:1;
+            uint16_t O_OFF:1;       // Ignored for this assignment
+            uint16_t SCG0:1;        // Ignored for this assignment
+            uint16_t SCG1:1;        // Ignored for this assignment
             uint16_t V:1;
-            uint16_t Reserved:7;
+            uint16_t Reserved:7;    // Ignored for this assignment
         };
         uint16_t us_sr_reg;
     };
@@ -256,8 +258,8 @@ struct device {
 };
 
 // Global overlay values
-extern device devices[MAX_DEVICES];          // Supports a maximum of 16 devices
-extern interrupt interrupts[500];           // Supports a maximum of 500 simulated interrupts
+extern device devices[MAX_DEVICES];                      // Supports a maximum of 16 devices
+extern interrupt interrupts[SIMULATED_INTERRUPT_MAX];    // Supports a maximum of 500 simulated interrupts
 extern single_overlay single;
 extern jump_overlay jump;
 extern double_overlay dbl;

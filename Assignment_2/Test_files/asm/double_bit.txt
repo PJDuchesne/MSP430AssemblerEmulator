@@ -1,7 +1,8 @@
-; Made by Paul Duchesne (B00332119)
-; JUNE 27, 2017
-
-; TEST Two Bitwise Operands
+; Author: Paul Duchesne (B00332119)
+; Date: JUNE 27, 2017
+; Name: Two Operand Bitwise Instructions
+; Purpose: Tests all addressing modes sing all instructions,
+;           also tests the clock count by checking the final value
 
 ORG $1000
 
@@ -38,3 +39,24 @@ BIT     R4,R5           ; Result = 0xA123: Negative bit set (Which means carry b
 MOV     SR,R5           ; R5 = 0x0004
 
 END MAIN
+
+; TEST OUTPUT: (Blank Registers are irrelevant to the test)
+;  --> CPU Registers (Final values)
+;       R0: 
+;       R1: 
+;       R2: 
+;       R3: 
+;       R4: 
+;       R5: 0x0004
+;       R6: 0x0000
+;       R7: 0x91A3
+;       R8: 0x1982
+;       R9: 0x8101
+;      R10: 0x0004
+;      R11: 0x0412
+;      R12: 0x177E
+;      R13: 0xF05A
+;      R14: 0x2236
+;      R15: 
+;
+

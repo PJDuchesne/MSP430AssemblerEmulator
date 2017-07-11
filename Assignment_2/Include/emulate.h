@@ -9,7 +9,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
        _\/\\\__________\//\\\\\\\\\______\/\\\\\\\\\\\\/___
         _\///____________\/////////_______\////////////_____
 
--> Name:  emulate.h
+-> Name:  library.h
 -> Brief: header file for emulate code
 -> Date: June 16, 2017   (Created)
 -> Author: Paul Duchesne (B00332119)
@@ -25,10 +25,23 @@ static bool HCF = false;
 
 static bool debug_signal = false;
 
+// This is used to inrement the PC based on the addressing mode
+// found in the 'matrix_decoder'
 static uint16_t addr_mode_PC_array[] = {0, 2, 2, 2, 0, 0, 2};
 
-// TO CONVERT TO ENUM EVENTUALLY, BUT IT WORKS LIKE THIS
-// Note: 0xC# Denotes a constant
+/* 
+    Name: src_dst_matrix
+    Inputs: AS or AD: This is taken from the instruction itself
+            Regnum: This is the associated register with the AS or AD command
+    Output: The return value is the mode for the given input values
+    Brief: This table used in the 'matrix_decoder' to find
+            the addressing mode of either the SRC or DST
+            data given the current AS or AD and its corresponding
+            regnum. The constant generator is also built in
+            with the prefix 0xC to separate them from the rest
+            --> Note: These could used the enumerations defined for
+                ADDR_MODE, but that would bulk up the code. 
+*/
 static uint16_t src_dst_matrix[4][16] = {
     {0, 0, 0, 0xC0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {2, 1, 3, 0xC1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -36,9 +49,17 @@ static uint16_t src_dst_matrix[4][16] = {
     {6, 5, 0xC8, 0xCF, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5}
 };
 
-// Returns how many clock cycles a single operand INST should take
-// Takes: [INST CODE (0 through 6)][MODE]
-// From Table 3-15: Page 60 (Family Guide)
+/* 
+    Name: single_operand_clock
+    Inputs: Single_Opcode (&0x7): The 3 LSB of the current opcode
+            Mode: The addressing mode of that instruction
+    Output: The clock timing for that instruction and addressing mode combination
+    Brief: This table used to increment the clock cycles
+            of one operand instructions by entering the instruction
+            (Given by the LSB 3 bits of the opcode, numbers 0 through 6)
+            and the addressing mode. The times are taken from Table 3-15
+            on page 60 of the MSP-430 Family Guide
+*/
 static uint16_t single_op_clock[7][7] = {
     {1, 4, 4, 4, 3, 3, 0},
     {1, 4, 4, 4, 3, 3, 0},
@@ -49,9 +70,17 @@ static uint16_t single_op_clock[7][7] = {
     {5, 5, 5, 5, 5, 5, 5}
 };
 
-// Returns how many clock cycles a double operand INST should take
-// Takes: [SRC MODE][DST MODE]
-// From Table 3-16: Page 61 (Family Guide)
+/* 
+    Name: double_op_clock
+    Inputs: SRC Mode: The addressing mode of that instruction's DST data
+            DST Mode: The addressing mode of that instruction's DST data
+    Output: The clock timing for that double addressing mode combination
+    Brief: This table used to increment the clock cycles
+            of two operand instructions by entering the SRC
+            addressing mode, followed by the DST addressing
+            mode. The times are taken from Table 3-16 on page
+            61 of the MSP-430 Family Guide
+*/
 static uint16_t double_op_clock[7][4] = {
     {1, 4, 4, 4},
     {3, 6, 6, 6},
@@ -62,9 +91,18 @@ static uint16_t double_op_clock[7][4] = {
     {2, 5, 5, 5}
 };
 
-// ORDER: JUMP TYPE, ZERO, NEGATIVE, CARRY, OVERFLOW
-// 8 -> Types of jump, 2 -> Z, 2 -> N, 2 -> C, 2 -> V
-// See report for details of how this is mapped
+/* 
+    Name: jmp_matrix
+    Inputs: JMP_Opcode (&0x7): The jump instruction number
+            ZERO:       The zero bit from the status register
+            NEGATIVE:   The negative bit from the status register
+            CARRY:      The carry bit from the status register
+            OVERFLOW:   The overflow bit from the status register
+    Brief: This table is used to perform all jump commands by inputing
+            the specific jump (Based on the 3 LSB of the opcode), followed by
+            the status register bits in the oder: ZERO, NEGATIVE, CARRY,
+            and OVERFLOW. See the design report for a full truth table.
+*/
 static bool jmp_matrix[8][2][2][2][2] = {
     // JNE/JNZ -> Jump if Z = 0
     {  // 8 of these (1/5)

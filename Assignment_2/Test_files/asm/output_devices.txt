@@ -1,17 +1,23 @@
+; Author: Paul Duchesne (B00332119)
+; Date: JULY 10, 2017
+; Name: Priority WRITE output test
+; Purpose: Tests output devices using 4 different devices with different times,
+;           Each device has a specific data array to output with their interrupt,
+;           the first item is set going and the rest trigger
+
+
 ; PRIORITY WRITE OUTPUT
 
 ; Labels for Devices 0-3 SR and Buffer
 dev0reg  EQU $0000   ; Device 0s control register.
 dev0data EQU $0001   ; Data buffer for device 0 is at address 1.
-dev1reg  EQU $0002   ; Device 1s control register.
-dev1data EQU $0003   ; Data buffer for device 1 is at address 3.
-dev2reg  EQU $0004   ; Device 2s control register.
-dev2data EQU $0005   ; Data buffer for device 2 is at address 5.
-dev3reg  EQU $0006   ; Device 3s control register.
-dev3data EQU $0007   ; Data buffer for device 3 is at address 7.
+dev1reg  EQU $0002
+dev1data EQU $0003
+dev2reg  EQU $0004
+dev2data EQU $0005
+dev3reg  EQU $0006
+dev3data EQU $0007
 
-; NOT USED
-COFF     EQU $10     ; Bit to turn the CPU off could use this to replace the forever waiting loop.
 
 ; DATA ARRAYS
 org $4000
@@ -33,8 +39,8 @@ BIS #1,dev1reg;
 BIS #1,dev2reg;
 BIS #1,dev3reg;
 
-mov #$FFC0,SP            ; Set up stack pointer
-BIS  #8,SR               ; set GIE to enabled SR: xxxx xxxx xxxx 1xxx
+mov #$FFC0,SP            ; Set S{
+BIS  #8,SR               ; Set GIE
 
 ; Set up R10 through R13 with the locations of the data arrays
 mov #DeviceDataArray0,R10
@@ -47,12 +53,12 @@ mov.b @R11+,dev1data    ; Send first piece of data for RA
 mov.b @R12+,dev2data    ; Send first piece of data for RA
 mov.b @R13+,dev3data    ; Send first piece of data for RA
 
-done jmp done           ; loop doing nothing forever (USE COFF EVENTUALLY)
+forever jmp forever           ; Loop forever waiting for writes to finish
 
 ; DEVICE INTERRUPTS HERE
 org $3000
 ISRdev0
-mov.b dev0reg,R15       ; Acknowlege interrupt
+mov.b dev0data,R15
 cmp #$4008,R10          ; End of string
 jeq ISRdev0_end
 mov.b @R10+,dev0data    ; Set next char emitting
@@ -60,7 +66,7 @@ ISRdev0_end RETI
 
 org $3100
 ISRdev1
-mov.b dev1reg,R15       ; Acknowlege interrupt
+mov.b dev1data,R15
 cmp #$4028,R11          ; End of string?
 jeq ISRdev1_end
 mov.b @R11+,dev1data    ; Set new data going
@@ -68,7 +74,7 @@ ISRdev1_end RETI
 
 org $3200
 ISRdev2
-mov.b dev2reg,R15       ; Acknowlege interrupt
+mov.b dev2data,R15
 cmp #$4048,R12          ; End of string?
 jeq ISRdev2_end
 mov.b @R12+,dev2data    ; Set new data going
@@ -76,7 +82,7 @@ ISRdev2_end RETI
 
 org $3300
 ISRdev3
-mov.b dev3reg,R15       ; Acknowlege interrupt
+mov.b dev3data,R15
 cmp #$4068,R13          ; End of string?
 jeq ISRdev3_end
 mov.b @R13+,dev3data    ; Set new data going
@@ -91,3 +97,37 @@ WORD ISRdev3    ; Address of my ISR
 
 END START       ;For start address.
 
+; Example Devices.txt file: Must enable first 4 devices as output
+//
+0       25
+0       50
+0       75
+0       100
+
+INTERRUPTS
+
+END
+//
+
+; TEST OUTPUT:
+--> Will output to dev_out.txt starting with:
+
+Device: 0   Write Start:  37    Write End:    62    Overflow:    0  Data Written: A
+
+Device: 1   Write Start:  42    Write End:    92    Overflow:    0  Data Written: a
+
+Device: 0   Write Start:  80    Write End:    105   Overflow:    0  Data Written: B
+
+Device: 2   Write Start:  47    Write End:    122   Overflow:    0  Data Written: 1
+
+Device: 3   Write Start:  52    Write End:    152   Overflow:    0  Data Written: Z
+
+Device: 0   Write Start:  130   Write End:    155   Overflow:    0  Data Written: C
+
+Device: 1   Write Start:  110   Write End:    160   Overflow:    0  Data Written: b
+
+Device: 0   Write Start:  190   Write End:    215   Overflow:    0  Data Written: D
+
+Device: 2   Write Start:  150   Write End:    225   Overflow:    0  Data Written: 2
+
+... Many more lines

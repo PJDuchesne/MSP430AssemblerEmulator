@@ -1,41 +1,10 @@
-1		0
-1		0
-1		0
-1		0
-1		0
-1		0
-1		0
-1		0
+0		25
+0		50
+0		75
+0		100
 
 INTERRUPTS
 
 25		0		Z
-100		0		A
-100		1		B
-100		2		C
-100		3		D
-100		4		E
-100		5		F
-100		6		G
-100		7		H
-125		0		Y
-135		3		Y
-145		2		Y
-185		7		Y
-195		1		Y
-195		1		Y
-215		5		Y
 
 END
-
-
-
-
-Notes:
-
--> Organized into two sections
-1) Devices:
-	>>Input (1) or Output (0)<<   >>Processing Time<<
-
-2) Interrupts:
-	>>Interrupt Time<<		>>Device #<<		>>Input Data<<

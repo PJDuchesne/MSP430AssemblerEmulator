@@ -1,7 +1,9 @@
-; Made by Paul Duchesne (B00332119)
-; JULY 1, 2017
-
-; TEST MOV
+; Author: Paul Duchesne (B00332119)
+; Date: JUNE 10, 2017
+; Name: MOV Test
+; Purpose: Tests mov for different bases and addressing
+;       modes. This was an early test done to build other
+;       tests off of
 
 ORG	$1000
 
@@ -15,3 +17,24 @@ MOV 	#1234,R14		; R14 = 0x04d2
 MOV		#-50,R15		; R15 = 0xffce
 
 END	MAIN
+
+; TEST OUTPUT: (Blank Registers are irrelevant to the test)
+;  --> CPU Registers (Final values)
+;       R0: 
+;       R1: 
+;       R2: 
+;       R3: 
+;       R4: 
+;       R5:
+;       R6:
+;       R7:
+;       R8:
+;       R9:
+;      R10: 0x0100
+;      R11: 0x0200
+;      R12: 0xffff
+;      R13: 0x0100
+;      R14: 0x04d2
+;      R15: 0xffce
+;
+

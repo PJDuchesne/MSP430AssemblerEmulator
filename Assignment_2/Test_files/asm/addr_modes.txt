@@ -1,8 +1,8 @@
-; Made by Paul Duchesne (B00332119)
-; JUNE 27, 2017
-
-; TEST Addressing Modes and CLOCK
-; Using all instructions
+; Author: Paul Duchesne (B00332119)
+; Date: JUNE 27, 2017
+; Name: Addressing Modes and CLOCK TEST
+; Purpose: Tests all addressing modes using all instructions,
+;           also tests the clock count by checking the final value
 
             ORG   $1000
 
@@ -55,4 +55,24 @@ Start       MOV   #$1000,R15        ; R15 = 0x1000
 
 END         Start
 
-; CLOCK should  end at 82!
+; TEST OUTPUT: (Blank Registers are irrelevant to the test)
+;  --> CPU Registers (Final values)
+;       R0: 
+;       R1: 0
+;       R2: 0
+;       R3: 0
+;       R4: 0
+;       R5: 0x8B04
+;       R6: 0
+;       R7: 0
+;       R8: 0
+;       R9: 0x1234
+;      R10: 0x1234
+;      R11: 0x2000
+;      R12: 0x58D0
+;      R13: 0x68D0
+;      R14: 0x78D0
+;      R15: 0x1002
+;
+; CPU_CLOCK: 82
+

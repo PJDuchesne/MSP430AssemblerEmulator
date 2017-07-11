@@ -1,34 +1,36 @@
-; PRIORITY INPUT DEVICES
+; Author: Paul Duchesne (B00332119)
+; Date: JUNE 27, 2017
+; Name: Priority Input Devices
+; Purpose: Tests interrupts with priority mode active. With 7 devices
+;         it will be obvious when which one is called and executed.
+;         The test outputs the results of the interrupts in the order
+;         that the interrupt is services to a data array starting at
+;         memory location 4000
 
-; Labels for Devices 0-3 SR and Buffer
-dev0reg  EQU $0000   ; Device 0s control register.
-dev0data EQU $0001   ; Data buffer for device 0 is at address 1.
-dev1reg  EQU $0002   ; Device 1s control register.
-dev1data EQU $0003   ; Data buffer for device 1 is at address 3.
-dev2reg  EQU $0004   ; Device 2s control register.
-dev2data EQU $0005   ; Data buffer for device 2 is at address 5.
-dev3reg  EQU $0006   ; Device 3s control register.
-dev3data EQU $0007   ; Data buffer for device 3 is at address 7.
-dev4reg  EQU $0008   ; Device 4s control register.
-dev4data EQU $0009   ; Data buffer for device 4 is at address 9.
-dev5reg  EQU $000a   ; Device 5s control register.
-dev5data EQU $000b   ; Data buffer for device 5 is at address 11.
-dev6reg  EQU $000c   ; Device 6s control register.
-dev6data EQU $000d   ; Data buffer for device 6 is at address 13.
-dev7reg  EQU $000e   ; Device 7s control register.
-dev7data EQU $000f   ; Data buffer for device 7 is at address 15.
-
-; NOT USED
-COFF     EQU $10     ; Bit to turn the CPU off could use this to replace the forever waiting loop.
+; Labels for Devices 0-7 SR and Buffer
+dev0reg  EQU $0000   ; Control register for device 0
+dev0data EQU $0001   ; Data buffer for device 0
+dev1reg  EQU $0002
+dev1data EQU $0003
+dev2reg  EQU $0004
+dev2data EQU $0005
+dev3reg  EQU $0006
+dev3data EQU $0007
+dev4reg  EQU $0008
+dev4data EQU $0009
+dev5reg  EQU $000a
+dev5data EQU $000b
+dev6reg  EQU $000c
+dev6data EQU $000d
+dev7reg  EQU $000e
+dev7data EQU $000f
 
 ORG $4000 
-DeviceDataArray
+DeviceDataArray        ; Results data array start
 
 ; MAIN
 ORG $1000
 START 
-
-MOV SR,R8
 
 ; Enable interrupts on all devices
 BIS #1,dev0reg;
@@ -42,10 +44,10 @@ BIS #1,dev7reg;
 
 mov #DeviceDataArray,R15
 
-mov #$FFC0,SP            ; Set up stack pointer
-BIS  #8,SR               ; set GIE to enabled SR: xxxx xxxx xxxx 1xxx
+mov #$FFC0,SP                   ; Set up stack pointer
+BIS  #8,SR                      ; Set GIE
 
-forever jmp forever           ; loop doing nothing forever (USE COFF EVENTUALLY)
+forever jmp forever             ; Forever loop, waiting for interrupts
 
 ; DEVICE INTERRUPTS HERE
 org $3000
@@ -97,19 +99,19 @@ add #2,R15
 RETI
 
 ; insert ISR Vector address
-org $FFC0       ; Vector address for device 0.
+org $FFC0       ; Base address for interrupt vector
 WORD ISRdev0    ; Address of ISR_0 
-WORD ISRdev1    ; Address of ISR_1 
-WORD ISRdev2    ; Address of ISR_2 
-WORD ISRdev3    ; Address of ISR_3 
-WORD ISRdev4    ; Address of ISR_4 
-WORD ISRdev5    ; Address of ISR_5 
-WORD ISRdev6    ; Address of ISR_6 
-WORD ISRdev7    ; Address of ISR_7 
+WORD ISRdev1
+WORD ISRdev2
+WORD ISRdev3
+WORD ISRdev4
+WORD ISRdev5
+WORD ISRdev6
+WORD ISRdev7
 
 END START       ; For start address.
 
-; REQUIRED DEVICES.TXT FILE BELOW:
+; Example DEVICES.TXT File: (Between the '//' flags)
 //
 1		0
 1		0
@@ -141,3 +143,33 @@ INTERRUPTS
 
 END
 //
+
+; TEST OUTPUT: From mem.txt file
+;       This is the data array output int he order of the interrupt
+;       Notice that not all data made it, some overflow occurred
+
+4000    5a
+4001    00
+4002    41
+4003    00
+4004    42
+4005    00
+4006    59
+4007    00
+4008    59
+4009    00
+400a    59
+400b    00
+400c    45
+400d    00
+400e    59
+400f    00
+4010    46
+4011    00
+4012    59
+4013    00
+4014    47
+4015    00
+4016    59
+4017    00
+

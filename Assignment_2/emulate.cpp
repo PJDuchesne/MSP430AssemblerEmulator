@@ -35,23 +35,29 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 // Globals: Delcared extern in library.h
 uint16_t mdr  = 0;
 
+// CPU Clock used throughout the emulation
 uint32_t cpu_clock = 0;
 
-uint16_t regfile[16] = {};  // All initialized to 0
+// Regfile all initialized to 0
+uint16_t regfile[MAX_DEVICES] = {};  
 
-uint32_t src = 0;  // Not used in the case of single operand
-uint32_t dst = 0;  // Used in the case of single operand
-uint16_t offset = 0;  // Used for jump commands
-uint32_t result = 0;
+uint32_t src = 0;       // Not used in the case of single operand
+uint32_t dst = 0;       // Used in the case of single operand
+uint16_t offset = 0;    // Used for jump commands
+uint32_t result = 0;    // Used as result of instructions for put_operand call
 
-uint16_t next_interrupt = 0;
+uint16_t next_interrupt = 0;    // Value of next interrupt in interrupts[] array
 
-bool emit_flag = true;
-bool temp_GIE_disable = false;
+bool emit_flag = true;          // Emit flag used for instructions that do not emit
+bool temp_GIE_disable = false;  // Used to limit interrupt storm damage
 
+// Global mode used to remember what last mode access was
 uint16_t mode = 0;
+
+// Global eff_address used to remember what value the 
 uint32_t eff_address = 0;
 
+// Unions used to access instructions and registers
 single_overlay single;
 jump_overlay jump;
 double_overlay dbl;
@@ -91,7 +97,10 @@ void (*double_ptr[])() = {
 */
 void signalHandler(int signum) {
     if (debug_mode) debugger();
-    else exit(2);
+    else {
+         
+        exit(2);
+    }
 }
 
 /*
@@ -115,11 +124,11 @@ bool emulate(uint16_t PC_init) {
 
     while (!HCF) {
         // Fetch
-        std::cout << "\nFETCHING INST AT PC: " << std::hex << regfile[PC] << std::dec << " (Clock at " << cpu_clock << ")" << std::endl;
+        if (debug_mode) std::cout << "\nFETCHING INST AT PC: " << std::hex << regfile[PC] << std::dec << " (Clock at " << cpu_clock << ")" << std::endl;
 
         bus(regfile[PC], mdr, READ_W);
 
-        std::cout << "\tInst: >>" << std::hex << mdr << "<<" << std::dec << std::endl;
+        if (debug_mode) std::cout << "\tInst: >>" << std::hex << mdr << "<<" << std::dec << std::endl;
 
         // Increment PC for the INST
         regfile[PC] += WORD;
@@ -137,8 +146,7 @@ bool emulate(uint16_t PC_init) {
     dump_mem();
     dev_outfile.close();
 
-    system("aafire");
-
+    // Reset debug_mode flag for main menu
     debug_mode = false;
 
     return true;
@@ -166,11 +174,13 @@ void decode_execute() {
 
                 // Double check extra characers are correct
                 if ((single.opcode>>3) != 0b100) {
-                    std::cout << "[Emulate] INVALID ONE OPERAND COMMAND (>>" << std::hex << single.opcode << std::dec << "<<)\n";
+                    if (debug_mode) std::cout << "[Emulate] INVALID ONE OPERAND COMMAND (>>" << std::hex << single.opcode << std::dec << "<<)\n";
+                    dump_mem();
+                    dev_outfile.close();
                     exit(1);
                 }
 
-                std::cout << "\t\tFound SINGLE instruction: SINGLE.OPCODE >>" << (single.opcode & UNIQUE_OP_MASK) << "<<" << std::endl;
+                if (debug_mode) std::cout << "\t\tFound SINGLE instruction: SINGLE.OPCODE >>" << (single.opcode & UNIQUE_OP_MASK) << "<<" << std::endl;
 
                 // Fetches DST value for single operand
                 addressing_mode_fetcher(SINGLE);
@@ -185,7 +195,7 @@ void decode_execute() {
                 // Fill union for future use
                 jump.us_jump = mdr;
 
-                std::cout << "\t\tFound JUMP instruction: JUMP.OPCODE >>" << (jump.opcode & UNIQUE_OP_MASK) << "<<" << std::endl;
+                if (debug_mode) std::cout << "\t\tFound JUMP instruction: JUMP.OPCODE >>" << (jump.opcode & UNIQUE_OP_MASK) << "<<" << std::endl;
 
                 // Fetches offset value for jump inst
                 addressing_mode_fetcher(JUMP);
@@ -193,14 +203,14 @@ void decode_execute() {
                 // Execute jump command through lookup table
                 if (jmp_matrix[jump.opcode & UNIQUE_OP_MASK][sr_union->Z][sr_union->N][sr_union->C][sr_union->V]) regfile[PC] += offset;
 
-                std::cout << "\tPC Updated to: >>" <<  std::hex << regfile[PC] << "<<" << std::endl;
+                if (debug_mode) std::cout << "\tPC Updated to: >>" <<  std::hex << regfile[PC] << "<<" << std::endl;
 
                 break;
             default:  // TWO OPERAND
                 // Fill union for future use
                 dbl.us_double = mdr;
 
-                std::cout << "\t\tFound DOUBLE instruction: DBL.OPCODE >>" << dbl.opcode << "<<" << std::endl;
+                if (debug_mode) std::cout << "\t\tFound DOUBLE instruction: DBL.OPCODE >>" << dbl.opcode << "<<" << std::endl;
 
                 // Fetches SRC and DST values for double operand
                 addressing_mode_fetcher(DOUBLE);
@@ -256,19 +266,19 @@ void addressing_mode_fetcher(INST_TYPE type) {
             // Fetch initial offset from union
             offset = jump.offset;
 
-            std::cout << "\t\tOFFSET IS >>" << std::hex << offset << std::dec << "<<\n";
+            if (debug_mode) std::cout << "\t\tOFFSET IS >>" << std::hex << offset << std::dec << "<<\n";
 
             // Shift to the left by one
             offset <<= 1;
 
-            std::cout << "\t\tOFFSET IS >>" << std::hex << offset << std::dec << "<<\n";
+            if (debug_mode) std::cout << "\t\tOFFSET IS >>" << std::hex << offset << std::dec << "<<\n";
 
             // Perform sign extend by checking if it is greater than or equal to
             // the largest possible value
             if (offset >= NEG_JUMP_CHECK) offset += JUMP_SIGN_EXTEND;
             // Else, already positive, leave as is
 
-            std::cout << "\t\tOFFSET IS >>" << std::hex << offset << std::dec << "<<\n";
+            if (debug_mode) std::cout << "\t\tOFFSET IS >>" << std::hex << offset << std::dec << "<<\n";
 
             // Clock always updates by 2 for jump instructions
             cpu_clock += JUMP_CLOCK_INC;
@@ -284,8 +294,7 @@ void addressing_mode_fetcher(INST_TYPE type) {
             // Store the mode from the global 'mode' before it is overwritten by the dst mode
             src_mode = mode;
 
-            // If using the constant generator, pretend it's immediate
-            // TODO: Ask Dr Hughes about this?
+            // If using the constant generator, pretent it is immediate
             if (src_mode > IMMEDIATE) src_mode = IMMEDIATE;
 
             dst = matrix_decoder(dbl.ad, dbl.dst, dbl.bw);
@@ -296,6 +305,8 @@ void addressing_mode_fetcher(INST_TYPE type) {
                 
         default:
             std::cout << "[ADDR MODE FETCHER] THIS IS BROKEN\n";
+            dump_mem();
+            dev_outfile.close();
             exit(1);
             break;
     }
@@ -317,11 +328,11 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
     uint32_t return_val = 0;
     mode = src_dst_matrix[asd][regnum];
 
-    std::cout << "\t\t\t(Matrix Decoder) ASD >>" << asd << "<< | REGNUM >>" << regnum << "<< | BW >>" << bw << "<< | MODE >>" << mode << "<<\n"; 
+    if (debug_mode) std::cout << "\t\t\t(Matrix Decoder) ASD >>" << asd << "<< | REGNUM >>" << regnum << "<< | BW >>" << bw << "<< | MODE >>" << mode << "<<\n"; 
 
     switch (mode) {
         case REG_DIRECT:
-            return_val = regfile[regnum];
+            return_val = (regfile[regnum])&(bw ? 0xff : 0xffff);
             break;
 
         // Relative is simply indexed addressing mode with the PC as the register
@@ -333,7 +344,7 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
             bus(regfile[PC], mdr, READ_W);
 
             // Set effective address to the location of the PC plus 
-            std::cout << "\t\t\tMDR (RELATIVE OFFSET): >>" << std::hex << mdr << std::dec << "<<" << std::endl;
+            if (debug_mode) std::cout << "\t\t\tMDR (RELATIVE OFFSET): >>" << std::hex << mdr << std::dec << "<<" << std::endl;
             eff_address = mdr + regfile[regnum];
 
             // Fetch the actual value, store in mdr
@@ -390,7 +401,7 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
     // the constant generator
     if (mode <= IMMEDIATE) regfile[PC] += addr_mode_PC_array[mode];
 
-    std::cout << "\t\t\t(Matrix Decoder) READ VALUE: >>" << std::hex << return_val << std::dec << "<<\n";
+    if (debug_mode) std::cout << "\t\t\t(Matrix Decoder) READ VALUE: >>" << std::hex << return_val << std::dec << "<<\n";
 
     return return_val;
 }
@@ -405,7 +416,7 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
 */
 void update_sr(bool bw) {
     // Global 'result' from last instruction
-    std::cout << "\t\t\t\tUPDATING SR WITH RESULT: >>" << std::hex << result << "<<\n";
+    if (debug_mode) std::cout << "\t\t\t\tUPDATING SR WITH RESULT: >>" << std::hex << result << "<<\n";
 
     // First clear all values
     sr_union->Z = 0;
@@ -426,7 +437,7 @@ void update_sr(bool bw) {
 
     // Set OVERFLOW flag through the logic performed in ADD, ADDC, SUB, SUBC, CMP, and XOR_
 
-    std::cout << "\t\t\t\tUPDATING SR TO: >>" << regfile[SR] << "<<\n" << std::dec;
+    if (debug_mode) std::cout << "\t\t\t\tUPDATING SR TO: >>" << regfile[SR] << "<<\n" << std::dec;
 }
 
 /*
@@ -438,20 +449,20 @@ void update_sr(bool bw) {
             DOUBLE) also determines the valid addressing modes.
 */
 void put_operand(uint16_t asd, INST_TYPE type) {
+    // Set Regnum and BW based on given type
     uint16_t regnum = (type == SINGLE) ? single.reg : dbl.dst;
     uint16_t bw = (type == SINGLE) ? single.bw : dbl.bw;
 
-    // mode should be set already (DST was called last in both SINGLE and DOUBLE): TODO: TEST THIS
-    // Maybe remove this
-    mode = src_dst_matrix[asd][regnum];
-
+    // Cast result down to a uint16_t (from uint32_t)
     mdr = static_cast<uint16_t>(result);
 
-    std::cout << "\t\t\t\tOPERATION RESULT IS: >>" << std::hex << mdr << std::dec << "<< (REGNUM: " << regnum << " || REGNUM: " << regnum << ")\n";
+    if (debug_mode) std::cout << "\t\t\t\tOPERATION RESULT IS: >>" << std::hex << mdr << std::dec << "<< (REGNUM: " << regnum << " || REGNUM: " << regnum << ")\n";
 
     switch (mode) {
         case REG_DIRECT:
-            regfile[regnum] = result;
+            // In the event of a byte instruction, keep the most significant byte
+            regfile[regnum] = (bw ? ((regfile[regnum]&0xff00) + (result&0xff)) : result);
+
             break;
 
         // All 3 of these modes simply return to the effective address
@@ -480,7 +491,7 @@ void put_operand(uint16_t asd, INST_TYPE type) {
             emulation_error("(Put Operand) Invalid Constant Generator dst");
             break;
     }
-    std::cout << "\t\t\t\t\t(Put Operand) ASD: " << asd << " | REGNUM: " << regnum << " | MODE: " << mode << " | EFF_ADDRESS: 0x" << std::hex << eff_address << std::endl << std::dec;
+    if (debug_mode) std::cout << "\t\t\t\t\t(Put Operand) ASD: " << asd << " | REGNUM: " << regnum << " | MODE: " << mode << " | EFF_ADDRESS: 0x" << std::hex << eff_address << std::endl << std::dec;
 }
 
 /*
@@ -499,7 +510,7 @@ void bus(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl) {
     // If the user attempts to access memory below 32,
     // initiate the device memory access function
     if (mar <= DEVICE_MEM_MAX) {
-        std::cout << "\t\t\t\tDEVICE BUS BEING CALLED: " << mar << "\n";
+        if (debug_mode) std::cout << "\t\t\t\tDEVICE BUS BEING CALLED: " << mar << "\n";
         device_bus(mar, mdr, ctrl);
     }
     else {
@@ -523,6 +534,8 @@ void bus(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl) {
                 break;
             default:
                 std::cout << "[BUS] INVALID BUS INPUT - ENDING" << std::endl;
+                dump_mem();
+                dev_outfile.close();
                 exit(1);
                 break;
         }
@@ -537,6 +550,8 @@ void bus(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl) {
 */
 void emulation_error(std::string error_msg) {
     std::cout << "[EMULATION ERROR] - " << error_msg << std::endl;
+    dump_mem();
+    dev_outfile.close();
     exit(1);
 }
 

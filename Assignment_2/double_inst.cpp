@@ -50,7 +50,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 void mov() {
     result = src;
 
-    std::cout << "\t\t\t\tEXECUTING MOV (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING MOV (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 }
 
 /*
@@ -67,7 +67,7 @@ void add() {
     result = src + dst;
     update_sr(dbl.bw);
 
-    std::cout << "\t\t\t\tEXECUTING ADD (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING ADD (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 
     // If SRC and DST have the same sign, and the result has the opposite sign. Set the overflow bit
     // Note: Overflow bit was reset in update_sr (No need to reset it again)
@@ -89,7 +89,7 @@ void add() {
 void addc() {
     result = src + dst + sr_union->C;
     update_sr(dbl.bw);
-    std::cout << "\t\t\t\tEXECUTING ADDC (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING ADDC (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 
     // If SRC and DST have the same sign, and the result has the opposite sign. Set the overflow bit
     // Note: Overflow bit was reset in update_sr (No need to reset it again)
@@ -111,11 +111,11 @@ void addc() {
 void subc() {
     result = dst + ~src + 1 + sr_union->C;
     update_sr(dbl.bw);
-    std::cout << "\t\t\t\tEXECUTING SUBC (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING SUBC (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 
-    // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
+    // If SRC and DST have opposite signs, and the result has the same sign as the source. Set the overflow bit
     // Note: Overflow bit was reset in update_sr (No need to reset it again)
-    if ((get_sign(src)&&!get_sign(dst))&&(!get_sign(result))||((!get_sign(src)&&get_sign(dst))&&(get_sign(result)))) {
+    if ((get_sign(src)&&!get_sign(dst))&&(get_sign(result))||((!get_sign(src)&&get_sign(dst))&&(!get_sign(result)))) {
         sr_union->V = 1;
     }
 }
@@ -133,11 +133,11 @@ void subc() {
 void sub() {
     result = dst + ~src + 1;
     update_sr(dbl.bw);
-    std::cout << "\t\t\t\tEXECUTING SUB (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING SUB (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 
-    // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
+    // If SRC and DST have opposite signs, and the result has the same sign as the source. Set the overflow bit
     // Note: Overflow bit was reset in update_sr (No need to reset it again)
-    if ((get_sign(src)&&!get_sign(dst))&&(!get_sign(result))||((!get_sign(src)&&get_sign(dst))&&(get_sign(result)))) {
+    if ((get_sign(src)&&!get_sign(dst))&&(get_sign(result))||((!get_sign(src)&&get_sign(dst))&&(!get_sign(result)))) {
         sr_union->V = 1;
     }
 }
@@ -157,15 +157,15 @@ void cmp() {  // NO EMIT
 
     emit_flag = false;
     update_sr(dbl.bw);
-    std::cout << "\t\t\t\tEXECUTING CMP (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING CMP (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 
-    // If SRC and DST have opposite signs, and the result has the same sign as the destination. Set the overflow bit
+    // If SRC and DST have opposite signs, and the result has the same sign as the source. Set the overflow bit
     // Note: Overflow bit was reset in update_sr (No need to reset it again)
-    if ((get_sign(src)&&!get_sign(dst))&&(!get_sign(result))||((!get_sign(src)&&get_sign(dst))&&(get_sign(result)))) {
+    if ((get_sign(src)&&!get_sign(dst))&&(get_sign(result))||((!get_sign(src)&&get_sign(dst))&&(!get_sign(result)))) {
         sr_union->V = 1;
     }
 
-    std::cout << "\t\t\t\tOPERATION RESULT IS: >>" << std::hex << result << std::dec << "<<\n";
+    if (debug_mode) std::cout << "\t\t\t\tOPERATION RESULT IS: >>" << std::hex << result << std::dec << "<<\n";
 }
 
 /*
@@ -202,7 +202,7 @@ void dadd() {
         dst = dst>>NIBBLE_WIDTH;
     }
 
-    std::cout << "\t\t\t\tEXECUTING DADD (SRC >>" << std::hex << (result&(dbl.bw ? DADD_BT_C_CHECK : DADD_WD_C_CHECK)) << "<< || DST: >>" << dst << "<< || RESULT: >>" << result << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING DADD (SRC >>" << std::hex << (result&(dbl.bw ? DADD_BT_C_CHECK : DADD_WD_C_CHECK)) << "<< || DST: >>" << dst << "<< || RESULT: >>" << result << std::dec << "<<)\n";
 
     update_sr(dbl.bw);
 
@@ -224,12 +224,12 @@ void bit() {  // NO EMIT
 
     emit_flag = false;
     update_sr(dbl.bw);
-    std::cout << "\t\t\t\tEXECUTING BIT (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING BIT (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 
     // Set carry bit to the opposite of the negative bit
     sr_union->C = (sr_union->N ? 0 : 1);
 
-    std::cout << "\t\t\t\tOPERATION RESULT IS: >>" << std::hex << result << std::dec << "<<\n";
+    if (debug_mode) std::cout << "\t\t\t\tOPERATION RESULT IS: >>" << std::hex << result << std::dec << "<<\n";
 }
 
 /*
@@ -242,7 +242,7 @@ void bit() {  // NO EMIT
 */
 void bic() {
     result = dst & ~src;
-    std::cout << "\t\t\t\tEXECUTING BIC (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING BIC (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 }
 
 /*
@@ -255,7 +255,7 @@ void bic() {
 */
 void bis() {
     result = dst | src;
-    std::cout << "\t\t\t\tEXECUTING BIS (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING BIS (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 }
 
 /*
@@ -279,7 +279,7 @@ void xor_() {
     sr_union->V = (src >= (dbl.bw ? BT_N_CHECK : WD_N_CHECK) && dst >= (dbl.bw ? BT_N_CHECK : WD_N_CHECK)) ? 1 : 0;
 
 
-    std::cout << "\t\t\t\tEXECUTING XOR_ (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING XOR_ (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 }
 
 /*
@@ -298,5 +298,5 @@ void and_() {
     // Set carry bit to the opposite of the negative bit
     sr_union->C = (sr_union->N ? 0 : 1);
 
-    std::cout << "\t\t\t\tEXECUTING AND_ (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+    if (debug_mode) std::cout << "\t\t\t\tEXECUTING AND_ (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
 }

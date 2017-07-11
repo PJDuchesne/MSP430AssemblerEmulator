@@ -117,7 +117,6 @@ int main(int argc, char *argv[]) {
 
             case 'Q':   // Quit
             case 'q':
-                system("aafire");
                 exit(0);
                 break;
         }
