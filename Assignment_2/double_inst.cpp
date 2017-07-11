@@ -105,16 +105,33 @@ void cmp() {  // NO EMIT
 void dadd() {
     // TODO: FINISH
 
-    uint16_t dec_src = (src>>4)*10 + (src&0x0f);
-    uint16_t dec_dst = (dst>>4)*10 + (dst&0x0f);
-    std::cout << "\t\t\t\tEXECUTING DADD (SRC >>" << std::hex << src << "<< || DST: >>" << dst << std::dec << "<<)\n";
+    uint16_t src_nib, dst_nib;
+    uint32_t dec_result;
+    bool carry = false;
 
-    // Each nibble of the byte corresponds to a digit in the final answer
-    // Must convert from binary to deciaml before doing arithmatic and convert back when finished
+    result = 0;
+
+    for (int i = 0; i < 4; i++) {  // 4 = Nibble count
+        dec_result = (src&0x000f) + (dst&0x000f) + carry;
+
+        if (dec_result >= 10) {
+            carry = true;
+            dec_result -= 10;
+        }
+        else carry = false;
+
+        result += dec_result<<(i*4);
+
+        src = src>>4;
+        dst = dst>>4;
+    }
+
+    std::cout << "\t\t\t\tEXECUTING DADD (SRC >>" << std::hex << (result&(dbl.bw ? 0x1000 : 0x10000)) << "<< || DST: >>" << dst << "<< || RESULT: >>" << result << std::dec << "<<)\n";
 
     update_sr(dbl.bw);
 
-    // Set carry flag if the result is greater than 9999 (W) or 99 (B)
+    // // Set carry flag if the result is greater than 9999 (W) or 99 (B)
+    sr_union->C = ((result&(dbl.bw ? 0x1000 : 0x10000)) ? true : false);
 }
 
 void bit() {  // NO EMIT

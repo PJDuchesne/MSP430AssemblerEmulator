@@ -16,8 +16,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 -> Contact: pl332718@dal.ca
 */
 
-// TO DO: Move instructions to their own separate files
-
 #include <stdio.h>
 #include <inttypes.h>
 #include <iostream>
@@ -36,6 +34,8 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 #define VECTOR_BASE 0xFFC0
 
+uint16_t interrupt_num = -1;
+
 bool load_devices()
 {
     std::cout << "LOADING DEVICES (START)\n";
@@ -45,7 +45,6 @@ bool load_devices()
 
     uint16_t line_num = -1;
     uint16_t device_num = -1;
-    uint16_t interrupt_num = -1;
 
     uint16_t interrupt_check = 0;
 
@@ -187,10 +186,6 @@ bool load_devices()
         scr = (scr_reg *)&mem_array[i*2];    
         scr->IO = devices[i].IO;
         scr->DBA = (scr->IO ? 0 : 1);  // Initialize DBA to opposite of IO bit
-
-        std::cout << "DBA INITIALIZED TO: " << (uint16_t)scr->DBA << std::endl;
-
-        // scr->OF = 0; // NOT NEEDED
     }
 
     // SHOULD END HERE: REST IS DIAGNOSTICS
@@ -213,7 +208,7 @@ bool load_devices()
                 << "\tData: >>" << std::hex << interrupts[i].data << std::dec << "<<\n";
     }
 
-    dump_mem();
+    return true;
 }
 
 void trigger_interrupt(uint16_t dev_num) {
@@ -232,14 +227,12 @@ void trigger_interrupt(uint16_t dev_num) {
     mdr = regfile[SR];
     bus(regfile[SP], mdr, WRITE_W);
 
-    regfile[SR] = 0;
-
     // Clear SR to disable interrupts
     regfile[SR] = 0;
 
     // Put PC to location pointed to by vector table
 
-    bus((VECTOR_BASE +dev_num*2), mdr, READ_W);
+    bus((VECTOR_BASE + dev_num*2), mdr, READ_W);
 
     regfile[PC] = mdr;
     std::cout << "PC Updated to ISR at: " << std::hex << mdr << std::dec << std::endl;
@@ -254,7 +247,8 @@ void update_device_statuses() {
     uint16_t device_num;
 
     // DEAL WITH PENDING INPUT INTERRUPTS
-    if (interrupts[next_interrupt].time <= cpu_clock) {
+    while (interrupts[next_interrupt].time <= cpu_clock) {
+        if (next_interrupt > interrupt_num) break;
 
         // Get the status register of that device
         scr = (scr_reg *)&mem_array[(interrupts[next_interrupt].dev)*2];
@@ -269,15 +263,10 @@ void update_device_statuses() {
         // Set the data register with the interrupt data
         mem_array[(interrupts[next_interrupt].dev)*2 + 1] = interrupts[next_interrupt].data;
 
-        // Cause the interrupt if GIE and dev.IE is set
-        if (sr_union->GIE && scr->IE) trigger_interrupt(interrupts[next_interrupt].dev);
-    
         // Iterate to the next interrupt
         next_interrupt++;
     }
-
-
-
+    
     // DEAL WITH WITH PENDING WRITES
     for (device_num = 0; device_num < 16; device_num++) {
         // std::cout << "CHECKING PENDING WRITES\n";
@@ -304,41 +293,39 @@ void update_device_statuses() {
             devices[device_num].end_time = 0;
         }
     }
-
-    // DEBUGGING
-    std::cout << "CPU CLOCK: " << std::dec << cpu_clock << std::endl;
-    for (int i = 0; i < 4; i++) {
-        std::cout << "DEVICE #" << std::dec << i << ": OA: " << devices[i].output_active << " || End: " << devices[i].end_time << " || IP: " << devices[i].output_interrupt_pending << std::endl;
-        
-    }
-
 }
 
 // Check for interrupts in a priority order
 
 // This is only done if GIE is set (MAYBE? TODO:)
 void check_for_interrupts() {
-    scr_reg *scr;  // First SCR for device 0 is at memory location 0
+    scr_reg *scr;
     
-    // scr_reg has a size of uint16_t, which means iterating to the next SRC down is
-    for (int i = 0; i < MAX_DEVICES; i++) {
-        scr = (scr_reg *)&mem_array[i*2];
-        // First bracket: If an input device with DBA and IE set
-        // Second bracket: If an output device with an output interrupt pending
-        if (((scr->DBA && scr->IE && devices[i].IO))||(devices[i].output_interrupt_pending)) {
-            trigger_interrupt(i);
-            // If this was an OUTPUT interrupt, set the pending status to false
-            devices[i].output_interrupt_pending = false;
-            break;  // Execute interrupt, stop checking the rest
+    if (!temp_GIE_disable) {
+        if (sr_union->GIE) {
+            for (int i = 0; i < MAX_DEVICES; i++) {
+                scr = (scr_reg *)&mem_array[i*2];
+                // First bracket:  If an input  device with DBA and IE set
+                // Second bracket: If an output device with an output interrupt pending
+                if (((scr->DBA && scr->IE && devices[i].IO))||(devices[i].output_interrupt_pending && scr->IE)) {
+                    trigger_interrupt(i);
+                    // If this was an outPUT interrupt, set the pending status to false
+                    devices[i].output_interrupt_pending = false;
+                    break;  // Execute interrupt, stop checking the rest
+                }  
+            }
         }
-        
-    } 
+    }
+    else temp_GIE_disable = false;
 }
 
 void device_bus(uint16_t mar, uint16_t &mdr, int ctrl) {
+
     uint16_t device_num = mar/2;  // Will round down on odd bits and still find the correct device
     uint16_t scr_addr = device_num*2;
     scr_reg *scr = (scr_reg *)&mem_array[scr_addr];
+
+    std::cout << "DEVICE BUS: dev: " << device_num << " || mar: " << mar << " || scr_addr: " << scr_addr << "\n";
 
     if (scr_addr == mar) {  // Therefore is the scr register
         std::cout << "\t\t\t\tTHIS IS A SRC REG ACCESS\n";
@@ -350,7 +337,7 @@ void device_bus(uint16_t mar, uint16_t &mdr, int ctrl) {
             case WRITE_W:
                 std::cout << "\t\t\t\tTHIS IS A WRITE_W\n";
                 // Write to SCR, but only IE bit is RW enabled. So only update that
-                scr->IE = mdr&0x01;
+                scr->IE = (mdr&0x01);
                 break;
             default:  // READ_B and WRITE_B should not be called on devices
                 std::cout << "ERROR: READ_B and WRITE_B should not be called on device memory\n";
@@ -361,9 +348,10 @@ void device_bus(uint16_t mar, uint16_t &mdr, int ctrl) {
         std::cout << "\t\t\t\tTHIS IS A DATA REGISTER ACCESS\n";
         if (scr->IO) {  // Device is an INPUT
             std::cout << "\t\t\t\tTHIS IS AN INPUT DEVICE\n";
-            if (ctrl == READ_W) {  // If the user is trying to read
-                scr->DBA = 0;
-                scr->OF  = 0;
+            if (ctrl == READ_W || ctrl == READ_B) {  // If the user is trying to read
+                std::cout << "\t\t\t\tTHIS IS A READ_W/B (scr_addr: " << scr_addr << ", INTERRUPT ACKNOWLEDGED)\n";
+                scr->DBA = 0;  // Set DBA low, signifying device is ready to receieve more data
+                // Overflow is cleared where overflow is set
                 mdr = mem_array[mar];
             }
             // Else: User cannot write to a INPUT device
@@ -374,8 +362,6 @@ void device_bus(uint16_t mar, uint16_t &mdr, int ctrl) {
                 std::cout << "\t\t\t\tTHIS IS A WRITE\n";
                 if (scr->DBA == 0) {
                     scr->OF = 1; 
-                    
-                    while(1);
                 }
                 else scr->OF = 0;
                 
@@ -387,7 +373,7 @@ void device_bus(uint16_t mar, uint16_t &mdr, int ctrl) {
                 devices[device_num].IO_data = mdr;
                 devices[device_num].end_time = cpu_clock + devices[device_num].process_time;
             }
-            else std::cout << "\t\t\t\tTHIS IS A BYTE (WHICH IS IGNORED)\n";
+            else std::cout << "\t\t\t\tTHIS IS A READ (WHICH IS IGNORED)\n";
             // Else: User cannot read an OUTPUT device
         }
     }

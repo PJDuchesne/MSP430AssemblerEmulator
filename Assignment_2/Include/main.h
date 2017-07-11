@@ -19,4 +19,6 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #ifndef MAIN_H
 #define MAIN_H
 
+void update_PC();
+
 #endif

@@ -41,15 +41,6 @@ void debugger() {
 
     std::cout << "\n\tDEBUG MODE ENTERED\n";
 
-    /* Functionality Required:
-        1) Inspect memory location (MRnnnn)
-        2) Change Memory location (MWnnnn)
-        3) Inspect Register (RRnn)
-        4) Change Register (RWnn nnnn)
-        5) Continue
-        6) EXIT (Normal ctrl-C signal)
-    */
-
     // TODO: DO PROPER STOI ERROR CHECKING
 
     while (1) {
@@ -71,7 +62,7 @@ void debugger() {
 
         std::transform(input.begin(), input.end(),input.begin(), ::toupper);
 
-        if (input == "EXIT") { dev_outfile.close(); exit(2); }
+        if (input == "EXIT") { dev_outfile.close(); dump_mem(); exit(2); }
 
         if (input.find_first_not_of("0123456789abcdefABCDEF MERWC") != std::string::npos) {
             std::cout << "\n\tPlease enter a valid input\n";

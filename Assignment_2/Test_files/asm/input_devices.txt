@@ -1,0 +1,143 @@
+; PRIORITY INPUT DEVICES
+
+; Labels for Devices 0-3 SR and Buffer
+dev0reg  EQU $0000   ; Device 0s control register.
+dev0data EQU $0001   ; Data buffer for device 0 is at address 1.
+dev1reg  EQU $0002   ; Device 1s control register.
+dev1data EQU $0003   ; Data buffer for device 1 is at address 3.
+dev2reg  EQU $0004   ; Device 2s control register.
+dev2data EQU $0005   ; Data buffer for device 2 is at address 5.
+dev3reg  EQU $0006   ; Device 3s control register.
+dev3data EQU $0007   ; Data buffer for device 3 is at address 7.
+dev4reg  EQU $0008   ; Device 4s control register.
+dev4data EQU $0009   ; Data buffer for device 4 is at address 9.
+dev5reg  EQU $000a   ; Device 5s control register.
+dev5data EQU $000b   ; Data buffer for device 5 is at address 11.
+dev6reg  EQU $000c   ; Device 6s control register.
+dev6data EQU $000d   ; Data buffer for device 6 is at address 13.
+dev7reg  EQU $000e   ; Device 7s control register.
+dev7data EQU $000f   ; Data buffer for device 7 is at address 15.
+
+; NOT USED
+COFF     EQU $10     ; Bit to turn the CPU off could use this to replace the forever waiting loop.
+
+ORG $4000 
+DeviceDataArray
+
+; MAIN
+ORG $1000
+START 
+
+MOV SR,R8
+
+; Enable interrupts on all devices
+BIS #1,dev0reg;
+BIS #1,dev1reg;
+BIS #1,dev2reg;
+BIS #1,dev3reg;
+BIS #1,dev4reg;
+BIS #1,dev5reg;
+BIS #1,dev6reg;
+BIS #1,dev7reg;
+
+mov #DeviceDataArray,R15
+
+mov #$FFC0,SP            ; Set up stack pointer
+BIS  #8,SR               ; set GIE to enabled SR: xxxx xxxx xxxx 1xxx
+
+forever jmp forever           ; loop doing nothing forever (USE COFF EVENTUALLY)
+
+; DEVICE INTERRUPTS HERE
+org $3000
+ISRdev0
+mov dev0data,dev0reg(R15)       ; Acknowlege interrupt
+add #2,R15
+RETI
+
+org $3100
+ISRdev1
+mov dev1data,dev0reg(R15)       ; Acknowlege interrupt
+add #2,R15
+RETI
+
+org $3200
+ISRdev2
+mov dev2data,dev0reg(R15)       ; Acknowlege interrupt
+add #2,R15
+RETI
+
+org $3300
+ISRdev3
+mov dev3data,dev0reg(R15)       ; Acknowlege interrupt
+add #2,R15
+RETI
+
+org $3400
+ISRdev4
+mov dev4data,dev0reg(R15)       ; Acknowlege interrupt
+add #2,R15
+RETI
+
+org $3500
+ISRdev5
+mov dev5data,dev0reg(R15)       ; Acknowlege interrupt
+add #2,R15
+RETI
+
+org $3600
+ISRdev6
+mov dev6data,dev0reg(R15)       ; Acknowlege interrupt
+add #2,R15
+RETI
+
+org $3700
+ISRdev7
+mov dev7data,dev0reg(R15)       ; Acknowlege interrupt
+add #2,R15
+RETI
+
+; insert ISR Vector address
+org $FFC0       ; Vector address for device 0.
+WORD ISRdev0    ; Address of ISR_0 
+WORD ISRdev1    ; Address of ISR_1 
+WORD ISRdev2    ; Address of ISR_2 
+WORD ISRdev3    ; Address of ISR_3 
+WORD ISRdev4    ; Address of ISR_4 
+WORD ISRdev5    ; Address of ISR_5 
+WORD ISRdev6    ; Address of ISR_6 
+WORD ISRdev7    ; Address of ISR_7 
+
+END START       ; For start address.
+
+; REQUIRED DEVICES.TXT FILE BELOW:
+//
+1		0
+1		0
+1		0
+1		0
+1		0
+1		0
+1		0
+1		0
+
+INTERRUPTS
+
+25		0		Z
+100		0		A
+100		1		B
+100		2		C
+100		3		D
+100		4		E
+100		5		F
+100		6		G
+100		7		H
+125		0		Y
+135		3		Y
+145		2		Y
+185		7		Y
+195		1		Y
+195		1		Y
+215		5		Y
+
+END
+//

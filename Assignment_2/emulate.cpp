@@ -58,7 +58,7 @@ jump_overlay jump;
 double_overlay dbl;
 sr_reg *sr_union;
 
-void (*single_ptr[])(/* INPUTS HERE */) = {
+void (*single_ptr[])() = {
     rrc,
     swpb,
     rra,
@@ -68,7 +68,7 @@ void (*single_ptr[])(/* INPUTS HERE */) = {
     reti
 };
 
-void (*double_ptr[])(/* INPUTS HERE */) = {
+void (*double_ptr[])() = {
     mov,
     add,
     addc,
@@ -116,14 +116,20 @@ bool emulate(uint8_t *mem, bool debug_mode_, uint16_t PC_init) {
         decode_execute();
 
         // TEMP (Slows things down and dumps memory for debugging)
-       //  dump_mem();
-        //  sr_union->GIE = 1;
+        //  dump_mem();
 
         update_device_statuses();
 
         if (!temp_GIE_disable) check_for_interrupts();
         else temp_GIE_disable = false;
+
+        if (cpu_clock > 3000) while(1);
     }
+
+    dump_mem();
+
+    dev_outfile.close();
+
     system("aafire");
 
     debug_mode = false;
@@ -411,35 +417,35 @@ void bus(uint16_t mar, uint16_t &mdr, int ctrl) {
         device_bus(mar, mdr, ctrl);
     }
     else {
-	    switch (ctrl) {
-		    case READ_W:
-			    mdr = mem_array[mar];
-			    mdr += (mem_array[mar+1] << 8);
-			    break;
-		    case READ_B:
-			    mdr = mem_array[mar];
+        switch (ctrl) {
+            case READ_W:
+                mdr = mem_array[mar];
+                mdr += (mem_array[mar+1] << 8);
+                break;
+            case READ_B:
+                mdr = mem_array[mar];
 
-			    break;
-		    case WRITE_W:
-			    mem_array[mar] = (mdr & 0xff);
-			    mem_array[mar+1] = ((mdr >> 8) & 0xff);
+                break;
+            case WRITE_W:
+                mem_array[mar] = (mdr & 0xff);
+                mem_array[mar+1] = ((mdr >> 8) & 0xff);
 
-			    break;
-		    case WRITE_B:
-			    mem_array[mar] = (mdr & 0xff);
+                break;
+            case WRITE_B:
+                mem_array[mar] = (mdr & 0xff);
 
-			    break;
-		    default:
-			    std::cout << "[BUS] INVALID BUS INPUT - ENDING" << std::endl;
-			    exit(1);
-			    break;
-	    }
+                break;
+            default:
+                std::cout << "[BUS] INVALID BUS INPUT - ENDING" << std::endl;
+                exit(1);
+                break;
+        }
 
     }
 }
 
 void emulation_error(std::string error_msg) {
-	std::cout << "[EMULATION ERROR] - " << error_msg << std::endl;
-	exit(1);
+    std::cout << "[EMULATION ERROR] - " << error_msg << std::endl;
+    exit(1);
 }
 

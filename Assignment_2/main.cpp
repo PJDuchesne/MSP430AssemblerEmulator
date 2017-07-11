@@ -32,6 +32,13 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 
 #define DEVICE_MAX 16
 #define SIMULATED_INTERRUPT_MAX 500
+#define DEC_STOI_RANGE 5
+#define HEX_STOI_RANGE 4
+#define DEC_BASE 10
+#define HEX_BASE 16
+#define BYTE 1
+#define WORD 2
+
 
 // Globals
 std::ifstream fin;
@@ -39,53 +46,34 @@ std::ifstream dev_fin;
 std::ofstream outfile;
 std::ofstream dev_outfile;
 
-uint16_t s9_addr;
-
 uint8_t mem_array[MAX_MEM_SIZE];
 
 device devices[DEVICE_MAX];
 interrupt interrupts[SIMULATED_INTERRUPT_MAX];
 
-int main(int argc, char *argv[]) {
+// Local variable
+// PC init position, updated within the menu
+static uint16_t PC_init = 0;
 
-    // MOVE THIS LATER
+int main(int argc, char *argv[]) {
     
     dev_outfile.open("dev_out.txt");
     // dev_outfile.open("dev_out.txt", std::ios::out | std::ios::trunc);
 
-    /* TESTING PLACE */
-
-
-
-    /* TESTING ENDS HERE */
-
+    // Variable used to keep track of debug mode
     bool debug_mode = true;
 
+    // Variables used for input parsing
     bool hex_flag = false;
-
-    std::string input_temp = "";
-
-    uint16_t temp_length = 0;
-
-    uint16_t stoi_temp = 0;
-
     std::string menuInput = "";
-
-    // PC init position which is updated from places in menu
-    uint16_t PC_init = 0;
-
-    
 
     while (1) {
         std::cout << "\nMAIN MENU: Please enter command from below\n"
-        << "\t(P) Load from previous session\n"
         << "\t(E) Emulate current memory\n"
         << "\t(S) Input PC Start Location\n"
         << "\t(F) Load from file\n"
         << "\t(D) Toggle Debugger Mode (Currently "
                                 << (debug_mode ? "On)\n" : "Off)\n")
-        << "\t(I) System Info\n"
-        << "\t(M) Memory Print Location (For diagnostics)\n"
         << "\t(Q) Quit\n\n"
 
         << "\tInput: >> ";
@@ -95,12 +83,6 @@ int main(int argc, char *argv[]) {
         std::cout << "MENU INPUT IS >>" << menuInput << "<<" << std::endl << std::endl;
 
         switch (menuInput[0]) {
-            case 'P':   // Load from previous session
-            case 'p':
-                // Load from mem.txt
-
-                break;
-
             case 'F':   // Load from file
             case 'f':
                 std::cout << "Please enter the filepath of the s19 record to input from" << std::endl;
@@ -116,7 +98,7 @@ int main(int argc, char *argv[]) {
             case 'e':
                 dev_fin.open("devices.txt");
 
-                load_devices();
+                if (!load_devices()) break;
 
                 if (!emulate(mem_array, debug_mode, PC_init)) {
                     std::cout << "EMULATION ERROR" << std::endl;
@@ -125,84 +107,66 @@ int main(int argc, char *argv[]) {
 
                 break;
 
-            case 'S':   // Select start location (Maybe put parsing into separate parse function)
+            case 'S':   // Select start location 
             case 's':
                 std::cout << "Please enter a 16 bit start location in hex (0xnnnn) or decimal (nnnnn)" << std::endl;
-                std::getline(std::cin, input_temp);
 
-                temp_length = input_temp.length();
-
-                if ((temp_length > 3)) {
-                    if (input_temp[0] == '0' && input_temp[1] == 'x') {
-                        hex_flag = true;
-                        input_temp = input_temp.erase(0,2);  // Erase the '0x' from the string
-                        temp_length -= 2;
-                    }
-                }
-                else hex_flag = false;
-
-                // Remove preceding 0s
-                while (input_temp[0] == '0' && temp_length > 1) {
-                    temp_length--;
-                    input_temp.erase(0, 1);
-                }
-
-                // Ensure the value is within a range of uint16_t
-                if (temp_length <= (hex_flag ? 4 : 5)) {
-                    if (input_temp.find_first_not_of(hex_flag ? "0123456789abcdefABCDEF" : "0123456789") == std::string::npos) {
-                        PC_init = std::stoi(input_temp, nullptr, hex_flag ? 16 : 10);
-                        if(hex_flag) std::cout << "PC Init updated to 0x" << std::hex << PC_init << " (Hex)" << std::endl << std::dec;
-                                else std::cout << "PC Init updated to " << PC_init << " (Dec)" << std::endl;
-                    }
-                    else std::cout << "Invalid characters found based on input type, PC init not updated" << std::endl;
-                } else std::cout << "Input string is too long for input type, PC init not updated" << std::endl;
+                update_PC();
 
                 break;
 
             case 'D':   // Debugger mode
             case 'd':
                 debug_mode = !debug_mode;
-        std::cout << "\tDebugger mode is now " << (debug_mode ? "ON" : "OFF") << std::endl;
+                std::cout << "\tDebugger mode is now " << (debug_mode ? "ON" : "OFF") << std::endl;
                 break;
-
-            case 'I':   // System info (Memory, starting point, etc.)
-            case 'i':
-                std::cout << "System Info:" << std::endl
-                          << "\tPC Init = 0x" << std::hex << PC_init << std::endl; // Add more entries here
-
-                break;
-
-        case 'M':  // Test memory location for number (Used to debug)
-        case 'm':  // Simply prints out memory location inputted
-        std::cout << "Input Memory location in hex to print out" << std::endl;
-
-        std::getline(std::cin, input_temp);
-
-
-                temp_length = input_temp.length();
-
-        // Remove preceding 0s
-                while (input_temp[0] == '0' && temp_length > 1) {
-                    temp_length--;
-                    input_temp.erase(0, 1);
-                }
-                // Ensure the value is within a range of uint16_t
-                if (temp_length <= 4) {
-                    if (input_temp.find_first_not_of("0123456789abcdefABCDEF") == std::string::npos) {
-            stoi_temp = std::stoi(input_temp, nullptr, 16);
-            std::cout << "MEM[" << std::hex << stoi_temp << "] contains >>" << static_cast<uint16_t>(mem_array[stoi_temp]) << "<<" << std::dec << std::endl;
-                    }
-                    else std::cout << "Invalid characters found, could not print memory" << std::endl;
-                } else std::cout << "Input string is too long for hex (Max is 4 characters), could not print memory" << std::endl;
-        break;
 
             case 'Q':   // Quit
             case 'q':
                 system("aafire");
                 exit(0);
                 break;
+        }
     }
 }
 
+
+void update_PC() {
+    // Temporary variables used to parse the input
+    std::string input_temp = "";
+    bool hex_flag = false;
+    uint16_t temp_length = 0;
+
+    // Get the line with the new PC
+    std::getline(std::cin, input_temp);
+
+    // Use str.length() just once, then increment the value
+    temp_length = input_temp.length();
+
+    // Ensure the minimum length is met, then remove preceding 0x
+    if ((temp_length > 3)) {
+        if (input_temp[0] == '0' && input_temp[1] == 'x') {
+            hex_flag = true;
+            input_temp = input_temp.erase(0,2);  // Erase the '0x' from the string
+            temp_length -= 2;
+        }
+    }
+    else hex_flag = false;
+
+    // Remove preceding 0s
+    while (input_temp[0] == '0' && temp_length > 1) {
+        temp_length--;
+        input_temp.erase(0, 1);
+    }
+
+    // Ensure the value is within a range of uint16_t, then update PC_init to the value from stoi
+    if (temp_length <= (hex_flag ? HEX_STOI_RANGE : DEC_STOI_RANGE)) {
+        if (input_temp.find_first_not_of(hex_flag ? "0123456789abcdefABCDEF" : "0123456789") == std::string::npos) {
+            PC_init = std::stoi(input_temp, nullptr, hex_flag ? HEX_BASE : DEC_BASE);
+            if(hex_flag) std::cout << "PC Init updated to 0x" << std::hex << PC_init << " (Hex)" << std::endl << std::dec;
+                    else std::cout << "PC Init updated to " << PC_init << " (Dec)" << std::endl;
+        }
+        else std::cout << "Invalid characters found based on input type, PC init not updated" << std::endl;
+    } else std::cout << "Input string is too long for input type, PC init not updated" << std::endl;
 }
 
