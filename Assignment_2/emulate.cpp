@@ -98,7 +98,8 @@ void (*double_ptr[])() = {
 void signalHandler(int signum) {
     if (debug_mode) debugger();
     else {
-         
+        dump_mem();
+        dev_outfile.close();
         exit(2);
     }
 }
@@ -138,6 +139,9 @@ bool emulate(uint16_t PC_init) {
 
         update_device_statuses();
 
+        // Check if HCF is set within 'Update_Device_statuses()'
+        if (HCF) continue;  
+
         if (!temp_GIE_disable) check_for_interrupts();
         else temp_GIE_disable = false;
     }
@@ -173,12 +177,7 @@ void decode_execute() {
                 single.us_single = mdr;
 
                 // Double check extra characers are correct
-                if ((single.opcode>>3) != 0b100) {
-                    if (debug_mode) std::cout << "[Emulate] INVALID ONE OPERAND COMMAND (>>" << std::hex << single.opcode << std::dec << "<<)\n";
-                    dump_mem();
-                    dev_outfile.close();
-                    exit(1);
-                }
+                if ((single.opcode>>3) != 0b100) emulation_error("[Emulate] INVALID ONE OPERAND COMMAND");
 
                 if (debug_mode) std::cout << "\t\tFound SINGLE instruction: SINGLE.OPCODE >>" << (single.opcode & UNIQUE_OP_MASK) << "<<" << std::endl;
 
@@ -304,10 +303,7 @@ void addressing_mode_fetcher(INST_TYPE type) {
             break;
                 
         default:
-            std::cout << "[ADDR MODE FETCHER] THIS IS BROKEN\n";
-            dump_mem();
-            dev_outfile.close();
-            exit(1);
+            emulation_error("[ADDR MODE FETCHER] THIS IS BROKEN");
             break;
     }
 }
@@ -533,10 +529,7 @@ void bus(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl) {
 
                 break;
             default:
-                std::cout << "[BUS] INVALID BUS INPUT - ENDING" << std::endl;
-                dump_mem();
-                dev_outfile.close();
-                exit(1);
+                emulation_error("[BUS] INVALID BUS INPUT - ENDING");
                 break;
         }
     }

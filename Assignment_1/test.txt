@@ -1,58 +1,106 @@
-; Author: Paul Duchesne (B00332119)
-; Date: JUNE 27, 2017
-; Name: Two Operand Arithmatic Commands
-; Purpose: Tests all two operand arithmatic operations
+SR0     EQU  $0000
+DR0     EQU  $0001
 
-ORG $1000
+        ORG $1000
+START   
+        MOV #0,R10  ; R10 = i
+        BIS #1,SR0  ; Set IE for device 0
+        BIS #8,SR
 
-MAIN    
+        MOV.b #48,DR0 ; Set first interrupt going
 
-MOV     #$FF12,R4       ; R4 = 0xFF12
-MOV     #$0023,R5       ; Temp
-ADD     R4,R5           ; R5 = 0xFF35
-MOV     #$0111,R6
-ADD     R4,R6           ; R6 = 0x0023 (CARRY BIT SET)
-MOV     #$003D,R7
-ADDC    R4,R7           ; R7 = 0xFF50
-MOV     #$003D,R8
-ADD     R4,R8           ; R8 = 0xFF4f
+FOREVER JMP FOREVER
 
-MOV     #$1234,R15
+        ORG $3000       ; ISR Routine
+ISRdev0
+        ADD #1,R10      ; Increment 
 
-MOV     #$1234,R9
-SUB     R15,R9          ; R9 = 0x0000
-MOV     #$1000,R10      
-SUB     R15,R10         ; R10 = 0xFDCC (CARRY BIT SET)
-MOV     #$1500,R11
-SUBC    R15,R11         ; R11 = 0x02CD
-MOV     #$1500,R12
-SUBC    R15,R12         ; R12 = 0x02CC (Same subtraction without carry bit set)
-MOV     #$5812,R13
-MOV     #$1344,R14
-MOV     #$1344,R15
-DADC.b  R13,R14         ; R14 = 0x1356
-DADC.W  R13,R15         ; R15 = 0x7156
+        CMP #10,R10     ; Check if done
+        JEQ ENDSPOT     ; If so, jump to the end
+    
+        MOV.b   #48,R12 ; Reset R12 to '0'
+        ADD.b   R10,R12 ; Add i
+        MOV.b   R12,DR0 ; Output to device
 
-; CMP is tested in the SR test
+        RETI
 
-END MAIN
+        ORG $FFC0       ; Set interrupt vector table
+        WORD ISRdev0
 
-; TEST OUTPUT: (Blank Registers are irrelevant to the test)
-;  --> CPU Registers (Final values)
-;       R0:
-;       R1: 0
-;       R2: 0
-;       R3: 0
-;       R4: 0xFF12
-;       R5: 0xFF35
-;       R6: 0x0023
-;       R7: 0xFF50
-;       R8: 0xFF4f
-;       R9: 0x0000
-;      R10: 0xFDCC
-;      R11: 0x02CD
-;      R12: 0x02CC
-;      R13: 
-;      R14: 0x1356
-;      R15: 0x7156
+        ORG $3100
+ENDSPOT
 
+END     START
+
+
+
+SR0     EQU  $0000
+DR0     EQU  $0001
+DBA     EQU  $4     ; Bit 4 is the DBA
+
+        ORG  $1000
+START
+        MOV #0,R10  ; R10 = i, initialized to 0
+
+LOOP    
+        MOV.b   #48,R12
+        ADD.b   R10,R12
+        MOV     R12,DR0 
+
+WAIT    cmp.b   DBA,SR0 ; Compare DBA directly with SR0. no other bit will be set
+        JEQ     CONT
+        JMP     WAIT
+CONT    ADD #1,R10      ; Inrement counter, loop again
+
+        CMP #10,R10     ; Check if done
+        JEQ ENDSPOT     ; If so, jump to the end
+        
+        JMP LOOP        ; Else, loop again
+
+ENDSPOT
+END     START
+
+
+
+
+        ORG     $1000
+TEXT    STRING  "ABXCBA"
+TEXTEND
+        
+        ORG     $1000
+DATASTART
+
+        ORG     $1003
+DATAEND
+
+        ORG     $2000
+START
+        MOV     #TEXT,R10       ; 0x1000
+        MOV     #TEXTEND,R11    ; 0x1003
+        SUB     #1,R11          ; TEXTEND is one location past the end of string
+      
+LOOP    
+        MOV.b   @R10,R12        ; Fetch current values
+        MOV.b   @R11,R13        ; 
+
+        ADD     #1,R10          ; Increment start to next location
+        SUB     #1,R11          ; Decrement end to next location
+
+        CMP     R11,R10         ; Check if done (If BOT-TOP >= 0)
+        JGE     TRUE
+
+        CMP     R12,R13         ; Check if the two values are the same
+        JEQ     LOOP            ; If the values are equal, continue looking
+        JMP     FALSE           ; If they are not, this is not a palindrome
+
+TRUE    MOV     #$1111,R15      ; Signifies true
+        JMP     ENDSPOT
+
+FALSE   MOV     #$FFFF,R15      ; Sifnified False
+        JMP     ENDSPOT  
+
+
+        ORG     $2100
+ENDSPOT
+
+END     START

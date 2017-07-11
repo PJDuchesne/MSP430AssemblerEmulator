@@ -44,23 +44,35 @@ bool load_devices()
 {
     if (debug_mode) std::cout << "LOADING DEVICES (START)\n";
 
+    // Current record string
     std::string current_record;
+    
+    // Current token string
     std::string token;
 
+    // Current line number (for debugging)
     uint16_t line_num = -1;
+
+    // Device number that is found
     uint16_t device_num = -1;
 
+    // Variable used to ensure that the next interrupt
+    // that is read is above the previous in chronological order
+    // If this is found to be false, that is an error 
     uint16_t interrupt_check = 0;
 
-    uint16_t temp_decimal = 0;
-
+    // End flag
     bool end_flag = false;
 
-    bool dev = true;  // TRUE = Devices section, FALSE = Interrupts section
+    // TRUE = Devices section, FALSE = Interrupts section
+    bool dev = true;  
 
-    char* temp_crecord = new char[PUNCH_CARD_WIDTH];  // Max input length of 80 characters for a line, punch card width
+    // Cstring used for STOI
+    // Max input length of 80 characters for a line, punch card width
+    char* temp_crecord = new char[PUNCH_CARD_WIDTH];
 
     while(!dev_fin.eof() && !end_flag) {
+        // Get the line to check
         std::getline(dev_fin, current_record);
         line_num++;
 
@@ -119,6 +131,7 @@ bool load_devices()
         else {  // Reading interrupts second
             if (token == "END") end_flag = true;
             else {
+                // Increment interrupt number
                 interrupt_num++;
 
                 if (device_num >= 500) {
@@ -181,10 +194,12 @@ bool load_devices()
         }
     }
 
+    // Release this tempoary cstring
     delete[] temp_crecord;
+
     if (debug_mode) std::cout << "LOADING DEVICES (END)\n";
 
-    // STORE THE DEVICES IN MEMORY
+    // STORE THE DEVICES IN MEMORY (Using Union)
     scr_reg *scr;
     for (int i = 0; i < MAX_DEVICES; i++) {
         scr = (scr_reg *)&mem_array[i*WORD];    
@@ -192,10 +207,8 @@ bool load_devices()
         scr->DBA = (scr->IO ? 0 : 1);  // Initialize DBA to opposite of IO bit
     }
 
-    // SHOULD END HERE: REST IS DIAGNOSTICS
-
+    // Reset is diagnostics
     if (debug_mode) {
-        
         for (int i = 0; i < MAX_DEVICES; i++) {
             std::cout << "DEVICE #" << i << "\n"
                 << "\tStatus Reg: >>" << devices[i].IO << "<<\n"
@@ -322,7 +335,7 @@ void update_device_statuses() {
                         << "Write Start:  " << (devices[device_num].end_time - devices[device_num].process_time) << "\t"
                         << "Write End:    " << devices[device_num].end_time << "\t"
                         << "Overflow:    " << (uint16_t)scr->OF << "\t"
-                        << "Data Written: " << (char)devices[device_num].IO_data << "\n\n";
+                        << "Data Written: >>" << (char)devices[device_num].IO_data << "<<\n\n";
 
             // Set DBA to high to signify that the device has finished writing
             scr->DBA = 1;
