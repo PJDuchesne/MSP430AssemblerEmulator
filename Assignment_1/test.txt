@@ -1,106 +1,31 @@
-SR0     EQU  $0000
-DR0     EQU  $0001
-
-        ORG $1000
-START   
-        MOV #0,R10  ; R10 = i
-        BIS #1,SR0  ; Set IE for device 0
-        BIS #8,SR
-
-        MOV.b #48,DR0 ; Set first interrupt going
-
-FOREVER JMP FOREVER
-
-        ORG $3000       ; ISR Routine
-ISRdev0
-        ADD #1,R10      ; Increment 
-
-        CMP #10,R10     ; Check if done
-        JEQ ENDSPOT     ; If so, jump to the end
-    
-        MOV.b   #48,R12 ; Reset R12 to '0'
-        ADD.b   R10,R12 ; Add i
-        MOV.b   R12,DR0 ; Output to device
-
-        RETI
-
-        ORG $FFC0       ; Set interrupt vector table
-        WORD ISRdev0
-
-        ORG $3100
-ENDSPOT
-
-END     START
+; Author: Paul Duchesne (B00332119)
+; Date: JULY 14, 2017
+; Name: Basic Cache check
+; Purpose: Not much
 
 
+            ORG $1000
+START       MOV #15,R15         ; Set compare value
+            MOV #0,R12
+LOOP        MOV #3,R10
+            RRC R10
+            RRA R11
+            SUB R10,R11
+            MOV #$1234,R8
+            MOV #$1234,R9
+            RRC R8
+            RRA R10
+            PUSH R11
+            MOV #$1234,R10
+            MOV @R7+,R8
+            MOV #$1234,R11
+            MOV #$1234,R13
+            MOV #$1234,R14
+            MOV #$1234,R7
+            ADD #1,R12
+            CMP R12,R15         ; Check if done
+            JEQ ENDSPOT
+            JMP LOOP            ; If not done, do it again
 
-SR0     EQU  $0000
-DR0     EQU  $0001
-DBA     EQU  $4     ; Bit 4 is the DBA
-
-        ORG  $1000
-START
-        MOV #0,R10  ; R10 = i, initialized to 0
-
-LOOP    
-        MOV.b   #48,R12
-        ADD.b   R10,R12
-        MOV     R12,DR0 
-
-WAIT    cmp.b   DBA,SR0 ; Compare DBA directly with SR0. no other bit will be set
-        JEQ     CONT
-        JMP     WAIT
-CONT    ADD #1,R10      ; Inrement counter, loop again
-
-        CMP #10,R10     ; Check if done
-        JEQ ENDSPOT     ; If so, jump to the end
-        
-        JMP LOOP        ; Else, loop again
-
-ENDSPOT
-END     START
-
-
-
-
-        ORG     $1000
-TEXT    STRING  "ABXCBA"
-TEXTEND
-        
-        ORG     $1000
-DATASTART
-
-        ORG     $1003
-DATAEND
-
-        ORG     $2000
-START
-        MOV     #TEXT,R10       ; 0x1000
-        MOV     #TEXTEND,R11    ; 0x1003
-        SUB     #1,R11          ; TEXTEND is one location past the end of string
-      
-LOOP    
-        MOV.b   @R10,R12        ; Fetch current values
-        MOV.b   @R11,R13        ; 
-
-        ADD     #1,R10          ; Increment start to next location
-        SUB     #1,R11          ; Decrement end to next location
-
-        CMP     R11,R10         ; Check if done (If BOT-TOP >= 0)
-        JGE     TRUE
-
-        CMP     R12,R13         ; Check if the two values are the same
-        JEQ     LOOP            ; If the values are equal, continue looking
-        JMP     FALSE           ; If they are not, this is not a palindrome
-
-TRUE    MOV     #$1111,R15      ; Signifies true
-        JMP     ENDSPOT
-
-FALSE   MOV     #$FFFF,R15      ; Sifnified False
-        JMP     ENDSPOT  
-
-
-        ORG     $2100
-ENDSPOT
-
-END     START
+ENDSPOT            
+            END START

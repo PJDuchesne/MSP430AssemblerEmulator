@@ -1,0 +1,10 @@
+
+;       TEST TO BREAK ASSOCIATIVE
+
+ZERO    EQU     $0
+
+        ORG     $1000
+START   MOV     #$40B0,R10
+        MOV     R10,ZERO(PC)
+
+END     START

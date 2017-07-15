@@ -1,0 +1,48 @@
+; Output test file: Based on Scott's test file
+
+; Generate labels for device 0's control register and data buffer.
+; Generate labels for device 0's control register and data buffer.
+
+dev0reg  EQU $0000   ; Device 0s control register.
+dev0data EQU $0001   ; Data buffer for device 0 is at address 1.
+COFF     EQU $10     ; Bit to turn the CPU off could use this to replace the forever waiting loop.
+
+ORG dev0reg           ; Use loader to initialize the device register.
+BYTE $01              ; 0000 0001 <-- IE interrupt is enabled.
+                      ;        ^IO = 0 device is an output device.
+; DATA ARRAY
+org $4000
+DeviceDataArray string "A_B_C_D_E_F_G_H_I_J_K_L_M_N_O_P_Q_R_S_T_U_V_W_X_Y_Z_"  ; output one letter at a time. You might have named this STRING
+
+; MAIN
+ORG $1000
+START 
+mov #DeviceDataArray,R10 ;  will use r10 as indirect auto increment pointer to load from my array.
+mov #$FFC0,SP            ; Set up stack pointer?
+BIS  #8,SR               ; set GIE to enabled SR: xxxx xxxx xxxx 1xxx
+
+
+mov.b @R10+,dev0data    ; send what R10 points at (string) and auto increment to next letter.
+
+                        ; Note that since its a BYTE instruction your emulator must only increment R10 by 1.
+
+done jmp done           ; loop doing nothing forever.
+
+
+; DEVICE INTERRUPT HERE
+org $3000
+ISRdev0
+cmp #$4034,R10          ; End of string?
+jeq ISRdev0_end
+
+mov.b @R10+,dev0data                    ; Set new data going
+mov.b dev0reg,R15                      ; Acknowlege interrupt
+
+ISRdev0_end RETI
+
+; insert ISR Vector address
+org $FFC0       ; Vector address for device 0.
+WORD ISRdev0    ; Address of my ISR
+
+END START       ;For start address.
+

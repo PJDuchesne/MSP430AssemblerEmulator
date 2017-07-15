@@ -1,0 +1,117 @@
+; Author: Paul Duchesne (B00332119)
+; Date: JUNE 27, 2017
+; Name: Jump Instructions Test
+; Purpose: Tests all jump instructions by setting bits across the code
+;              if any jump fails to perform, the code is ended and it is
+;              obvious where the output stopped. This also tests the clock,
+;              by providing a known ending value
+
+            ; STATUS BIT SETTING STAGE
+
+            ORG $0F00
+TEST_START  BIC #$0107,SR   ; Clear status bits in SR
+                            ; Set Z = 0
+
+            JMP TEST0
+
+TEST_A      MOV #$1111,R4
+            BIC #$0107,SR   ; Clear status bits in SR
+            BIS #$0002,SR   ; Set Z = 1
+            JMP TEST1
+
+TEST_B      MOV #$2222,R5
+            BIC #$0107,SR   ; Clear status bits in SR
+                            ; Set C = 0
+            JMP TEST2
+
+TEST_C      MOV #$3333,R6
+            BIC #$0107,SR   ; Clear status bits in SR
+            BIS #$0001,SR   ; Set C = 1
+            JMP TEST3
+
+TEST_D      MOV #$4444,R7
+            BIC #$0107,SR   ; Clear status bits in SR     
+            BIS #$0004,SR   ; Set N = 1
+            JMP TEST4
+
+TEST_E      MOV #$5555,R8
+            BIC #$0107,SR   ; Clear status bits in SR
+            BIS #$0104,SR   ; Sets V = 1 and N = 1
+            JMP TEST5
+
+TEST_F      MOV #$6666,R9
+            BIC #$0107,SR   ; Clear status bits in SR
+            BIS #$0100,SR   ; Sets V = 1 and N = 0
+            JMP TEST6
+
+            ; JUMP STAGE
+
+            ORG $1000
+TEST0       JNE TEST_A       ; Requires Z = 0
+            JMP ENDSPOT
+    
+            ORG $1050
+TEST1       JeQ TEST_B       ; Requires Z = 1
+            JMP ENDSPOT
+    
+            ORG $1100
+TEST2       jnc TEST_C       ; Requires C = 0
+            JMP ENDSPOT
+    
+            ORG $1150
+TEST3       JC  TEST_D       ; Requires C = 1
+            JMP ENDSPOT
+    
+            ORG $1200 
+TEST4       JN  TEST_E       ; Requires N = 1
+            JMP ENDSPOT
+    
+            ORG $1250
+TEST5       jGE TEST_F       ; Requires (N XOR V) = 0 --> N == V (Both 0 or 1)
+            JMP ENDSPOT
+    
+            ORG $1300 
+TEST6       Jl  TEST7        ; Requires (N XOR V) = 1 --> N != V
+            JMP ENDSPOT
+
+            ; "DO NOT JUMP" STAGE
+
+TEST7        BIC #$0107,SR   ; Clear status bits in SR
+            JEQ ENDSPOT
+            MOV #$7777,R10
+            JHS ENDSPOT
+            MOV #$8888,R11
+            JL ENDSPOT
+            MOV #$9999,R12
+            BIS #$0007,SR    ; Set SR for all except overflow
+            JNZ ENDSPOT
+            MOV #$AAAA,R13
+            JLO ENDSPOT
+            MOV #$BBBB,R14
+            JGE ENDSPOT
+            MOV #$CCCC,R15
+
+            JMP ENDSPOT
+    
+ENDSPOT
+END         TEST_START
+
+; TEST OUTPUT: (Blank Registers are irrelevant to the test)
+;  --> CPU Registers (Final values)
+;       R0:
+;       R1: 
+;       R2: 
+;       R3: 
+;       R4: 0x1111
+;       R5: 0x2222
+;       R6: 0x3333
+;       R7: 0x4444
+;       R8: 0x5555
+;       R9: 0x6666
+;      R10: 0x7777
+;      R11: 0x8888
+;      R12: 0x9999
+;      R13: 0xAAAA
+;      R14: 0xBBBB
+;      R15: 0xCCCC
+; Clock at 94

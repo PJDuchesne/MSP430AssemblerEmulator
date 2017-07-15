@@ -1,0 +1,40 @@
+; Made by Paul Duchesne (B00332119)
+; JUNE 27, 2017
+; Name: Byte Operations Test
+; Brief: Tests random byte instructions
+
+ORG $1000
+
+MAIN
+
+MOV     #$1177,R10
+RRC.B   R10          ; R10 = 0x113b
+MOV     #$9911,R11
+RRA.B   R11          ; R11 = 0x9908
+MOV     #$1234,R12   ; R12 = 0x1234
+MOV     #$CD00,R13  
+ADD.b   R12,R13      ; R13 = 0xCD34
+MOV.b   #$1238,R14   ; R14 = 0x0038
+MOV     #$8765,R15
+SUB.b   R12,R15      ; R15 = 0x8731
+
+END MAIN
+
+; OUTPUT: (Blank Registers are irrelevant to the test)
+;  --> CPU Registers (Final Values)
+;       R1: 
+;       R2: 
+;       R3: 
+;       R4: 
+;       R5: 
+;       R6: 
+;       R7: 
+;       R8: 
+;       R9: 
+;      R10: 0x113B
+;      R11: 0x9908
+;      R12: 0x1234
+;      R13: 0xCD34
+;      R14: 0x0038
+;      R15: 0x8731
+

@@ -1,0 +1,49 @@
+; Author: Paul Duchesne (B00332119)
+; Date: JUNE 27, 2017
+; Name: Status Register Test
+; Purpose: Tests all status register settings
+
+ORG	$1000
+
+MAIN
+
+MOV		SR,R4			; R4 = 0x0000 (Status register starts empty)
+MOV		#$1000,R11		; R11 = 0x1000
+CMP		#$1000,R11		; Compare: Should set ZERO
+MOV		SR,R5			; R5 = 0x0002 (Set zero bit)
+CMP     #$2000,R11		; Should be -1000, which is: 0xFC18
+MOV		SR,R6			; R6 = 0x0005 (Negative and Carry)
+MOV		#-5000,R12		; R12 = 0xEC78 (-5000)
+MOV		#31000,R13		; R13 = 0x7918 (31000)
+CMP     R12,R13			; Should be (36000)
+MOV		SR,R7			; R7 = 0x0105
+CMP     R13,R12			; Should be (-36000)
+MOV		SR,R8			; R8 = 0x0100
+MOV		#45000,R14		; R14 = 0xAFC8 (45000)
+ADD		R13,R14			; R14 = 28E0 (10464)
+MOV 	SR,R9			; R9 = 0x0001
+MOV		R13,R15			; Temp
+ADD		R13,R15			; R15 = 0xF230
+MOV		SR,R10			; R10 = 0x0104
+
+END	MAIN
+
+; TEST OUTPUT: (Blank Registers are irrelevant to the test)
+;  --> CPU Registers (Final values)
+;       R0:
+;       R1: 
+;       R2: 
+;       R3: 
+;       R4: 0x0000
+;       R5: 0x0002
+;       R6: 0x0005
+;       R7: 0x0105
+;       R8: 0x0100
+;       R9: 0x0001
+;      R10: 0x0104
+;      R11: 0x1000 
+;      R12: 0xEC78
+;      R13: 0x7918
+;      R14: 0x28E0
+;      R15: 0xF230
+

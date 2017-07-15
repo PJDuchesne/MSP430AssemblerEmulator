@@ -31,6 +31,7 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include "Include/double_inst.h"
 #include "Include/debugger.h"
 #include "Include/devices.h"
+#include "Include/cache.h"
 
 // Globals: Delcared extern in library.h
 uint16_t mdr  = 0;
@@ -127,7 +128,7 @@ bool emulate(uint16_t PC_init) {
         // Fetch
         if (debug_mode) std::cout << "\nFETCHING INST AT PC: " << std::hex << regfile[PC] << std::dec << " (Clock at " << cpu_clock << ")" << std::endl;
 
-        bus(regfile[PC], mdr, READ_W);
+        cache(regfile[PC], mdr, READ_W);
 
         if (debug_mode) std::cout << "\tInst: >>" << std::hex << mdr << "<<" << std::dec << std::endl;
 
@@ -150,7 +151,7 @@ bool emulate(uint16_t PC_init) {
     dump_mem();
     dev_outfile.close();
 
-   // Reset debug_mode flag for main menu
+    // Reset debug_mode flag for main menu
     debug_mode = false;
 
     return true;
@@ -337,14 +338,14 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
         case INDEXED:
             // Fetch the base address, store in mdr
             // Relative address is a full word
-            bus(regfile[PC], mdr, READ_W);
+            cache(regfile[PC], mdr, READ_W);
 
             // Set effective address to the location of the PC plus 
             if (debug_mode) std::cout << "\t\t\tMDR (RELATIVE OFFSET): >>" << std::hex << mdr << std::dec << "<<" << std::endl;
             eff_address = mdr + regfile[regnum];
 
             // Fetch the actual value, store in mdr
-            bus(eff_address, mdr, (bw ? READ_B : READ_W));
+            cache(eff_address, mdr, (bw ? READ_B : READ_W));
 
             return_val = mdr;
             break;
@@ -352,12 +353,12 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
         case ABSOLUTE:
             // Fetch the absolute address, store in mdr
             // Absolute address is a full word
-            bus(regfile[PC], mdr, READ_W);
+            cache(regfile[PC], mdr, READ_W);
 
             eff_address = mdr;
 
             // Fetch the actual value, store in MDR
-            bus(eff_address, mdr, (bw ? READ_B : READ_W));
+            cache(eff_address, mdr, (bw ? READ_B : READ_W));
             return_val = mdr;
 
             break;
@@ -368,7 +369,7 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
             eff_address = regfile[regnum];
 
             // Fetch the desired address, store in MDR
-            bus(eff_address, mdr, READ_W);
+            cache(eff_address, mdr, READ_W);
             return_val = mdr;
 
             // Increment the register if in INDIRECT_AI mode
@@ -378,7 +379,7 @@ uint32_t matrix_decoder(uint16_t asd, uint16_t regnum, uint16_t bw) {
 
         case IMMEDIATE:
             // Fetch the value directly
-            bus(regfile[PC], mdr, (bw ? READ_B : READ_W));
+            cache(regfile[PC], mdr, (bw ? READ_B : READ_W));
 
             return_val = mdr;
 
@@ -465,7 +466,7 @@ void put_operand(uint16_t asd, INST_TYPE type) {
         case RELATIVE:
         case INDEXED:
         case ABSOLUTE:
-            bus(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
+            cache(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
 
             break;
 
@@ -473,13 +474,13 @@ void put_operand(uint16_t asd, INST_TYPE type) {
         // two operand instructions from putting values to the destination
         case INDIRECT:
         case INDIRECT_AI:
-            if (type == SINGLE) bus(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
+            if (type == SINGLE) cache(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
             else emulation_error("(Put Operand) Invalid INDIRECT dst");
             break;
 
         // Only the push instruction can do this
         case IMMEDIATE:
-            if (type == SINGLE && single.opcode == PUSH_OPCODE) bus(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
+            if (type == SINGLE && single.opcode == PUSH_OPCODE) cache(eff_address, mdr, (bw ? WRITE_B : WRITE_W));
             else emulation_error("(Put Operand) Invalid Immediate dst");
             break;
 
