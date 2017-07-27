@@ -1,0 +1,100 @@
+; Author: Paul Duchesne (B00332119)
+; Date: JULY 25, 2017
+; Name: Break_Dir
+; Purpose: Test to break direct mapping by having a 0% hit rate. This is
+;           accomplished by having instructions only on multiples of 0x40
+;           in order to constantly write over actively used cachelines
+;
+;   Algorithm: Direct_Mapping
+;   Policy: Write_Back or Write_Through
+
+
+            ORG     $8040
+LABEL1      WORD    $1234   ; 0x8040
+LABEL2      WORD    $1234   ; 0x8042
+LABEL3      WORD    $1234   ; 0x8044
+
+            ORG     $1000
+
+Start       MOV     #$1234,LABEL3
+            ADD     #3000,R11
+            SUBC    #$1000,R12
+            JMP     MARKER1
+
+            ORG     $1040
+
+MARKER1     SUBC    #$1234,R14
+            ADDC    #$9876,R7
+            CMP     #$1234,R4
+            JMP     MARKER2
+
+            ORG     $1080
+
+MARKER2     SUBC.b  #$1234,R14
+            ADDC.b  #$9876,LABEL2
+            CMP     #$1234,R9
+            JMP     MARKER3
+
+            ORG     $10C0
+
+MARKER3     SUBC    #$1234,R14
+            ADDC.b  #$9876,LABEL1
+            AND     #$1234,R14
+            JMP     MARKER4
+
+            ORG     $1380
+
+MARKER4     BIS     #LABEL1,R14
+            ADDC.b  #$9876,R13
+            XOR     #$1234,R14
+            JMP     MARKER5
+
+            ORG     $15C0
+
+MARKER5     SUBC    #$1234,R14
+            ADDC.b  #$9876,R13
+            CMP     #$1234,R14
+
+END         Start
+
+; TEST OUTPUT: (Cache contents followed by hit ratio)
+
+PRINTING CONTENTS OF THE CACHE
+LINE #0:  ADDR >>15c0<< || DATA >>703e<< || DB: >>0<<
+LINE #1:  ADDR >>15c2<< || DATA >>1234<< || DB: >>0<<
+LINE #2:  ADDR >>15c4<< || DATA >>607d<< || DB: >>0<<
+LINE #3:  ADDR >>15c6<< || DATA >>9876<< || DB: >>0<<
+LINE #4:  ADDR >>15c8<< || DATA >>903e<< || DB: >>0<<
+LINE #5:  ADDR >>15ca<< || DATA >>1234<< || DB: >>0<<
+LINE #6:  ADDR >>15cc<< || DATA >>0<<    || DB: >>0<<
+LINE #7:  ADDR >>10ce<< || DATA >>3d58<< || DB: >>0<<
+LINE #8:  ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #9:  ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #10: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #11: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #12: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #13: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #14: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #15: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #16: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #17: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #18: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #19: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #20: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #21: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #22: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #23: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #24: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #25: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #26: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #27: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #28: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #29: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #30: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+LINE #31: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+
+HIT  COUNT: >>0<<
+MISS COUNT: >>51<<
+RATIO: >>0<<
+
+

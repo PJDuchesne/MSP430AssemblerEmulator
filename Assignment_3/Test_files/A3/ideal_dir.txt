@@ -1,0 +1,80 @@
+; Author: Paul Duchesne (B00332119)
+; Date: JULY 25, 2017
+; Name: ideal_dir
+; Purpose: Test to show an ideal direct mapping cache
+;   Note #1: This is a salvaged version of a test from assignment 2
+;   Note #2: This is identical to the ideal_assoc test since they cover 
+;               the same content
+;
+;   Algorithm: Direct_Mapping
+;   Policy: Write_Back or Write_Through
+
+            ORG   $1000
+
+Start       MOV     #0,R15          ; Not within the loop
+loop        MOV     #$FF12,R4       ; 1/2    0x1002
+            MOV     #$0023,R5       ; 3/4    0x1006
+            ADD     R4,R5           ; 5      0x100A
+            MOV     #$0111,R6       ; 6/7    0x100C
+            ADD     R4,R6           ; 8      0x1010
+            MOV     #$003D,R7       ; 9/10   0x1012
+            ADDC    R4,R7           ; 11     0x1016
+            MOV     #$003D,R8       ; 12/13  0x1018
+            ADD     R4,R8           ; 14     0x101C
+            MOV     #$1234,R9       ; 15/16  0x101E
+            SUB     R15,R9          ; 17     0x1022
+            MOV     #$1000,R10      ; 18/19  0x1024
+            SUB     R15,R10         ; 20     0x1028
+            MOV     #$1500,R11      ; 21/22  0x102A
+            SUBC    R15,R11         ; 23     0x102E
+            MOV     #$1500,R12      ; 24/25  0x1030
+            MOV     #$5812,R13      ; 26/27  0x1034
+            ADD     #1,R15          ; 28     0x1038
+            CMP     #10,R15         ; 29     0x103A
+            JEQ     endspot         ; 30     0x103C
+            JMP     loop            ; 31     0x103E
+
+endspot
+END         Start
+
+; TEST OUTPUT: (Cache contents followed by hit ratio)
+
+PRINTING CONTENTS OF THE CACHE
+LINE #0:  ADDR >>1040<< || DATA >>3fe0<< || DB: >>0<<
+LINE #1:  ADDR >>1042<< || DATA >>0<<    || DB: >>0<<
+LINE #2:  ADDR >>1004<< || DATA >>ff12<< || DB: >>0<<
+LINE #3:  ADDR >>1006<< || DATA >>4035<< || DB: >>0<<
+LINE #4:  ADDR >>1008<< || DATA >>23<<   || DB: >>0<<
+LINE #5:  ADDR >>100a<< || DATA >>5405<< || DB: >>0<<
+LINE #6:  ADDR >>100c<< || DATA >>4036<< || DB: >>0<<
+LINE #7:  ADDR >>100e<< || DATA >>111<<  || DB: >>0<<
+LINE #8:  ADDR >>1010<< || DATA >>5406<< || DB: >>0<<
+LINE #9:  ADDR >>1012<< || DATA >>4037<< || DB: >>0<<
+LINE #10: ADDR >>1014<< || DATA >>3d<<   || DB: >>0<<
+LINE #11: ADDR >>1016<< || DATA >>6407<< || DB: >>0<<
+LINE #12: ADDR >>1018<< || DATA >>4038<< || DB: >>0<<
+LINE #13: ADDR >>101a<< || DATA >>3d<<   || DB: >>0<<
+LINE #14: ADDR >>101c<< || DATA >>5408<< || DB: >>0<<
+LINE #15: ADDR >>101e<< || DATA >>4039<< || DB: >>0<<
+LINE #16: ADDR >>1020<< || DATA >>1234<< || DB: >>0<<
+LINE #17: ADDR >>1022<< || DATA >>8f09<< || DB: >>0<<
+LINE #18: ADDR >>1024<< || DATA >>403a<< || DB: >>0<<
+LINE #19: ADDR >>1026<< || DATA >>1000<< || DB: >>0<<
+LINE #20: ADDR >>1028<< || DATA >>8f0a<< || DB: >>0<<
+LINE #21: ADDR >>102a<< || DATA >>403b<< || DB: >>0<<
+LINE #22: ADDR >>102c<< || DATA >>1500<< || DB: >>0<<
+LINE #23: ADDR >>102e<< || DATA >>7f0b<< || DB: >>0<<
+LINE #24: ADDR >>1030<< || DATA >>403c<< || DB: >>0<<
+LINE #25: ADDR >>1032<< || DATA >>1500<< || DB: >>0<<
+LINE #26: ADDR >>1034<< || DATA >>403d<< || DB: >>0<<
+LINE #27: ADDR >>1036<< || DATA >>5812<< || DB: >>0<<
+LINE #28: ADDR >>1038<< || DATA >>531f<< || DB: >>0<<
+LINE #29: ADDR >>103a<< || DATA >>903f<< || DB: >>0<<
+LINE #30: ADDR >>103c<< || DATA >>a<<    || DB: >>0<<
+LINE #31: ADDR >>103e<< || DATA >>2401<< || DB: >>0<<
+
+HIT  COUNT: >>287<<
+MISS COUNT: >>34<<
+RATIO: >>0.894081<<
+    Inst: >>0<<
+

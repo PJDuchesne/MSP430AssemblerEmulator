@@ -1,0 +1,132 @@
+; Author: Paul Duchesne (B00332119)
+; Date: JULY 26, 2017
+; Name: writing_test
+; Purpose: Test to show the two writing policies,
+;
+;   Algorithm: Direct_Mapping
+;   Policy: Write_Back or Write_Through
+
+            ORG     $2010   ; Starting on cache line 8
+LABEL1      WORD    $1000   ; Line 8
+LABEL2      WORD    $2000   ; Line 9
+LABEL3      WORD    $3000   ; Line 10
+
+            ORG     $1000
+                                   ; Cache_line:
+Start       ADD     #$9000,LABEL1  ; 0/1/2  ; Loads label1 into line 8
+            ADD     #4,LABEL2      ; 3/4    ; Loads Label2 into line 9
+            SUBC    #8,LABEL3      ; 5/6    ; Loads label3 into line 10
+            CMP     R4,R8          ; 7
+            JMP     endspot        ; 8      ; Will force Label1 to be written
+                                            ; in write_back
+            ORG     $1090
+
+endspot
+END         Start
+
+; TEST OUTPUTS:
+
+--> Write_Back Policy OUTPUT
+
+    From mem.txt (Memory Output File, comments added after)
+
+        2010    00      ; Label1 (Upper bit)
+        2011    a0      ; Label1 (Lower bit), Written back to
+        2012    00      ; Label2 (Lower bit)
+        2013    20      ; Label2 (Upper bit), Not written back to
+        2014    00      ; Label3 (Lower bit)
+        2015    30      ; Label3 (Upper bit), Not written back to
+
+    From Cache Printout (Comments added after)
+   
+        PRINTING CONTENTS OF THE CACHE
+            LINE #0:  ADDR >>1000<< || DATA >>50b0<< || DB: >>0<<
+            LINE #1:  ADDR >>1002<< || DATA >>9000<< || DB: >>0<<
+            LINE #2:  ADDR >>1004<< || DATA >>100c<< || DB: >>0<<
+            LINE #3:  ADDR >>1006<< || DATA >>52a0<< || DB: >>0<<
+            LINE #4:  ADDR >>1008<< || DATA >>100a<< || DB: >>0<<
+            LINE #5:  ADDR >>100a<< || DATA >>72b0<< || DB: >>0<<
+            LINE #6:  ADDR >>100c<< || DATA >>1008<< || DB: >>0<<
+            LINE #7:  ADDR >>100e<< || DATA >>9408<< || DB: >>0<<
+            LINE #8:  ADDR >>1090<< || DATA >>0   << || DB: >>0<<   ; Note this is not LABEL1
+            LINE #9:  ADDR >>2012<< || DATA >>2004<< || DB: >>1<<   ; Note the DB is set
+            LINE #10: ADDR >>2014<< || DATA >>2ff8<< || DB: >>1<<   ; Note the DB is set
+            LINE #11: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #12: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #13: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #14: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #15: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #16: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #17: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #18: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #19: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #20: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #21: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #22: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #23: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #24: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #25: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #26: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #27: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #28: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #29: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #30: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+            LINE #31: ADDR >>ffff<< || DATA >>0<< || DB: >>0<<
+
+            HIT  COUNT: >>3<<
+            MISS COUNT: >>13<<
+            RATIO: >>0.1875<<
+                Inst: >>0<<
+
+--> Write_Through Policy OUTPUT
+
+    From mem.txt (Memory Output File, comments added after)
+
+        2010    00      ; Label1 (Upper bit)
+        2011    a0      ; Label1 (Lower bit), Written back to
+        2012    04      ; Label2 (Lower bit)
+        2013    20      ; Label2 (Upper bit), Written back to
+        2014    f8      ; Label3 (Lower bit)
+        2015    2f      ; Label3 (Upper bit), WRitten back to
+
+    From Cache Printout (Comments added after)
+   
+        PRINTING CONTENTS OF THE CACHE
+            LINE #0:  ADDR >>1000<< || DATA >>50b0<<    ; Note that there is no dirty bit
+            LINE #1:  ADDR >>1002<< || DATA >>9000<<
+            LINE #2:  ADDR >>1004<< || DATA >>100c<<
+            LINE #3:  ADDR >>1006<< || DATA >>52a0<<
+            LINE #4:  ADDR >>1008<< || DATA >>100a<<
+            LINE #5:  ADDR >>100a<< || DATA >>72b0<<
+            LINE #6:  ADDR >>100c<< || DATA >>1008<<
+            LINE #7:  ADDR >>100e<< || DATA >>9408<<
+            LINE #8:  ADDR >>1090<< || DATA >>0   <<
+            LINE #9:  ADDR >>2012<< || DATA >>2004<<
+            LINE #10: ADDR >>2014<< || DATA >>2ff8<<
+            LINE #11: ADDR >>ffff<< || DATA >>0<<
+            LINE #12: ADDR >>ffff<< || DATA >>0<<
+            LINE #13: ADDR >>ffff<< || DATA >>0<<
+            LINE #14: ADDR >>ffff<< || DATA >>0<<
+            LINE #15: ADDR >>ffff<< || DATA >>0<<
+            LINE #16: ADDR >>ffff<< || DATA >>0<<
+            LINE #17: ADDR >>ffff<< || DATA >>0<<
+            LINE #18: ADDR >>ffff<< || DATA >>0<<
+            LINE #19: ADDR >>ffff<< || DATA >>0<<
+            LINE #20: ADDR >>ffff<< || DATA >>0<<
+            LINE #21: ADDR >>ffff<< || DATA >>0<<
+            LINE #22: ADDR >>ffff<< || DATA >>0<<
+            LINE #23: ADDR >>ffff<< || DATA >>0<<
+            LINE #24: ADDR >>ffff<< || DATA >>0<<
+            LINE #25: ADDR >>ffff<< || DATA >>0<<
+            LINE #26: ADDR >>ffff<< || DATA >>0<<
+            LINE #27: ADDR >>ffff<< || DATA >>0<<
+            LINE #28: ADDR >>ffff<< || DATA >>0<<
+            LINE #29: ADDR >>ffff<< || DATA >>0<<
+            LINE #30: ADDR >>ffff<< || DATA >>0<<
+            LINE #31: ADDR >>ffff<< || DATA >>0<<
+
+            HIT  COUNT: >>3<<
+            MISS COUNT: >>13<<
+            RATIO: >>0.1875<<
+                Inst: >>0<<
+

@@ -22,11 +22,9 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 #include <fstream>
 #include <cstdlib>
 
-#include "Include/debugger.h"
-#include "Include/library.h"
+#include "Include/cache.h"
 #include "Include/emulate.h"
-
-// Preprocessor Checks
+#include "Include/library.h"
 
 /*
     Note: Used #if <condition> instead of #ifdef <condition> due to
@@ -37,25 +35,12 @@ __/\\\\\\\\\\\\\_____/\\\\\\\\\\\__/\\\\\\\\\\\\____
 //  ALGORITHM:
 //  0: Direct Mapping
 //  1: Associative
-#define ALGORITHM   ASS
-#define DIRECT_MAP  0
-#define ASSOCIATIVE 1
-
-#define ASS ASSOCIATIVE
+#define ALGORITHM   DIRECT_MAP  // Set to DIRECT_MAP or ASSOCIATIVE
 
 //  POLICY:
 //  0: WRITE BACK    (WB)
 //  1: WRITE THROUGH (WT)
-#define POLICY        WRITE_BACK
-#define WRITE_BACK    0
-#define WRITE_THROUGH 1
-
-// Used in direct mapping to extract bits 1 through 5 (not 0-4)
-// Bitshifts result to have a number from 0-31
-#define dir_map(addr) ((addr&0x001F)>>1)
-
-#define CACHE_SIZE 32
-#define MAX_DEVICE_MEM 31
+#define POLICY        WRITE_THROUGH  // Set to WRITE_BACK or WRITE_THROUGH
 
 // Counts to track hit ratio
 uint16_t miss_cnt = 0;
@@ -77,9 +62,10 @@ cache_line cache_array[CACHE_SIZE];
         // At this point, we have the cache_line that is related the input addr
         // It either does or doesn't have the correct address
         2) Check if the addr is correct or not
-            * IF correct: Set MDR and return, set DB appropriately
-            * ELSE (Incorrect): Call BUS for the value based on the ctrl type
-                
+            * IF correct: HIT: Set MDR and return, set DB appropriately
+            * ELSE (Incorrect) MISS: Call BUS for the value based on the ctrl type
+
+        --> Please see design report for more details            
 */
 
 // MAR contains memory location to be accessed or stored to
@@ -88,7 +74,7 @@ cache_line cache_array[CACHE_SIZE];
 void cache(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl) {
     std::cout << "CACHE CALL\n";
 
-    // Check if ALGORITHM and POLICY are valid
+    // Check if ALGORITHM and POLICY are valid, break if either is invalid
     #if ALGORITHM > 1
     std::cout << "INVALID ALGORITHM\n"
     exit(1)
@@ -97,6 +83,12 @@ void cache(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl) {
     std::cout << "INVALID POLICY\n"
     exit(1)
     #endif
+
+    // Check if device memory is being accessed
+    if (mar <= MAX_DEVICE_MEM) {
+        bus(mar, mdr, ctrl);
+        return;  // Return here is purely to avoid doing an "else" after this if and then indenting EVERYTHING
+    }
 
     // Temp variable for performing other bus calls
     uint16_t data_temp = -1;
@@ -110,28 +102,17 @@ void cache(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl) {
         exit(1);
     }
 
-    // Check if device memory is being accessed
-    if (mar <= MAX_DEVICE_MEM) {
-        bus(mar, mdr, ctrl);
-        return;  // Return here is purely to avoid doing an "else" after this if and then indenting EVERYTHING
-    }
-
     // Mask off the lowest bit to get the even address (i.e. 0x2001 --> 0x2000)
-    uint16_t mar_even = mar&0xFFFE;  
+    uint16_t mar_even = mar&LOWEST_BIT_MASK;  // LOWEST_BIT_MASK = 0xFFFE
 
     // Cache_addr reset to MAX at the start 
     uint8_t cache_addr = CACHE_SIZE; // Array goes from 0 to CACHE_SIZE-1
 
     // Obtain cache address depending on mode, store in 'cache_addr'
 
-    #if ALGORITHM == DIRECT_MAP
-    // DIRECT MAPPING, Obtain line based on dir_map
-
+    #if ALGORITHM == DIRECT_MAP // Obtain cache line based on hash
     cache_addr = dir_map(mar);  // Takes bits 1 through 5 (Not 0 through 4)
-
-    #elif ALGORITHM == ASSOCIATIVE
-
-    // ASSOCIATIVE, Obtain line based on AGE
+    #else  // ALGORITHM == ASSOCIATIVE -> Obtain cache line based on age
 
     // Max age found used to determine oldest line
     int8_t previous_age = -1;
@@ -164,7 +145,7 @@ void cache(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl) {
     // To properly increment the other ages
     for (int i = 0; i < CACHE_SIZE; i++) if (cache_array[i].age <= previous_age) cache_array[i].age++;
 
-    // Set age to be replaced to 0 (youngest)
+    // Set age to be replaced to 0 (new youngest)
     cache_array[cache_addr].age = 0;
     
     #endif    
@@ -193,6 +174,7 @@ void cache(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl) {
    
                 // Update cache_line
                 cache_array[cache_addr].addr = mar; 
+                cache_array[cache_addr].data = mdr; 
         
                 break;
 
@@ -275,7 +257,7 @@ void cache(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl) {
                 // If write-back, set the DB
                 #if POLICY == WRITE_THROUGH
                 bus(mar, mdr, WRITE_W);
-                #elif POLICY == WRITE_BACK
+                #else  // POLICY == WRITE_BACK
                 cache_array[cache_addr].db = true;
                 #endif
                 cache_array[cache_addr].data = mdr;
@@ -287,21 +269,18 @@ void cache(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl) {
                 // If write-back, set the DB
                 #if POLICY == WRITE_THROUGH
                 bus(mar, mdr, WRITE_B);
-                
-                #elif POLICY == WRITE_BACK
+                #else  // POLICY == WRITE_BACK
                 cache_array[cache_addr].db = true;
                 #endif
 
                 // Store the original byte
                 data_temp = mdr;
 
-                // Call bus for missing byte: TODO: ASK HUGHES IF THIS IS ACCEPTIBLE
-                    // If ODD  (2001), fetch EVEN (2000, from even_mar)
-                    // If EVEN (2000), fetch ODD  (2001, from mar + 1 )
+                // Call bus for missing byte
                 bus((odd_flag ? mar_even : (mar+1)), mdr, READ_B);
 
                 // Store the fetched byte with the provided byte on the cache line
-                cache_array[cache_addr].data = (mdr<<(odd_flag ? 8 : 0) + (data_temp<<(odd_flag ? 0 : 8)));
+                cache_array[cache_addr].data = (mdr<<(odd_flag ? BYTE_SIZE : 0) + (data_temp<<(odd_flag ? 0 : BYTE_SIZE)));
                 cache_array[cache_addr].addr = mar_even;
                 break;
 
@@ -311,26 +290,26 @@ void cache(uint16_t mar, uint16_t &mdr, BUS_CTRL ctrl) {
         }
     }
 
-    // PRINT OUT CONTENTS OF THE CACHE (FOR DEBUGGING) TODO: PUT IN DEBUG_MODE CHECK
-    std::cout << "\n\nPRINTING CONTENTS OF THE CACHE\n";
-    for (int i = 0; i < CACHE_SIZE; i++) {
-        std::cout << "LINE #" << std::dec << i << ": ADDR >>" << std::hex << cache_array[i].addr << "<< || DATA >>" << cache_array[i].data << "<<";
-        #if POLICTY == WRITE_BACK
-        std::cout << " || DB: >>" << cache_array[i].db << "<<";
-        #endif
-        #if ALGORITHM == ASSOCIATIVE
-        std::cout << std::dec << " || AGE: >>" << (int)cache_array[i].age << "<<";
-        #endif
-        std::cout << "\n";
+    // Print out Contents of the Cache and Statistics
+    // Only done if debug mode is enabled in the main menu
+    if (debug_mode) {
+        // Print the contents of the cache
+        std::cout << "\n\nPRINTING CONTENTS OF THE CACHE\n";
+        for (int i = 0; i < CACHE_SIZE; i++) {
+            std::cout << "LINE #" << std::dec << i << ": ADDR >>" << std::hex << cache_array[i].addr << "<< || DATA >>" << cache_array[i].data << "<<";
+            #if POLICY == WRITE_BACK
+            std::cout << " || DB: >>" << cache_array[i].db << "<<";
+            #endif
+            #if ALGORITHM == ASSOCIATIVE
+            std::cout << std::dec << " || AGE: >>" << (int)cache_array[i].age << "<<";
+            #endif
+            std::cout << "\n";
+        }
+        // Determine and print the hit ratio
+        std::cout << std::dec << std::endl;
+        std::cout << "HIT  COUNT: >>" << hit_cnt << "<<\n";
+        std::cout << "MISS COUNT: >>" << miss_cnt << "<<\n";
+        float ratio = ((float)hit_cnt)/((float)(miss_cnt+hit_cnt));
+        std::cout << "RATIO: >>" << ratio << "<<\n";
     }
-    std::cout << std::dec << std::endl;
-
-    std::cout << "HIT  COUNT: >>" << hit_cnt << "<<\n";
-    std::cout << "MISS COUNT: >>" << miss_cnt << "<<\n";
-
-    float ratio = ((float)hit_cnt)/((float)(miss_cnt+hit_cnt));
-
-    std::cout << "RATIO: >>" << ratio << "<<\n";
-
-    // PRINT OUT END
 }

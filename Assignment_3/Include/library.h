@@ -262,8 +262,9 @@ struct device {
 };
 
 /* 
-    BRIEF: Cache lines used for cache array
-*/
+    BRIEF: Cache lines used for cache array, certain parts
+            are hash defined to only exist within modes that
+            actually require them
 struct cache_line {
     int16_t addr = -1;  // This is signed to allow -1 checks
     union {
@@ -280,6 +281,7 @@ struct cache_line {
     bool db;
     #endif
 };
+*/
 
 // Global overlay values
 extern device devices[MAX_DEVICES];                      // Supports a maximum of 16 devices

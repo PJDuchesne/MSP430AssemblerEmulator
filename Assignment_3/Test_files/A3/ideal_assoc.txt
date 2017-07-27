@@ -1,0 +1,87 @@
+; Author: Paul Duchesne (B00332119)
+; Date: JULY 25, 2017
+; Name: Ideal_assoc
+; Purpose: Test to see an ideal associative cache run, with a "tight" loop
+;          that has 32 or less runs in a loop. This will miss 34 times. 1 for 
+;          the initial MOV #0,R15. 1 for the 'HCF', and 32 for the first loop
+;   Note #1: This is a salvaged version of a test from assignment 2
+;   Note #2: This is almost identical to the 'break_assoc' test, which just
+;               has 2 more words in the loop
+;
+;   Algorithm: Associative
+;   Policy: Write_Back or Write_Through
+
+
+            ORG     $1000
+
+Start       MOV     #0,R15          ; Not within the loop
+loop        MOV     #$FF12,R4       ; 1/2
+            MOV     #$0023,R5       ; 3/4
+            ADD     R4,R5           ; 5
+            MOV     #$0111,R6       ; 6/7
+            jmp     LABEL2          ; 8
+
+            ORG     $1200
+LABEL2      MOV     #$003D,R7       ; 9/10
+            ADDC.b  R4,R7           ; 11
+            MOV     #$003D,R8       ; 12/13
+            ADD     R4,R8           ; 14
+            MOV.b   #$1234,R9       ; 15/16
+            SUB     R15,R9          ; 17
+            MOV     #$1000,R10      ; 18/19
+            JMP     LABEL3          ; 20
+
+            ORG     $12C0
+LABEL3      MOV     #$1500,R11      ; 21/22
+            SUBC    R15,R11         ; 23
+            MOV     #$1500,R12      ; 24/25
+            MOV     #$5812,R13      ; 26/27
+            ADD.b   #1,R15          ; 28
+            CMP     #10,R15         ; 29
+            JEQ     endspot         ; 30
+            JMP     loop            ; 31
+
+endspot
+END         Start
+
+; TEST OUTPUT: (Cache contents followed by hit ratio)
+
+PRINTING CONTENTS OF THE CACHE
+LINE #0:  ADDR >>12d8<< || DATA >>0<<    || DB: >>0<< || AGE: >>0<<
+LINE #1:  ADDR >>1002<< || DATA >>4034<< || DB: >>0<< || AGE: >>31<<
+LINE #2:  ADDR >>1004<< || DATA >>ff12<< || DB: >>0<< || AGE: >>30<<
+LINE #3:  ADDR >>1006<< || DATA >>4035<< || DB: >>0<< || AGE: >>29<<
+LINE #4:  ADDR >>1008<< || DATA >>23<<   || DB: >>0<< || AGE: >>28<<
+LINE #5:  ADDR >>100a<< || DATA >>5405<< || DB: >>0<< || AGE: >>27<<
+LINE #6:  ADDR >>100c<< || DATA >>4036<< || DB: >>0<< || AGE: >>26<<
+LINE #7:  ADDR >>100e<< || DATA >>111<<  || DB: >>0<< || AGE: >>25<<
+LINE #8:  ADDR >>1010<< || DATA >>3cf7<< || DB: >>0<< || AGE: >>24<<
+LINE #9:  ADDR >>1200<< || DATA >>4037<< || DB: >>0<< || AGE: >>23<<
+LINE #10: ADDR >>1202<< || DATA >>3d<<   || DB: >>0<< || AGE: >>22<<
+LINE #11: ADDR >>1204<< || DATA >>6447<< || DB: >>0<< || AGE: >>21<<
+LINE #12: ADDR >>1206<< || DATA >>4038<< || DB: >>0<< || AGE: >>20<<
+LINE #13: ADDR >>1208<< || DATA >>3d<<   || DB: >>0<< || AGE: >>19<<
+LINE #14: ADDR >>120a<< || DATA >>5408<< || DB: >>0<< || AGE: >>18<<
+LINE #15: ADDR >>120c<< || DATA >>4079<< || DB: >>0<< || AGE: >>17<<
+LINE #16: ADDR >>120e<< || DATA >>1234<< || DB: >>0<< || AGE: >>16<<
+LINE #17: ADDR >>1210<< || DATA >>8f09<< || DB: >>0<< || AGE: >>15<<
+LINE #18: ADDR >>1212<< || DATA >>403a<< || DB: >>0<< || AGE: >>14<<
+LINE #19: ADDR >>1214<< || DATA >>1000<< || DB: >>0<< || AGE: >>13<<
+LINE #20: ADDR >>1216<< || DATA >>3c54<< || DB: >>0<< || AGE: >>12<<
+LINE #21: ADDR >>12c0<< || DATA >>403b<< || DB: >>0<< || AGE: >>11<<
+LINE #22: ADDR >>12c2<< || DATA >>1500<< || DB: >>0<< || AGE: >>10<<
+LINE #23: ADDR >>12c4<< || DATA >>7f0b<< || DB: >>0<< || AGE: >>9<<
+LINE #24: ADDR >>12c6<< || DATA >>403c<< || DB: >>0<< || AGE: >>8<<
+LINE #25: ADDR >>12c8<< || DATA >>1500<< || DB: >>0<< || AGE: >>7<<
+LINE #26: ADDR >>12ca<< || DATA >>403d<< || DB: >>0<< || AGE: >>6<<
+LINE #27: ADDR >>12cc<< || DATA >>5812<< || DB: >>0<< || AGE: >>5<<
+LINE #28: ADDR >>12ce<< || DATA >>535f<< || DB: >>0<< || AGE: >>4<<
+LINE #29: ADDR >>12d0<< || DATA >>903f<< || DB: >>0<< || AGE: >>3<<
+LINE #30: ADDR >>12d2<< || DATA >>a<<    || DB: >>0<< || AGE: >>2<<
+LINE #31: ADDR >>12d4<< || DATA >>2401<< || DB: >>0<< || AGE: >>1<<
+
+HIT  COUNT: >>287<<
+MISS COUNT: >>34<<
+RATIO: >>0.894081<<
+    Inst: >>0<<
+
